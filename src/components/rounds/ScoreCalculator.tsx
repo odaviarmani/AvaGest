@@ -245,7 +245,7 @@ export default function ScoreCalculator() {
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m09">
-                <AccordionTrigger>M09 – O Que Está em Promoção? (30)</AccordionTrigger>
+                <AccordionTrigger>M09 – O que está à venda? (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
                     <MissionCheckbox id="m09_roof" label="Teto completamente levantado (20)" checked={missions.m09_whats_on_sale.roof_lifted} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m09_whats_on_sale: {...prev.m09_whats_on_sale, roof_lifted: checked} }))} />
                     <MissionCheckbox id="m09_goods" label="Produtos do mercado levantados (10)" checked={missions.m09_whats_on_sale.market_goods_lifted} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m09_whats_on_sale: {...prev.m09_whats_on_sale, market_goods_lifted: checked} }))} />
@@ -255,14 +255,12 @@ export default function ScoreCalculator() {
                 <AccordionTrigger>M10 – Inclinar a Balança (60)</AccordionTrigger>
                 <AccordionContent className="space-y-4">
                     <div>
-                        <Label>Balanças inclinadas: {missions.m10_tip_the_scales.scales_tipped}</Label>
+                        <Label>Balanças inclinadas (20 pts cada): {missions.m10_tip_the_scales.scales_tipped}</Label>
                         <Slider value={[missions.m10_tip_the_scales.scales_tipped]} onValueChange={([val]) => setMissions(prev => ({...prev, m10_tip_the_scales: {...prev.m10_tip_the_scales, scales_tipped: val}}))} max={2} step={1} />
-                        <p className="text-sm text-muted-foreground">+20 pontos por balança</p>
                     </div>
                     <div>
-                        <Label>Balanças removidas (pan): {missions.m10_tip_the_scales.pan_removed}</Label>
+                        <Label>Pratos da balança removidos (10 pts cada): {missions.m10_tip_the_scales.pan_removed}</Label>
                         <Slider value={[missions.m10_tip_the_scales.pan_removed]} onValueChange={([val]) => setMissions(prev => ({...prev, m10_tip_the_scales: {...prev.m10_tip_the_scales, pan_removed: val}}))} max={2} step={1} />
-                        <p className="text-sm text-muted-foreground">+10 pontos por pan removido</p>
                     </div>
                 </AccordionContent>
             </AccordionItem>
@@ -334,3 +332,5 @@ export default function ScoreCalculator() {
     </Card>
   );
 }
+
+    
