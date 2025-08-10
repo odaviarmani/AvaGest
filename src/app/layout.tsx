@@ -28,6 +28,9 @@ export default function RootLayout({
                 <Button variant="ghost" asChild>
                     <Link href="/kanban">Kanban</Link>
                 </Button>
+                 <Button variant="ghost" asChild>
+                    <Link href="/calendar">Calendário</Link>
+                </Button>
                 <Button variant="ghost" asChild>
                     <Link href="/roulette">Roletas (Revezamento)</Link>
                 </Button>
