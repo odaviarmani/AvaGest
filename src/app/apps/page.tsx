@@ -25,7 +25,7 @@ const apps = [
     { name: "NotebookLM", href: "https://notebooklm.google.com", icon: <BookMarked className="w-8 h-8" /> },
     { name: "WhatsApp", href: "https://web.whatsapp.com", icon: <BotMessageSquare className="w-8 h-8" /> },
     { name: "YouTube", href: "https://www.youtube.com", icon: <Youtube className="w-8 h-8" /> },
-    { name: "FLL Tools", href: "https://fll-wro.github.io/fll-tools/", icon: <Wrench className="w-8 h-8" /> },
+    { name: "FLL Tools", href: "https://flltools.flltutorials.com/", icon: <Wrench className="w-8 h-8" /> },
 ];
 
 export default function AppsPage() {
