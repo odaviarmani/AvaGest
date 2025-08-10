@@ -31,9 +31,6 @@ export default function RootLayout({
                     <Link href="/calendar">Calendário</Link>
                 </Button>
                 <Button variant="ghost" asChild>
-                    <Link href="/rounds">Rounds</Link>
-                </Button>
-                <Button variant="ghost" asChild>
                     <Link href="/roulette">Roletas (Revezamento)</Link>
                 </Button>
                 <Button variant="ghost" asChild>
