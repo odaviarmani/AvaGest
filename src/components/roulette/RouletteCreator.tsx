@@ -57,19 +57,19 @@ export default function RouletteCreator() {
     <div className="space-y-8">
         <Card>
             <CardHeader>
-                <CardTitle>Crie suas Roletas</CardTitle>
-                <CardDescription>Adicione roletas personalizadas para qualquer tipo de sorteio que precisar.</CardDescription>
+                <CardTitle>Crie suas Roletas Personalizadas</CardTitle>
+                <CardDescription>Adicione roletas para qualquer tipo de sorteio.</CardDescription>
             </CardHeader>
             <CardContent>
                  <Button onClick={handleAddRoulette}>
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar Roleta Personalizada
+                    Adicionar Nova Roleta
                 </Button>
             </CardContent>
         </Card>
         
         {roulettes.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 gap-8">
                 {roulettes.map(roulette => (
                     <RouletteEditor 
                         key={roulette.id} 
