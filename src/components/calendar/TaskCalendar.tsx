@@ -11,9 +11,9 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '../ui/skeleton';
 
 const areaColorMap: Record<string, string> = {
-  "Projeto de Inovação": "bg-blue-500/80",
+  "Projeto de Inovação": "bg-red-500/80",
   "Construção": "bg-green-500/80",
-  "Programação": "bg-purple-500/80",
+  "Programação": "bg-blue-500/80",
   "Core Values": "bg-yellow-500/80",
   "default": "bg-gray-500/80",
 };
