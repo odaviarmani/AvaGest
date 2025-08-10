@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Undo, Trash2, Redo } from 'lucide-react';
+import { Undo, Trash2, Redo, Upload } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import Image from 'next/image';
 
@@ -42,14 +42,24 @@ export default function StrategyBoard() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number, y: number } | null>(null);
   const [endPoint, setEndPoint] = useState<{ x: number, y: number } | null>(null);
+  const [mapImage, setMapImage] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { history: initialHistoryState, steps: initialStepsState } = useMemo(initialHistory, []);
   const historyRef = useRef<Record<string, Drawing[]>>(initialHistoryState);
   const currentStepRef = useRef<Record<string, number>>(initialStepsState);
 
+  useEffect(() => {
+    setIsClient(true);
+    const savedImage = localStorage.getItem('strategyMapImage');
+    if (savedImage) {
+        setMapImage(savedImage);
+    }
+  }, []);
 
   const drawAllLines = useCallback(() => {
     const canvas = canvasRef.current;
@@ -59,6 +69,8 @@ export default function StrategyBoard() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    if (!mapImage) return;
+
     const currentHistory = historyRef.current[activeTab] || [];
     const currentStep = currentStepRef.current[activeTab] || 0;
     const drawings = currentHistory.slice(0, currentStep).flat();
@@ -74,7 +86,6 @@ export default function StrategyBoard() {
       ctx.stroke();
     });
 
-    // Draw the current line being drawn
     if (isDrawing && startPoint && endPoint) {
         ctx.beginPath();
         ctx.strokeStyle = color;
@@ -85,7 +96,7 @@ export default function StrategyBoard() {
         ctx.lineTo(endPoint.x, endPoint.y);
         ctx.stroke();
     }
-  }, [activeTab, startPoint, endPoint, color, lineWidth, isDrawing]);
+  }, [activeTab, startPoint, endPoint, color, lineWidth, isDrawing, mapImage]);
 
 
   useEffect(() => {
@@ -120,7 +131,7 @@ export default function StrategyBoard() {
         window.removeEventListener('resize', resizeCanvas);
       };
     }
-  }, [drawAllLines]);
+  }, [drawAllLines, mapImage]);
 
   const getCoordinates = (event: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -144,6 +155,7 @@ export default function StrategyBoard() {
   };
 
   const startDrawing = (event: React.MouseEvent | React.TouchEvent) => {
+    if (!mapImage) return;
     const coords = getCoordinates(event);
     if (!coords) return;
     
@@ -175,7 +187,6 @@ export default function StrategyBoard() {
 
   const handleDrawing = (event: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing) return;
-    // Prevent scrolling on touch devices
     event.preventDefault();
     const coords = getCoordinates(event);
     if (!coords) return;
@@ -205,30 +216,67 @@ export default function StrategyBoard() {
     drawAllLines();
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const result = reader.result as string;
+            setMapImage(result);
+            try {
+                localStorage.setItem('strategyMapImage', result);
+            } catch (error) {
+                console.error("Failed to save image to localStorage:", error);
+                alert("Não foi possível salvar a imagem. Ela pode ser muito grande.");
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
 
   return (
     <div className="w-full flex flex-col md:flex-row gap-8 items-start">
-        <div className="relative w-full aspect-[1.84/1] rounded-lg border overflow-hidden shadow-lg bg-gray-200">
-            <Image
-                ref={imageRef}
-                src="https://fll-wro.github.io/fll-2023/unearthed.svg"
-                alt="Mapa da FLL Unearthed"
-                fill
-                className='object-contain'
-                priority
-                unoptimized
-            />
-            <canvas
-                ref={canvasRef}
-                className="absolute top-0 left-0 w-full h-full cursor-crosshair"
-                onMouseDown={startDrawing}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-                onMouseMove={handleDrawing}
-                onTouchStart={startDrawing}
-                onTouchEnd={stopDrawing}
-                onTouchMove={handleDrawing}
-            />
+        <div className="relative w-full aspect-[1.84/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+            {isClient && mapImage ? (
+                <>
+                    <Image
+                        ref={imageRef}
+                        src={mapImage}
+                        alt="Mapa da FLL"
+                        fill
+                        className='object-contain'
+                        priority
+                        unoptimized
+                    />
+                    <canvas
+                        ref={canvasRef}
+                        className="absolute top-0 left-0 w-full h-full cursor-crosshair"
+                        onMouseDown={startDrawing}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onMouseMove={handleDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchEnd={stopDrawing}
+                        onTouchMove={handleDrawing}
+                    />
+                </>
+            ) : (
+                <div className="flex flex-col gap-4 items-center">
+                     <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                        className="hidden"
+                    />
+                    <Button onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Fazer Upload do Mapa
+                    </Button>
+                    <p className="text-sm text-muted-foreground">Carregue a imagem do tapete da temporada.</p>
+                </div>
+            )}
         </div>
 
         <Card className="w-full md:w-[320px] shrink-0">
@@ -271,18 +319,28 @@ export default function StrategyBoard() {
                         </div>
 
                         <div className="flex justify-between gap-2">
-                            <Button variant="outline" onClick={undo} disabled={(currentStepRef.current[activeTab] || 0) === 0}>
+                            <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
                                 <Undo className="mr-2 h-4 w-4"/> Desfazer
                             </Button>
-                            <Button variant="outline" onClick={redo} disabled={(currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length}>
+                            <Button variant="outline" onClick={redo} disabled={!mapImage || (currentStepRef.current[activeTab] >= (historyRef.current[activeTab] || []).length)}>
                                 <Redo className="mr-2 h-4 w-4"/> Refazer
                             </Button>
                         </div>
                         
-                        <Button variant="destructive" onClick={clearCanvas} className="w-full">
+                        <Button variant="destructive" onClick={clearCanvas} className="w-full" disabled={!mapImage}>
                             <Trash2 className="mr-2 h-4 w-4" />
                             Limpar Desenho
                         </Button>
+
+                         {mapImage && (
+                            <Button variant="secondary" onClick={() => {
+                                setMapImage(null);
+                                localStorage.removeItem('strategyMapImage');
+                            }} className="w-full">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Trocar Imagem
+                            </Button>
+                        )}
                     </div>
 
                     {Array.from({ length: NUM_SAIDAS }, (_, i) => (
