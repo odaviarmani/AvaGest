@@ -59,3 +59,12 @@ export const customNotificationSchema = z.object({
 });
 
 export type CustomNotification = z.infer<typeof customNotificationSchema>;
+
+export const activityLogSchema = z.object({
+    id: z.string(),
+    username: z.string(),
+    action: z.enum(['login', 'logout']),
+    timestamp: z.string(),
+});
+
+export type ActivityLog = z.infer<typeof activityLogSchema>;

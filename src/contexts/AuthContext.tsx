@@ -3,6 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { ActivityLog } from '@/lib/types';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -24,6 +25,23 @@ const validUsers: Record<string, string> = {
 }
 
 export const USERS = Object.keys(validUsers);
+
+const addActivityLog = (username: string, action: 'login' | 'logout') => {
+    const newLog: ActivityLog = {
+        id: crypto.randomUUID(),
+        username,
+        action,
+        timestamp: new Date().toISOString(),
+    };
+    try {
+        const existingLogsRaw = localStorage.getItem('activityLog');
+        const existingLogs: ActivityLog[] = existingLogsRaw ? JSON.parse(existingLogsRaw) : [];
+        localStorage.setItem('activityLog', JSON.stringify([newLog, ...existingLogs]));
+    } catch (error) {
+        console.error("Failed to save activity log:", error);
+    }
+}
+
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -47,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('username', user);
       setIsAuthenticated(true);
       setUsername(user);
+      addActivityLog(user, 'login');
       router.push('/kanban');
       return true;
     }
@@ -54,6 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    const currentUser = localStorage.getItem('username');
+    if(currentUser) {
+        addActivityLog(currentUser, 'logout');
+    }
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('username');
     setIsAuthenticated(false);

@@ -7,12 +7,13 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { LogOut, Bell } from 'lucide-react';
+import { LogOut, Bell, History } from 'lucide-react';
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, username, logout } = useAuth();
   const isAuthPage = pathname === '/login';
+  const isDavi = username === 'Davi';
 
   return (
     <ThemeProvider
@@ -58,6 +59,11 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                   <Button variant="ghost" asChild>
                       <Link href="/rubricas">Rubricas</Link>
                   </Button>
+                   {isDavi && (
+                     <Button variant="ghost" asChild>
+                       <Link href="/activity-log">Log de Atividade</Link>
+                     </Button>
+                   )}
                   <Button variant="ghost" asChild>
                       <Link href="/notificacoes" className="relative">
                         Notificações
