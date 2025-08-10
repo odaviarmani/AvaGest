@@ -16,10 +16,10 @@ const formatTime = (seconds: number) => {
 };
 
 const CountdownAnimation = ({ onFinish }: { onFinish: () => void }) => {
-    const [text, setText] = useState('3');
+    const [text, setText] = useState('');
   
     useEffect(() => {
-      const sequence = [
+      const sequence: { t: string; duration: number }[] = [
         { t: '3', duration: 1000 },
         { t: '2', duration: 1000 },
         { t: '1', duration: 1000 },
@@ -81,10 +81,10 @@ export default function RoundsTimer() {
     }
   };
 
-  const handleAnimationFinish = () => {
+  const handleAnimationFinish = useCallback(() => {
     setShowAnimation(false);
     setIsActive(true);
-  };
+  },[]);
 
   const handlePause = () => {
     setIsActive(false);
