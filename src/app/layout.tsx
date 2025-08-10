@@ -34,6 +34,9 @@ export default function RootLayout({
                     <Link href="/roulette">Roletas (Revezamento)</Link>
                 </Button>
                 <Button variant="ghost" asChild>
+                    <Link href="/rounds">Rounds</Link>
+                </Button>
+                <Button variant="ghost" asChild>
                     <Link href="/documentation">Documentação</Link>
                 </Button>
             </nav>
