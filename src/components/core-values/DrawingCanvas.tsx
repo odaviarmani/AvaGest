@@ -8,48 +8,73 @@ import { Label } from '@/components/ui/label';
 import { Trash2, Undo } from 'lucide-react';
 
 const COLORS = ["#ef4444", "#f97316", "#84cc16", "#3b82f6", "#a855f7", "#ec4899", "#14b8a6", "#222222"];
+const CANVAS_STORAGE_KEY = 'drawingCanvasState';
 
 export default function DrawingCanvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [color, setColor] = useState(COLORS[7]);
-    const [history, setHistory] = useState<ImageData[]>([]);
+    const [history, setHistory] = useState<string[]>([]);
+    const [currentStep, setCurrentStep] = useState(-1);
     
     const getContext = () => canvasRef.current?.getContext('2d');
 
+    // Load canvas state from localStorage
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
         const ctx = getContext();
-        if(!ctx) return;
-        
-        // Set a white background
-        ctx.fillStyle = 'white';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Save initial state
-        saveHistory();
+        if (!canvas || !ctx) return;
+
+        const savedState = localStorage.getItem(CANVAS_STORAGE_KEY);
+        if (savedState) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL();
+                setHistory([dataUrl]);
+                setCurrentStep(0);
+            };
+            img.src = savedState;
+        } else {
+            // Set a white background for new canvas
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveHistory();
+        }
     }, []);
 
+    const saveCanvasState = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const dataUrl = canvas.toDataURL();
+        localStorage.setItem(CANVAS_STORAGE_KEY, dataUrl);
+        return dataUrl;
+    }
+
     const saveHistory = () => {
-        const ctx = getContext();
-        if(!ctx || !canvasRef.current) return;
-        const imageData = ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height);
-        setHistory(prev => [...prev, imageData]);
+        const dataUrl = saveCanvasState();
+        if(!dataUrl) return;
+
+        const newHistory = history.slice(0, currentStep + 1);
+        setHistory([...newHistory, dataUrl]);
+        setCurrentStep(newHistory.length);
     };
 
     const undo = () => {
-        if(history.length <= 1) return; // Don't undo the initial blank state
-
-        const newHistory = [...history];
-        newHistory.pop(); // Remove current state
-        const lastImage = newHistory[newHistory.length - 1]; // Get previous state
-
-        const ctx = getContext();
-        if(ctx) {
-            ctx.putImageData(lastImage, 0, 0);
-        }
-        setHistory(newHistory);
+        if(currentStep <= 0) return;
+        
+        const newStep = currentStep - 1;
+        setCurrentStep(newStep);
+        const lastImage = new Image();
+        lastImage.onload = () => {
+            const ctx = getContext();
+            if(ctx) {
+                ctx.clearRect(0, 0, canvasRef.current!.width, canvasRef.current!.height);
+                ctx.drawImage(lastImage, 0, 0);
+                saveCanvasState();
+            }
+        };
+        lastImage.src = history[newStep];
     };
 
     const startDrawing = ({ nativeEvent }: React.MouseEvent<HTMLCanvasElement>) => {
@@ -103,7 +128,7 @@ export default function DrawingCanvas() {
                     ref={canvasRef}
                     width={500}
                     height={400}
-                    className="border rounded-md cursor-crosshair w-full"
+                    className="border rounded-md cursor-crosshair w-full bg-white"
                     onMouseDown={startDrawing}
                     onMouseMove={draw}
                     onMouseUp={stopDrawing}
@@ -123,7 +148,7 @@ export default function DrawingCanvas() {
                     </RadioGroup>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={undo} disabled={history.length <= 1}>
+                    <Button variant="outline" onClick={undo} disabled={currentStep <= 0}>
                         <Undo className="mr-2" /> Desfazer
                     </Button>
                     <Button variant="destructive" onClick={clearCanvas}>
