@@ -8,6 +8,8 @@ import {
     Palette,
     Sheet,
     Video,
+    Youtube,
+    Wrench
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,6 +24,8 @@ const apps = [
     { name: "Google Acadêmico", href: "https://scholar.google.com", icon: <GraduationCap className="w-8 h-8" /> },
     { name: "NotebookLM", href: "https://notebooklm.google.com", icon: <BookMarked className="w-8 h-8" /> },
     { name: "WhatsApp", href: "https://web.whatsapp.com", icon: <BotMessageSquare className="w-8 h-8" /> },
+    { name: "YouTube", href: "https://www.youtube.com", icon: <Youtube className="w-8 h-8" /> },
+    { name: "FLL Tools", href: "https://fll-wro.github.io/fll-tools/", icon: <Wrench className="w-8 h-8" /> },
 ];
 
 export default function AppsPage() {
