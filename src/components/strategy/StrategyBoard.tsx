@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Undo, Trash2, Redo, Upload } from 'lucide-react';
+import { Undo, Trash2, Redo, Upload, Download } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import Image from 'next/image';
 
@@ -56,9 +56,8 @@ export default function StrategyBoard() {
   const imageRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const { history: initialHistoryState, steps: initialStepsState } = useMemo(initialHistory, []);
-  const historyRef = useRef<Record<string, DrawingHistory[]>>(initialHistoryState);
-  const currentStepRef = useRef<Record<string, number>>(initialStepsState);
+  const historyRef = useRef<Record<string, DrawingHistory[]>>({});
+  const currentStepRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     setIsClient(true);
@@ -66,7 +65,29 @@ export default function StrategyBoard() {
     if (savedImage) {
         setMapImage(savedImage);
     }
+    
+    const savedHistory = localStorage.getItem('strategyHistory');
+    const savedSteps = localStorage.getItem('strategySteps');
+    if (savedHistory && savedSteps) {
+        historyRef.current = JSON.parse(savedHistory);
+        currentStepRef.current = JSON.parse(savedSteps);
+    } else {
+        const { history, steps } = initialHistory();
+        historyRef.current = history;
+        currentStepRef.current = steps;
+    }
+
   }, []);
+
+  const saveData = useCallback(() => {
+      if(!isClient) return;
+      try {
+        localStorage.setItem('strategyHistory', JSON.stringify(historyRef.current));
+        localStorage.setItem('strategySteps', JSON.stringify(currentStepRef.current));
+      } catch (error) {
+        console.error("Failed to save drawing history to localStorage:", error);
+      }
+  }, [isClient]);
 
    const drawMetricsOnCanvas = (
     ctx: CanvasRenderingContext2D,
@@ -128,8 +149,8 @@ export default function StrategyBoard() {
         const prevDrawing = drawings[index - 1];
         const angleDiff = drawing.angleDeg - prevDrawing.angleDeg;
         // Normalize angle to be between -180 and 180
-        const displayAngle = (angleDiff + 180) % 360 - 180;
-        const angleText = `${displayAngle.toFixed(1)}°`;
+        const displayAngle = Math.round((angleDiff + 180) % 360 - 180);
+        const angleText = `${displayAngle}°`;
         drawMetricsOnCanvas(ctx, angleText, x1, y1, -5);
       }
     });
@@ -245,6 +266,7 @@ export default function StrategyBoard() {
     setStartPoint(null);
     setEndPoint(null);
     drawAllLines();
+    saveData();
   };
 
   const handleDrawing = (event: React.MouseEvent | React.TouchEvent) => {
@@ -261,6 +283,7 @@ export default function StrategyBoard() {
     if ((currentStepRef.current[activeTab] || 0) > 0) {
         currentStepRef.current[activeTab]--;
         drawAllLines();
+        saveData();
     }
   };
 
@@ -269,6 +292,7 @@ export default function StrategyBoard() {
     if ((currentStepRef.current[activeTab] || 0) < history.length) {
       currentStepRef.current[activeTab]++;
       drawAllLines();
+      saveData();
     }
   };
 
@@ -276,6 +300,7 @@ export default function StrategyBoard() {
     historyRef.current[activeTab] = [];
     currentStepRef.current[activeTab] = 0;
     drawAllLines();
+    saveData();
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -296,6 +321,29 @@ export default function StrategyBoard() {
     }
   };
 
+  const handleDownload = () => {
+    const mainCanvas = canvasRef.current;
+    const bgImage = imageRef.current;
+    if (!mainCanvas || !bgImage) return;
+
+    const downloadCanvas = document.createElement('canvas');
+    downloadCanvas.width = mainCanvas.width;
+    downloadCanvas.height = mainCanvas.height;
+    const ctx = downloadCanvas.getContext('2d');
+    
+    if(!ctx) return;
+
+    // Draw the background image first
+    ctx.drawImage(bgImage, 0, 0, mainCanvas.width, mainCanvas.height);
+    
+    // Draw the drawings canvas on top
+    ctx.drawImage(mainCanvas, 0, 0);
+
+    const link = document.createElement('a');
+    link.download = `estrategia_${activeTab}_${new Date().toISOString()}.png`;
+    link.href = downloadCanvas.toDataURL('image/png');
+    link.click();
+  };
 
   return (
     <div className="w-full flex flex-col md:flex-row gap-8 items-start">
@@ -310,6 +358,7 @@ export default function StrategyBoard() {
                         className='object-contain'
                         priority
                         unoptimized
+                        crossOrigin="anonymous" // Required for canvas toDataURL
                     />
                     <canvas
                         ref={canvasRef}
@@ -380,7 +429,7 @@ export default function StrategyBoard() {
                             />
                         </div>
 
-                        <div className="flex justify-between gap-2">
+                        <div className="grid grid-cols-2 gap-2">
                             <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
                                 <Undo className="mr-2 h-4 w-4"/> Desfazer
                             </Button>
@@ -394,11 +443,21 @@ export default function StrategyBoard() {
                             Limpar Desenho
                         </Button>
 
+                        <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Baixar Desenho
+                        </Button>
+
                          {mapImage && (
                             <Button variant="secondary" onClick={() => {
                                 setMapImage(null);
                                 localStorage.removeItem('strategyMapImage');
-                            }} className="w-full mt-4">
+                                const { history, steps } = initialHistory();
+                                historyRef.current = history;
+                                currentStepRef.current = steps;
+                                saveData();
+                                drawAllLines();
+                            }} className="w-full mt-2">
                                 <Upload className="mr-2 h-4 w-4" />
                                 Trocar Imagem
                             </Button>
