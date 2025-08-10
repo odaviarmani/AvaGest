@@ -34,11 +34,11 @@ export const attachmentSchema = z.object({
 export type Attachment = z.infer<typeof attachmentSchema>;
 
 export const CRITERIA = [
-    { key: 'problem', label: 'Problema' },
-    { key: 'solution', label: 'Solução' },
-    { key: 'innovation', label: 'Inovação' },
-    { key: 'business_plan', label: 'Plano de Negócios' },
-    { key: 'presentation', label: 'Apresentação' },
+    { key: 'coherence', label: 'Coerências T-P-S' },
+    { key: 'alignment', label: 'Alinhamento com a Unearthed' },
+    { key: 'feasibility', label: 'Viabilidade' },
+    { key: 'originality', label: 'Originalidade' },
+    { key: 'clarity', label: 'Clareza/Registros' },
 ] as const;
 
 export const evaluationSchema = z.object({
