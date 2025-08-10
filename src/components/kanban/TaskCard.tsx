@@ -34,10 +34,10 @@ const areaColorMap: Record<string, string> = {
 };
 
 export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCardProps) {
-  const priorityIconColor: Record<Priority, string> = {
-    'Baixa': 'text-green-700 dark:text-green-300',
-    'Média': 'text-yellow-700 dark:text-yellow-300',
-    'Alta': 'text-red-700 dark:text-red-300'
+  const priorityBadgeColor: Record<Priority, string> = {
+    'Baixa': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-300 dark:border-green-600',
+    'Média': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 border-yellow-300 dark:border-yellow-600',
+    'Alta': 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300 border-red-300 dark:border-red-600'
   }
 
   const taskAreas = Array.isArray(task.area) ? task.area : [task.area];
@@ -75,7 +75,7 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCar
         </CardHeader>
         <CardContent className="p-4 pt-0 space-y-3">
             <div className="flex items-center justify-between text-sm">
-                <Badge variant="outline" className={cn("capitalize bg-card/80", priorityIconColor[task.priority])}>
+                <Badge variant="outline" className={cn("capitalize", priorityBadgeColor[task.priority])}>
                     {React.cloneElement(priorityIcons[task.priority] as React.ReactElement, { className: "h-4 w-4" })}
                     <span className="ml-1">{task.priority}</span>
                 </Badge>
@@ -102,4 +102,3 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCar
     </Card>
   );
 }
-
