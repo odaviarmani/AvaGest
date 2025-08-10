@@ -1,4 +1,5 @@
 import RoundsTimer from "@/components/rounds/RoundsTimer";
+import ScoreCalculator from "@/components/rounds/ScoreCalculator";
 
 export default function RoundsPage() {
   return (
@@ -9,12 +10,12 @@ export default function RoundsPage() {
           Acompanhe os dados e a evolução dos rounds.
         </p>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
         <div className="md:col-span-1">
           <RoundsTimer />
         </div>
         <div className="md:col-span-1">
-          {/* Conteúdo da segunda coluna */}
+          <ScoreCalculator />
         </div>
         <div className="md:col-span-1">
           {/* Conteúdo da terceira coluna */}
