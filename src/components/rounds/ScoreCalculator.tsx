@@ -237,10 +237,10 @@ export default function ScoreCalculator() {
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m08">
-                <AccordionTrigger>M08 – Silo (20)</AccordionTrigger>
+                <AccordionTrigger>M08 – Silo (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
                     <Label>Peças preservadas fora do silo: {missions.m08_silo}</Label>
-                    <Slider value={[missions.m08_silo]} onValueChange={([val]) => setMissions(prev => ({...prev, m08_silo: val}))} max={2} step={1} />
+                    <Slider value={[missions.m08_silo]} onValueChange={([val]) => setMissions(prev => ({...prev, m08_silo: val}))} max={3} step={1} />
                     <p className="text-sm text-muted-foreground">+10 pontos por peça</p>
                 </AccordionContent>
             </AccordionItem>
