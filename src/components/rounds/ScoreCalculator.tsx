@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Trash2 } from 'lucide-react';
 
-interface MissionState {
+export interface MissionState {
     // Pré-jogo
     m00_equipment_inspection: boolean;
     // Missões
@@ -56,7 +56,7 @@ interface MissionState {
 }
 
 
-const initialMissionState: MissionState = {
+export const initialMissionState: MissionState = {
     m00_equipment_inspection: false,
     m01_surface_brushing: { soil_deposits_cleaned: 0, brush_not_touching: false },
     m02_map_reveal: 0,
@@ -76,81 +76,15 @@ const initialMissionState: MissionState = {
     precision_tokens: 6,
 };
 
+interface ScoreCalculatorProps {
+    missions: MissionState;
+    setMissions: React.Dispatch<React.SetStateAction<MissionState>>;
+    totalScore: number;
+}
 
-export default function ScoreCalculator() {
-  const [missions, setMissions] = useState<MissionState>(initialMissionState);
 
-  const calculateScore = (state: MissionState): number => {
-    let score = 0;
-    
-    // M00
-    if (state.m00_equipment_inspection) score += 20;
+export default function ScoreCalculator({ missions, setMissions, totalScore }: ScoreCalculatorProps) {
 
-    // M01
-    score += state.m01_surface_brushing.soil_deposits_cleaned * 10;
-    if (state.m01_surface_brushing.brush_not_touching) score += 10;
-
-    // M02
-    score += state.m02_map_reveal * 10;
-
-    // M03
-    if (state.m03_mine_shaft_explorer.team_cart_reaches_opponent) score += 30;
-    if (state.m03_mine_shaft_explorer.opponent_cart_in_your_field) score += 10;
-
-    // M04
-    if (state.m04_careful_retrieval.artifact_not_touching_mine) score += 30;
-    if (state.m04_careful_retrieval.support_structures_standing) score += 10;
-
-    // M05
-    if (state.m05_who_lived_here) score += 30;
-    
-    // M06
-    score += state.m06_forge * 10;
-
-    // M07
-    if (state.m07_heavy_lifting) score += 30;
-    
-    // M08
-    score += state.m08_silo * 10;
-    
-    // M09
-    if (state.m09_whats_on_sale.roof_lifted) score += 20;
-    if (state.m09_whats_on_sale.market_goods_lifted) score += 10;
-    
-    // M10
-    if (state.m10_tip_the_scales.scales_tipped) score += 20;
-    if (state.m10_tip_the_scales.pan_removed) score += 10;
-    
-    // M11
-    if (state.m11_fisher_artifacts.artifacts_elevated) score += 20;
-    if (state.m11_fisher_artifacts.crane_flag_raised) score += 10;
-    
-    // M12
-    if (state.m12_salvage_operation.sand_cleared) score += 20;
-    if (state.m12_salvage_operation.ship_lifted) score += 10;
-    
-    // M13
-    if (state.m13_statue_reconstruction) score += 30;
-    
-    // M14
-    score += state.m14_forum.artifacts * 5;
-    
-    // M15
-    score += state.m15_site_marking * 10;
-    
-    // Fichas de Precisão
-    const tokens = state.precision_tokens;
-    if (tokens >= 5) score += 50;
-    else if (tokens === 4) score += 35;
-    else if (tokens === 3) score += 25;
-    else if (tokens === 2) score += 15;
-    else if (tokens === 1) score += 10;
-    
-    return score;
-  };
-
-  const totalScore = useMemo(() => calculateScore(missions), [missions]);
-  
   const handleReset = () => {
     setMissions(initialMissionState);
   };
