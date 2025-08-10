@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Undo, Trash2, Redo, Upload, BarChart2 } from 'lucide-react';
+import { Undo, Trash2, Redo, Upload } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import Image from 'next/image';
 
@@ -68,10 +68,26 @@ export default function StrategyBoard() {
     }
   }, []);
 
+   const drawMetricsOnCanvas = (
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    x: number, y: number,
+    textOffset = 10
+  ) => {
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillStyle = 'black';
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+    ctx.strokeText(text, x, y - textOffset);
+    ctx.fillText(text, x, y - textOffset);
+  };
+
+
   const drawLineWithMetrics = (
     ctx: CanvasRenderingContext2D,
     x1: number, y1: number, x2: number, y2: number,
-    lineColor: string, lineThickness: number
+    lineColor: string, lineThickness: number,
+    lengthText: string
   ) => {
     // Draw the main line
     ctx.beginPath();
@@ -83,26 +99,9 @@ export default function StrategyBoard() {
     ctx.lineTo(x2, y2);
     ctx.stroke();
 
-    // Calculate metrics
-    const pixelLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-    const cmLength = (pixelLength / (canvasRef.current?.width || 1)) * MAT_WIDTH_CM;
-    const angleRad = Math.atan2(y2 - y1, x2 - x1);
-    const angleDeg = angleRad * (180 / Math.PI);
-    const text = `${cmLength.toFixed(1)}cm, ${angleDeg.toFixed(1)}°`;
-
-    // Draw the text
     const midX = (x1 + x2) / 2;
     const midY = (y1 + y2) / 2;
-    const textOffset = 10;
-
-    ctx.font = 'bold 12px sans-serif';
-    ctx.fillStyle = 'black';
-    ctx.strokeStyle = 'white';
-    ctx.lineWidth = 2;
-
-    // Position text slightly above the midpoint
-    ctx.strokeText(text, midX, midY - textOffset);
-    ctx.fillText(text, midX, midY - textOffset);
+    drawMetricsOnCanvas(ctx, lengthText, midX, midY);
   };
 
   const drawAllLines = useCallback(() => {
@@ -119,13 +118,27 @@ export default function StrategyBoard() {
     const currentStep = currentStepRef.current[activeTab] || 0;
     const drawings = currentHistory.slice(0, currentStep).flat();
     
-    drawings.forEach((drawing) => {
+    drawings.forEach((drawing, index) => {
       const [x1, y1, x2, y2, c, lw] = drawing.line;
-      drawLineWithMetrics(ctx, x1, y1, x2, y2, c, lw);
+      const lengthText = `${drawing.lengthCm.toFixed(1)}cm`;
+      drawLineWithMetrics(ctx, x1, y1, x2, y2, c, lw, lengthText);
+
+      // Draw transition angle
+      if (index > 0) {
+        const prevDrawing = drawings[index - 1];
+        const angleDiff = drawing.angleDeg - prevDrawing.angleDeg;
+        // Normalize angle to be between -180 and 180
+        const displayAngle = (angleDiff + 180) % 360 - 180;
+        const angleText = `${displayAngle.toFixed(1)}°`;
+        drawMetricsOnCanvas(ctx, angleText, x1, y1, -5);
+      }
     });
 
     if (isDrawing && startPoint && endPoint) {
-        drawLineWithMetrics(ctx, startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth);
+        const pixelLength = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
+        const cmLength = (pixelLength / (canvasRef.current?.width || 1)) * MAT_WIDTH_CM;
+        const lengthText = `${cmLength.toFixed(1)}cm`;
+        drawLineWithMetrics(ctx, startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth, lengthText);
     }
   }, [activeTab, startPoint, endPoint, color, lineWidth, isDrawing, mapImage]);
 
@@ -245,7 +258,7 @@ export default function StrategyBoard() {
   };
 
   const undo = () => {
-    if (currentStepRef.current[activeTab] > 0) {
+    if ((currentStepRef.current[activeTab] || 0) > 0) {
         currentStepRef.current[activeTab]--;
         drawAllLines();
     }
@@ -253,7 +266,7 @@ export default function StrategyBoard() {
 
   const redo = () => {
     const history = historyRef.current[activeTab] || [];
-    if (currentStepRef.current[activeTab] < history.length) {
+    if ((currentStepRef.current[activeTab] || 0) < history.length) {
       currentStepRef.current[activeTab]++;
       drawAllLines();
     }
