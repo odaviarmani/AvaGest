@@ -3,6 +3,8 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export const metadata: Metadata = {
   title: 'KanbanFlow',
@@ -15,45 +17,53 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
-        <header className="p-4 border-b shrink-0 flex items-center justify-center">
-            <nav className="flex items-center gap-1">
-                <Button variant="ghost" asChild>
-                    <Link href="/kanban">Kanban</Link>
-                </Button>
-                 <Button variant="ghost" asChild>
-                    <Link href="/calendar">Calendário</Link>
-                </Button>
-                <Button variant="ghost" asChild>
-                    <Link href="/roulette">Roletas (Revezamento)</Link>
-                </Button>
-                <Button variant="ghost" asChild>
-                    <Link href="/rounds">Rounds</Link>
-                </Button>
-                <Button variant="ghost" asChild>
-                    <Link href="/documentation">Documentação</Link>
-                </Button>
-            </nav>
-        </header>
-        <main className="flex-1 flex flex-col">{children}</main>
-        <footer className="p-4 border-t shrink-0">
-          <iframe
-            style={{ borderRadius: '12px' }}
-            src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
-            width="100%"
-            height="80"
-            allowFullScreen={false}
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-          ></iframe>
-        </footer>
-        <Toaster />
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
+            <header className="p-4 border-b shrink-0 flex items-center justify-center">
+                <nav className="flex items-center gap-1">
+                    <Button variant="ghost" asChild>
+                        <Link href="/kanban">Kanban</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/calendar">Calendário</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/roulette">Roletas (Revezamento)</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/rounds">Rounds</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/documentation">Documentação</Link>
+                    </Button>
+                </nav>
+            </header>
+            <main className="flex-1 flex flex-col">{children}</main>
+            <footer className="p-4 border-t shrink-0 flex items-center justify-between">
+            <iframe
+                style={{ borderRadius: '12px' }}
+                src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
+                width="80%"
+                height="80"
+                allowFullScreen={false}
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+            ></iframe>
+             <ThemeToggle />
+            </footer>
+            <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
