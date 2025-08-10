@@ -30,7 +30,7 @@ export default function DecodeEvaluation() {
             id: crypto.randomUUID(),
             name: `Novo Item ${evaluations.length + 1}`,
             scores: CRITERIA.reduce((acc, criterion) => {
-                acc[criterion.key] = 0;
+                acc[criterion.key] = 1;
                 return acc;
             }, {} as Record<string, number>),
         };

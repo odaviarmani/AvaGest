@@ -17,7 +17,7 @@ interface EvaluationItemProps {
     onDelete: (itemId: string) => void;
 }
 
-const MAX_SCORE = CRITERIA.length * 10;
+const MAX_SCORE = CRITERIA.length * 4;
 const PASSING_PERCENTAGE = 70;
 
 export default function EvaluationItem({ evaluation, onUpdate, onDelete }: EvaluationItemProps) {
@@ -62,9 +62,10 @@ export default function EvaluationItem({ evaluation, onUpdate, onDelete }: Evalu
                             </div>
                             <Slider
                                 id={`${evaluation.id}-${criterion.key}`}
-                                value={[evaluation.scores[criterion.key]]}
+                                value={[evaluation.scores[criterion.key] || 1]}
                                 onValueChange={([val]) => handleScoreChange(criterion.key, val)}
-                                max={10}
+                                min={1}
+                                max={4}
                                 step={1}
                             />
                         </div>
