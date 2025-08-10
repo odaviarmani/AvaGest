@@ -1,16 +1,21 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Bell, AlertTriangle, CheckCircle, Info, CalendarClock } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Task } from '@/lib/types';
+import { Bell, AlertTriangle, CheckCircle, Info, CalendarClock, MessageSquarePlus, MessageSquare } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Task, CustomNotification } from '@/lib/types';
 import { differenceInDays, formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import NotificationForm from '@/components/notifications/NotificationForm';
+import { useToast } from '@/hooks/use-toast';
 
 interface Notification {
     id: string;
-    type: 'warning' | 'info' | 'success';
+    type: 'warning' | 'info' | 'success' | 'custom';
     title: string;
     message: string;
     date: string;
@@ -67,35 +72,78 @@ const staticNotifications: Notification[] = [
     },
 ];
 
+const mapCustomToUINotification = (custom: CustomNotification): Notification => ({
+  ...custom,
+  type: 'custom',
+  icon: <MessageSquare className="h-6 w-6 text-purple-500" />
+});
+
 
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [customNotifications, setCustomNotifications] = useState<CustomNotification[]>([]);
     const [isClient, setIsClient] = useState(false);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const { username } = useAuth();
+    const { toast } = useToast();
 
     useEffect(() => {
         setIsClient(true);
+        // Load dynamic deadline notifications
         const savedTasks = localStorage.getItem('kanbanTasks');
-        if (savedTasks) {
-            const tasks: Task[] = JSON.parse(savedTasks);
-            const deadlineNotifications = generateDeadlineNotifications(tasks);
-            const allNotifications = [...deadlineNotifications, ...staticNotifications].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            setNotifications(allNotifications);
-        } else {
-             setNotifications(staticNotifications.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        }
+        const deadlineNotifications = savedTasks ? generateDeadlineNotifications(JSON.parse(savedTasks)) : [];
+
+        // Load custom notifications
+        const savedCustom = localStorage.getItem('customNotifications');
+        const customNotifs = savedCustom ? JSON.parse(savedCustom) : [];
+        setCustomNotifications(customNotifs);
+        const customUINotifs = customNotifs.map(mapCustomToUINotification);
+
+        const allNotifications = [...deadlineNotifications, ...staticNotifications, ...customUINotifs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setNotifications(allNotifications);
     }, []);
-    
+
+     useEffect(() => {
+        if (isClient) {
+            localStorage.setItem('customNotifications', JSON.stringify(customNotifications));
+            const customUINotifs = customNotifications.map(mapCustomToUINotification);
+            
+            const savedTasks = localStorage.getItem('kanbanTasks');
+            const deadlineNotifications = savedTasks ? generateDeadlineNotifications(JSON.parse(savedTasks)) : [];
+
+            setNotifications([...deadlineNotifications, ...staticNotifications, ...customUINotifs].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        }
+    }, [customNotifications, isClient]);
+
+    const handleSaveNotification = (data: Omit<CustomNotification, 'id' | 'date'>) => {
+        const newNotification: CustomNotification = {
+            id: crypto.randomUUID(),
+            date: new Date().toISOString(),
+            ...data
+        };
+        setCustomNotifications(prev => [newNotification, ...prev]);
+        toast({ title: "Notificação enviada!", description: "Sua notificação foi enviada para a equipe." });
+        setIsDialogOpen(false);
+    };
 
     return (
         <div className="flex-1 p-4 md:p-8">
-            <header className="mb-8 flex items-center gap-4">
-                <Bell className="w-8 h-8 text-primary" />
-                <div>
-                    <h1 className="text-3xl font-bold">Notificações</h1>
-                    <p className="text-muted-foreground">
-                        Fique por dentro das últimas atualizações e avisos importantes.
-                    </p>
+            <header className="mb-8 flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                    <Bell className="w-8 h-8 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold">Notificações</h1>
+                        <p className="text-muted-foreground">
+                            Fique por dentro das últimas atualizações e avisos importantes.
+                        </p>
+                    </div>
                 </div>
+                {username === 'Davi' && (
+                    <Button onClick={() => setIsDialogOpen(true)}>
+                        <MessageSquarePlus className="mr-2" />
+                        Criar Notificação
+                    </Button>
+                )}
             </header>
 
             <div className="max-w-3xl mx-auto space-y-4">
@@ -131,6 +179,15 @@ export default function NotificationsPage() {
                     </div>
                 )}
             </div>
+
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Criar Nova Notificação</DialogTitle>
+                    </DialogHeader>
+                    <NotificationForm onSave={handleSaveNotification} onCancel={() => setIsDialogOpen(false)} />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

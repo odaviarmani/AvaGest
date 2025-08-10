@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -30,11 +31,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Check for auth state in localStorage on initial load
-    const loggedIn = localStorage.getItem('isAuthenticated') === 'true';
-    const savedUser = localStorage.getItem('username');
-    if (loggedIn && savedUser) {
+    const loggedInUser = localStorage.getItem('username');
+    if (loggedInUser && validUsers[loggedInUser]) {
         setIsAuthenticated(true);
-        setUsername(savedUser);
+        setUsername(loggedInUser);
     }
     setLoading(false);
   }, []);

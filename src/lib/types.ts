@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export const priorities = ['Baixa', 'Média', 'Alta'] as const;
@@ -48,3 +49,12 @@ export const evaluationSchema = z.object({
 });
 
 export type Evaluation = z.infer<typeof evaluationSchema>;
+
+export const customNotificationSchema = z.object({
+    id: z.string(),
+    title: z.string().min(1, "O título é obrigatório."),
+    message: z.string().min(1, "A mensagem é obrigatória."),
+    date: z.string(),
+});
+
+export type CustomNotification = z.infer<typeof customNotificationSchema>;
