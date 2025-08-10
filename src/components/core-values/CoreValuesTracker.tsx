@@ -5,10 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, CheckCircle, Circle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import BrazilMap from './BrazilMap';
 import { BRAZIL_STATES } from '@/lib/brazil-states';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 interface Team {
   id: string;
@@ -73,13 +73,49 @@ export default function CoreValuesTracker() {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
       <Card className="lg:col-span-2">
         <CardHeader>
-          <CardTitle>Mapa de Conexões</CardTitle>
-          <CardDescription>Visualize as equipes com quem nos conectamos em todo o Brasil.</CardDescription>
+          <CardTitle>Alcançe Nacional</CardTitle>
+          <CardDescription>Acompanhe o registro de equipes em cada estado do Brasil.</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="w-full flex items-center justify-center">
-            <BrazilMap teamsByState={teamsByState} />
-          </div>
+          <ScrollArea className="h-[500px] pr-4">
+             <Accordion type="multiple">
+                {Object.entries(BRAZIL_STATES).map(([uf, { name }]) => {
+                  const stateTeams = teamsByState[uf] || [];
+                  const hasTeams = stateTeams.length > 0;
+                  return (
+                     <AccordionItem value={uf} key={uf}>
+                       <AccordionTrigger>
+                          <div className="flex items-center gap-3">
+                            {hasTeams ? (
+                               <CheckCircle className="h-5 w-5 text-primary"/>
+                            ) : (
+                               <Circle className="h-5 w-5 text-muted-foreground"/>
+                            )}
+                            <span className="font-semibold">{name}</span>
+                            {hasTeams && <span className="text-xs font-normal text-muted-foreground">({stateTeams.length} equipe{stateTeams.length > 1 ? 's' : ''})</span>}
+                          </div>
+                       </AccordionTrigger>
+                       <AccordionContent className="pl-8">
+                         {hasTeams ? (
+                            <div className="space-y-2">
+                                {stateTeams.map(team => (
+                                    <div key={team.id} className="flex items-center justify-between bg-secondary/50 p-2 rounded-md">
+                                    <span>{team.name}</span>
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteTeam(team.id)}>
+                                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                    </Button>
+                                    </div>
+                                ))}
+                            </div>
+                         ) : (
+                           <p className="text-sm text-muted-foreground">Nenhuma equipe registrada neste estado ainda.</p>
+                         )}
+                       </AccordionContent>
+                     </AccordionItem>
+                  );
+                })}
+              </Accordion>
+          </ScrollArea>
         </CardContent>
       </Card>
       
@@ -112,7 +148,7 @@ export default function CoreValuesTracker() {
                   <SelectValue placeholder="Estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(BRAZIL_STATES).map(([uf, { name }]) => (
+                  {Object.entries(BRAZIL_STATES).sort((a, b) => a[1].name.localeCompare(b[1].name)).map(([uf, { name }]) => (
                     <SelectItem key={uf} value={uf}>
                       {name}
                     </SelectItem>
@@ -126,35 +162,6 @@ export default function CoreValuesTracker() {
             </Button>
           </CardContent>
         </Card>
-        
-        {isClient && teams.length > 0 && (
-            <Card>
-            <CardHeader>
-                <CardTitle>Equipes Registradas</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ScrollArea className="h-[300px] pr-4">
-                <div className="space-y-4">
-                    {Object.entries(teamsByState).map(([uf, stateTeams]) => (
-                    <div key={uf}>
-                        <h4 className="font-semibold mb-2">{BRAZIL_STATES[uf as keyof typeof BRAZIL_STATES].name}</h4>
-                        <div className="space-y-2">
-                        {stateTeams.map(team => (
-                            <div key={team.id} className="flex items-center justify-between bg-secondary/50 p-2 rounded-md">
-                            <span>{team.name}</span>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteTeam(team.id)}>
-                                <Trash2 className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                            </div>
-                        ))}
-                        </div>
-                    </div>
-                    ))}
-                </div>
-                </ScrollArea>
-            </CardContent>
-            </Card>
-        )}
       </div>
     </div>
   );
