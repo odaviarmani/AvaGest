@@ -22,9 +22,8 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
-        <header className="p-4 border-b shrink-0 flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-primary">KanbanFlow</h1>
-            <nav className="flex items-center gap-4">
+        <header className="p-4 border-b shrink-0 flex items-center justify-center">
+            <nav className="flex items-center gap-1">
                 <Button variant="ghost" asChild>
                     <Link href="/kanban">Kanban</Link>
                 </Button>
