@@ -7,7 +7,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { LogOut } from 'lucide-react';
+import { LogOut, Bell } from 'lucide-react';
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -59,7 +59,13 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                       <Link href="/rubricas">Rubricas</Link>
                   </Button>
                   <Button variant="ghost" asChild>
-                      <Link href="/notificacoes">Notificações</Link>
+                      <Link href="/notificacoes" className="relative">
+                        Notificações
+                        <span className="absolute top-1 right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                      </Link>
                   </Button>
               </nav>
               <div className="flex items-center gap-4">
