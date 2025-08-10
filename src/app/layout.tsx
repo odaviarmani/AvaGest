@@ -31,6 +31,9 @@ export default function RootLayout({
                 <Button variant="ghost" asChild>
                     <Link href="/roulette">Roletas (Revezamento)</Link>
                 </Button>
+                <Button variant="ghost" asChild>
+                    <Link href="/documentation">Documentação</Link>
+                </Button>
             </nav>
         </header>
         <main className="flex-1 flex flex-col">{children}</main>
