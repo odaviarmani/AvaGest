@@ -25,6 +25,16 @@ const NUM_SAIDAS = 6;
 type Line = [number, number, number, number, string, number]; // [x1, y1, x2, y2, color, lineWidth]
 type Drawing = Line[];
 
+const initialHistory = () => {
+    const history: Record<string, Drawing[]> = {};
+    const steps: Record<string, number> = {};
+    for (let i = 1; i <= NUM_SAIDAS; i++) {
+        history[`saida-${i}`] = [];
+        steps[`saida-${i}`] = 0;
+    }
+    return {history, steps};
+}
+
 export default function StrategyBoard() {
   const [activeTab, setActiveTab] = useState(`saida-1`);
   const [color, setColor] = useState(COLORS[0].value);
@@ -36,26 +46,9 @@ export default function StrategyBoard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   
-  const historyRef = useRef<Record<string, Drawing[]>>({});
-  const currentStepRef = useRef<Record<string, number>>({});
+  const historyRef = useRef<Record<string, Drawing[]>>(initialHistory().history);
+  const currentStepRef = useRef<Record<string, number>>(initialHistory().steps);
 
-  const initializeState = useCallback(() => {
-    const history: Record<string, Drawing[]> = {};
-    const steps: Record<string, number> = {};
-    for (let i = 1; i <= NUM_SAIDAS; i++) {
-        history[`saida-${i}`] = [[]];
-        steps[`saida-${i}`] = 0;
-    }
-    historyRef.current = history;
-    currentStepRef.current = steps;
-  }, []);
-
-  useEffect(() => {
-    if(Object.keys(historyRef.current).length === 0) {
-        initializeState();
-    }
-  }, [initializeState]);
-  
   const drawAllLines = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -65,8 +58,8 @@ export default function StrategyBoard() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     const currentHistory = historyRef.current[activeTab] || [];
-    const drawings = currentHistory.slice(0, currentStepRef.current[activeTab]).flat();
-
+    const drawings = currentHistory.slice(0, currentStepRef.current[activeTab] + 1).flat();
+    
     drawings.forEach(([x1, y1, x2, y2, c, lw]) => {
       ctx.beginPath();
       ctx.strokeStyle = c;
@@ -133,6 +126,7 @@ export default function StrategyBoard() {
     
     let clientX, clientY;
     if ('touches' in event) {
+        if(event.touches.length === 0) return null;
         clientX = event.touches[0].clientX;
         clientY = event.touches[0].clientY;
     } else {
@@ -153,20 +147,24 @@ export default function StrategyBoard() {
     setIsDrawing(true);
     setStartPoint(coords);
     setEndPoint(coords);
-    
-    const step = currentStepRef.current[activeTab];
-    historyRef.current[activeTab] = historyRef.current[activeTab].slice(0, step);
+
+    const step = currentStepRef.current[activeTab] || 0;
+    const newHistory = (historyRef.current[activeTab] || []).slice(0, step);
+    historyRef.current[activeTab] = newHistory;
   };
 
   const stopDrawing = () => {
     if(!isDrawing || !startPoint || !endPoint) return;
+    
+    const currentDrawing: Drawing = [[startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth]];
+    
+    const step = currentStepRef.current[activeTab] || 0;
+    const newHistory = [...(historyRef.current[activeTab] || []).slice(0, step), currentDrawing];
+    
+    historyRef.current[activeTab] = newHistory;
+    currentStepRef.current[activeTab] = newHistory.length;
+
     setIsDrawing(false);
-
-    const step = currentStepRef.current[activeTab];
-    const newDrawing: Drawing = [[startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth]];
-    historyRef.current[activeTab] = [...historyRef.current[activeTab].slice(0, step), newDrawing];
-    currentStepRef.current[activeTab]++;
-
     setStartPoint(null);
     setEndPoint(null);
     drawAllLines();
@@ -174,6 +172,8 @@ export default function StrategyBoard() {
 
   const handleDrawing = (event: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing) return;
+    // Prevent scrolling on touch devices
+    event.preventDefault();
     const coords = getCoordinates(event);
     if (!coords) return;
     
@@ -189,7 +189,7 @@ export default function StrategyBoard() {
   };
 
   const redo = () => {
-    if (currentStepRef.current[activeTab] < historyRef.current[activeTab].length) {
+    if (currentStepRef.current[activeTab] < (historyRef.current[activeTab] || []).length) {
         currentStepRef.current[activeTab]++;
         drawAllLines();
     }
@@ -209,8 +209,8 @@ export default function StrategyBoard() {
                 ref={imageRef}
                 src="/fll_unearthed_map.jpg"
                 alt="Mapa da FLL Unearthed"
-                layout="fill"
-                objectFit="contain"
+                fill
+                className='object-contain'
                 priority
                 unoptimized
             />
@@ -267,10 +267,10 @@ export default function StrategyBoard() {
                         </div>
 
                         <div className="flex justify-between gap-2">
-                            <Button variant="outline" onClick={undo} disabled={currentStepRef.current[activeTab] === 0}>
+                            <Button variant="outline" onClick={undo} disabled={(currentStepRef.current[activeTab] || 0) === 0}>
                                 <Undo className="mr-2 h-4 w-4"/> Desfazer
                             </Button>
-                            <Button variant="outline" onClick={redo} disabled={currentStepRef.current[activeTab] >= historyRef.current[activeTab].length}>
+                            <Button variant="outline" onClick={redo} disabled={(currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length}>
                                 <Redo className="mr-2 h-4 w-4"/> Refazer
                             </Button>
                         </div>
