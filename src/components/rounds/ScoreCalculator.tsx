@@ -195,10 +195,10 @@ export default function ScoreCalculator() {
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m02">
-                <AccordionTrigger>M02 – Revelação do Mapa (20)</AccordionTrigger>
+                <AccordionTrigger>M02 – Revelação do Mapa (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
                     <Label>Seções de solo superficial limpas: {missions.m02_map_reveal}</Label>
-                    <Slider value={[missions.m02_map_reveal]} onValueChange={([val]) => setMissions(prev => ({...prev, m02_map_reveal: val}))} max={2} step={1} />
+                    <Slider value={[missions.m02_map_reveal]} onValueChange={([val]) => setMissions(prev => ({...prev, m02_map_reveal: val}))} max={3} step={1} />
                     <p className="text-sm text-muted-foreground">+10 pontos por seção</p>
                 </AccordionContent>
             </AccordionItem>
