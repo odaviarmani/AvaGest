@@ -34,8 +34,10 @@ export default function PairingRoulette() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [latestResult, setLatestResult] = useState<SpinResult | null>(null);
   const [history, setHistory] = useState<SpinResult[]>([]);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const savedHistory = localStorage.getItem('pairingRouletteHistory');
     if (savedHistory) {
       setHistory(JSON.parse(savedHistory));
@@ -43,13 +45,14 @@ export default function PairingRoulette() {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('pairingRouletteHistory', JSON.stringify(history));
-  }, [history]);
+    if (isClient) {
+        localStorage.setItem('pairingRouletteHistory', JSON.stringify(history));
+    }
+  }, [history, isClient]);
 
   const handleSpin = () => {
     setIsSpinning(true);
     
-    // Simulate spinning animation
     setTimeout(() => {
       const shuffledNames = shuffle(NAMES);
       const shuffledAreas = shuffle(AREAS);
@@ -68,23 +71,23 @@ export default function PairingRoulette() {
       setLatestResult(newResult);
       setHistory(prevHistory => [newResult, ...prevHistory]);
       setIsSpinning(false);
-    }, 1500); // 1.5 second spin
+    }, 1500);
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-12">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <Card className="lg:col-span-1">
         <CardHeader>
-          <CardTitle>Roleta de Duplas</CardTitle>
+          <CardTitle>Roleta de Duplas Fixa</CardTitle>
           <CardDescription>Sorteia 3 duplas e atribui uma área para cada uma.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center gap-6">
-            <div className="text-center p-4 border rounded-lg bg-secondary/50">
+            <div className="text-center p-4 border rounded-lg bg-secondary/50 w-full">
                 <p className="font-semibold">Nomes:</p>
-                <p className="text-muted-foreground">{NAMES.join(', ')}</p>
+                <p className="text-sm text-muted-foreground">{NAMES.join(', ')}</p>
                 <Separator className="my-2"/>
                 <p className="font-semibold">Áreas:</p>
-                <p className="text-muted-foreground">{AREAS.join(', ')}</p>
+                <p className="text-sm text-muted-foreground">{AREAS.join(', ')}</p>
             </div>
           <Button onClick={handleSpin} disabled={isSpinning} size="lg">
             <Play className="mr-2 h-5 w-5" />
@@ -113,7 +116,7 @@ export default function PairingRoulette() {
                 <History className="h-6 w-6" />
                 <CardTitle>Histórico de Sorteios</CardTitle>
             </div>
-          <CardDescription>Resultados dos sorteios anteriores.</CardDescription>
+          <CardDescription>Resultados dos sorteios da roleta de duplas.</CardDescription>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[400px] p-4 border rounded-lg">
@@ -124,7 +127,7 @@ export default function PairingRoulette() {
                 {history.map((result, index) => (
                   <li key={index}>
                     <p className="font-semibold text-sm mb-2">{result.date}</p>
-                    <ul className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                       {result.pairs.map((p, i) => (
                          <li key={i} className="p-2 bg-secondary/30 rounded-md">
                             <p className="font-medium text-secondary-foreground">{p.pair.join(' & ')}</p>
