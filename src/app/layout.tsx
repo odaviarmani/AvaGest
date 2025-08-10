@@ -1,6 +1,8 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export const metadata: Metadata = {
   title: 'KanbanFlow',
@@ -20,7 +22,18 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
-        <main className="flex-1">{children}</main>
+        <header className="p-4 border-b shrink-0 flex items-center justify-between">
+            <h1 className="text-2xl font-bold text-primary">KanbanFlow</h1>
+            <nav className="flex items-center gap-4">
+                <Button variant="ghost" asChild>
+                    <Link href="/kanban">Kanban</Link>
+                </Button>
+                <Button variant="ghost" asChild>
+                    <Link href="/roulette">Roletas (Revezamento)</Link>
+                </Button>
+            </nav>
+        </header>
+        <main className="flex-1 flex flex-col">{children}</main>
         <footer className="p-4 border-t shrink-0">
           <iframe
             style={{ borderRadius: '12px' }}
