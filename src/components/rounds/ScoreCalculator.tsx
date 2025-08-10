@@ -35,8 +35,8 @@ interface MissionState {
         market_goods_lifted: boolean;
     };
     m10_tip_the_scales: {
-        scales_tipped: number;
-        pan_removed: number;
+        scales_tipped: boolean;
+        pan_removed: boolean;
     };
     m11_fisher_artifacts: {
         artifacts_elevated: boolean;
@@ -67,7 +67,7 @@ const initialMissionState: MissionState = {
     m07_heavy_lifting: false,
     m08_silo: 0,
     m09_whats_on_sale: { roof_lifted: false, market_goods_lifted: false },
-    m10_tip_the_scales: { scales_tipped: 0, pan_removed: 0 },
+    m10_tip_the_scales: { scales_tipped: false, pan_removed: false },
     m11_fisher_artifacts: { artifacts_elevated: false, crane_flag_raised: false },
     m12_salvage_operation: { sand_cleared: false, ship_lifted: false },
     m13_statue_reconstruction: false,
@@ -118,8 +118,8 @@ export default function ScoreCalculator() {
     if (state.m09_whats_on_sale.market_goods_lifted) score += 10;
     
     // M10
-    score += state.m10_tip_the_scales.scales_tipped * 20;
-    score += state.m10_tip_the_scales.pan_removed * 10;
+    if (state.m10_tip_the_scales.scales_tipped) score += 20;
+    if (state.m10_tip_the_scales.pan_removed) score += 10;
     
     // M11
     if (state.m11_fisher_artifacts.artifacts_elevated) score += 20;
@@ -252,16 +252,10 @@ export default function ScoreCalculator() {
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m10">
-                <AccordionTrigger>M10 – Inclinar a Balança (60)</AccordionTrigger>
-                <AccordionContent className="space-y-4">
-                    <div>
-                        <Label>Balanças inclinadas (20 pts cada): {missions.m10_tip_the_scales.scales_tipped}</Label>
-                        <Slider value={[missions.m10_tip_the_scales.scales_tipped]} onValueChange={([val]) => setMissions(prev => ({...prev, m10_tip_the_scales: {...prev.m10_tip_the_scales, scales_tipped: val}}))} max={2} step={1} />
-                    </div>
-                    <div>
-                        <Label>Pratos da balança removidos (10 pts cada): {missions.m10_tip_the_scales.pan_removed}</Label>
-                        <Slider value={[missions.m10_tip_the_scales.pan_removed]} onValueChange={([val]) => setMissions(prev => ({...prev, m10_tip_the_scales: {...prev.m10_tip_the_scales, pan_removed: val}}))} max={2} step={1} />
-                    </div>
+                <AccordionTrigger>M10 – Inclinar a Balança (30)</AccordionTrigger>
+                <AccordionContent className="space-y-2">
+                    <MissionCheckbox id="m10_scales" label="Balança inclinada (20)" checked={missions.m10_tip_the_scales.scales_tipped} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m10_tip_the_scales: {...prev.m10_tip_the_scales, scales_tipped: checked} }))} />
+                    <MissionCheckbox id="m10_pan" label="Prato da balança removido (10)" checked={missions.m10_tip_the_scales.pan_removed} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m10_tip_the_scales: {...prev.m10_tip_the_scales, pan_removed: checked} }))} />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m11">
