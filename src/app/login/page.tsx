@@ -22,7 +22,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Erro de Login",
-        description: "Usuário ou senha inválidos. Tente novamente.",
+        description: "Usuário ou senha incorretos.",
       });
     }
   };
