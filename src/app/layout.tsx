@@ -58,7 +58,7 @@ export default function RootLayout({
                         <Link href="/attachments">Anexos</Link>
                     </Button>
                     <Button variant="ghost" asChild>
-                        <Link href="/documentation">Documentação</Link>
+                        <Link href="/biblioteca">Biblioteca</Link>
                     </Button>
                     <Button variant="ghost" asChild>
                         <Link href="/apps">Apps</Link>

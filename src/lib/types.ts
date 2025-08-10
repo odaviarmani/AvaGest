@@ -48,3 +48,14 @@ export const evaluationSchema = z.object({
 });
 
 export type Evaluation = z.infer<typeof evaluationSchema>;
+
+export const libraryItemSchema = z.object({
+    id: z.string(),
+    title: z.string().min(1, 'O título é obrigatório.'),
+    author: z.string().min(1, 'O autor é obrigatório.'),
+    link: z.string().url('Insira uma URL válida.').optional().or(z.literal('')),
+    summary: z.string().optional(),
+    imageUrl: z.string().optional().nullable(),
+});
+
+export type LibraryItem = z.infer<typeof libraryItemSchema>;
