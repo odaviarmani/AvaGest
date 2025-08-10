@@ -8,7 +8,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Trash2 } from 'lucide-react';
-import { Separator } from '../ui/separator';
 
 interface MissionState {
     // Pré-jogo
@@ -48,7 +47,9 @@ interface MissionState {
         ship_lifted: boolean;
     };
     m13_statue_reconstruction: boolean;
-    m14_forum: number;
+    m14_forum: {
+        artifacts: number;
+    };
     m15_site_marking: number;
     // Bônus
     precision_tokens: number;
@@ -70,7 +71,7 @@ const initialMissionState: MissionState = {
     m11_fisher_artifacts: { artifacts_elevated: false, crane_flag_raised: false },
     m12_salvage_operation: { sand_cleared: false, ship_lifted: false },
     m13_statue_reconstruction: false,
-    m14_forum: 0,
+    m14_forum: { artifacts: 0 },
     m15_site_marking: 0,
     precision_tokens: 6,
 };
@@ -132,7 +133,7 @@ export default function ScoreCalculator() {
     if (state.m13_statue_reconstruction) score += 30;
     
     // M14
-    score += state.m14_forum * 5;
+    score += state.m14_forum.artifacts * 5;
     
     // M15
     score += state.m15_site_marking * 10;
@@ -183,7 +184,7 @@ export default function ScoreCalculator() {
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m01">
-                <AccordionTrigger>M01 – Escovação de Superfícies (20+)</AccordionTrigger>
+                <AccordionTrigger>M01 – Escovação de Superfícies (30)</AccordionTrigger>
                 <AccordionContent className="space-y-4">
                     <div>
                         <Label>Depósitos de solo limpos: {missions.m01_surface_brushing.soil_deposits_cleaned}</Label>
@@ -288,9 +289,9 @@ export default function ScoreCalculator() {
             <AccordionItem value="m14">
                 <AccordionTrigger>M14 – Fórum (35)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
-                    <Label>Artefatos no fórum: {missions.m14_forum}</Label>
-                    <Slider value={[missions.m14_forum]} onValueChange={([val]) => setMissions(prev => ({...prev, m14_forum: val}))} max={7} step={1} />
-                    <p className="text-sm text-muted-foreground">+5 pontos por artefato</p>
+                    <Label>Discos da Missão no fórum: {missions.m14_forum.artifacts}</Label>
+                    <Slider value={[missions.m14_forum.artifacts]} onValueChange={([val]) => setMissions(prev => ({...prev, m14_forum: { artifacts: val }}))} max={7} step={1} />
+                    <p className="text-sm text-muted-foreground">+5 pontos por disco</p>
                 </AccordionContent>
             </AccordionItem>
              <AccordionItem value="m15">
