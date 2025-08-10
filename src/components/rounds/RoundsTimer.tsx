@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, RotateCcw, FastForward, CheckCircle } from 'lucide-react';
+import { Play, Pause, RotateCcw, FastForward, CheckCircle, Trash2 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -19,9 +19,8 @@ const formatTime = (seconds: number) => {
 };
 
 const formatSubTime = (ms: number) => {
-  const seconds = Math.floor(ms / 1000);
-  const milliseconds = ms % 1000;
-  return `${seconds}.${String(milliseconds).padStart(3, '0')}s`;
+    const totalSeconds = ms / 1000;
+    return `${totalSeconds.toFixed(3)}s`;
 };
 
 const CountdownAnimation = ({ onFinish }: { onFinish: () => void }) => {
@@ -80,44 +79,69 @@ export default function RoundsTimer() {
   const [isActive, setIsActive] = useState(false);
   const [showAnimation, setShowAnimation] = useState(false);
   
-  // Sub-timer state
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [stageTimings, setStageTimings] = useState<StageTime[]>([]);
   const stageStartTimeRef = useRef<number | null>(null);
-  const mainTimerStartTimeRef = useRef<number | null>(null);
+  const mainTimerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+
+  const handlePause = useCallback(() => {
+    setIsActive(false);
+    if (mainTimerIntervalRef.current) {
+        clearInterval(mainTimerIntervalRef.current);
+        mainTimerIntervalRef.current = null;
+    }
+
+    // Pause sub-timer logic
+    if (stageStartTimeRef.current !== null && stageTimings[currentStageIndex]?.duration === null) {
+      const now = performance.now();
+      const elapsed = now - stageStartTimeRef.current;
+      const newTimings = [...stageTimings];
+      // Important: We add to the existing duration if it's not null (which it won't be if we paused before)
+      const currentDuration = stageTimings[currentStageIndex]?.duration || 0;
+      newTimings[currentStageIndex] = { ...newTimings[currentStageIndex], duration: currentDuration + elapsed };
+      setStageTimings(newTimings);
+      stageStartTimeRef.current = null; // Mark as paused
+    }
+  }, [currentStageIndex, stageTimings]);
+
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-
-    if (isActive && seconds > 0) {
-      interval = setInterval(() => {
-        setSeconds(s => s - 1);
-      }, 1000);
-    } else if (seconds === 0 && isActive) {
-        handlePause(); // Stop everything when main timer ends
+    if (isActive && seconds <= 0) {
+        handlePause();
     }
-
-    return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
-    };
-  }, [isActive, seconds]);
+  }, [seconds, isActive, handlePause]);
 
   const startTimers = () => {
-    const now = performance.now();
     setIsActive(true);
-    if(mainTimerStartTimeRef.current === null){
-        mainTimerStartTimeRef.current = now;
+
+    mainTimerIntervalRef.current = setInterval(() => {
+        setSeconds(s => s - 1);
+    }, 1000);
+
+    if (stageTimings.length === 0) {
         const initialTimings = STAGE_NAMES.map(name => ({name, duration: null}));
         setStageTimings(initialTimings);
+        setCurrentStageIndex(0);
     }
-    stageStartTimeRef.current = now;
+    
+    // If the stage was paused, its duration will be a number. If starting new, it's null.
+    if(stageTimings[currentStageIndex]?.duration === null){
+        const newTimings = [...(stageTimings.length > 0 ? stageTimings : STAGE_NAMES.map(name => ({name, duration: null})))];
+        newTimings[currentStageIndex] = {...newTimings[currentStageIndex], duration: 0};
+        setStageTimings(newTimings);
+    }
+
+    stageStartTimeRef.current = performance.now();
   };
 
   const handleStart = () => {
     if (seconds > 0) {
-        setShowAnimation(true);
+        if(stageTimings.length === 0) {
+            setShowAnimation(true);
+        } else {
+            startTimers();
+        }
     }
   };
 
@@ -126,27 +150,17 @@ export default function RoundsTimer() {
     startTimers();
   },[]);
 
-  const handlePause = () => {
-    setIsActive(false);
-    // Pause sub-timer logic
-    if (stageStartTimeRef.current !== null && stageTimings[currentStageIndex]?.duration === null) {
-      const now = performance.now();
-      const elapsed = now - stageStartTimeRef.current;
-      const newTimings = [...stageTimings];
-      const currentDuration = newTimings[currentStageIndex].duration || 0;
-      newTimings[currentStageIndex] = { ...newTimings[currentStageIndex], duration: currentDuration + elapsed };
-      setStageTimings(newTimings);
-      stageStartTimeRef.current = null;
-    }
-  };
-
-  const handleReset = () => {
-    setIsActive(false);
+  const handleResetTimer = () => {
+    handlePause();
     setSeconds(TOTAL_SECONDS);
-    setCurrentStageIndex(0);
+  };
+  
+  const handleResetData = () => {
+    handlePause();
+    setSeconds(TOTAL_SECONDS);
     setStageTimings([]);
+    setCurrentStageIndex(0);
     stageStartTimeRef.current = null;
-    mainTimerStartTimeRef.current = null;
   };
 
   const handleNextStage = () => {
@@ -157,6 +171,7 @@ export default function RoundsTimer() {
       if (stageStartTimeRef.current !== null) {
           const elapsed = now - stageStartTimeRef.current;
           const newTimings = [...stageTimings];
+          // If the stage was paused, we get its partial duration, otherwise start from 0
           const currentDuration = newTimings[currentStageIndex].duration || 0;
           newTimings[currentStageIndex] = { ...newTimings[currentStageIndex], duration: currentDuration + elapsed };
           setStageTimings(newTimings);
@@ -165,16 +180,21 @@ export default function RoundsTimer() {
       stageStartTimeRef.current = now;
 
       if(currentStageIndex < STAGE_NAMES.length - 1) {
-          setCurrentStageIndex(prev => prev + 1);
+          const nextIndex = currentStageIndex + 1;
+          setCurrentStageIndex(nextIndex);
+          // Initialize next stage duration
+          const newTimings = [...stageTimings];
+          newTimings[nextIndex] = {...newTimings[nextIndex], duration: 0};
+          setStageTimings(newTimings);
       } else {
         // Last stage finished, stop timers
-        setIsActive(false);
+        handlePause();
       }
   };
 
 
   const progress = (seconds / TOTAL_SECONDS) * 100;
-  const isFinished = currentStageIndex === STAGE_NAMES.length - 1 && stageTimings[STAGE_NAMES.length - 1]?.duration !== null;
+  const isFinished = currentStageIndex === STAGE_NAMES.length - 1 && stageTimings[STAGE_NAMES.length - 1]?.duration !== null && !isActive;
 
   return (
     <>
@@ -205,7 +225,7 @@ export default function RoundsTimer() {
               Pausar
             </Button>
           )}
-          <Button onClick={handleReset} size="lg" variant="ghost">
+          <Button onClick={handleResetTimer} size="lg" variant="ghost">
             <RotateCcw className="mr-2 h-5 w-5" />
             Resetar
           </Button>
@@ -230,13 +250,19 @@ export default function RoundsTimer() {
                     {stageTimings.map((stage, index) => (
                         <div key={index} className="flex justify-between items-center p-2 rounded-md bg-secondary/50">
                             <span className="font-medium">{stage.name}</span>
-                            <Badge variant={stage.duration === null ? 'outline' : 'default'} className="font-mono text-base">
-                                {stage.duration !== null ? formatSubTime(stage.duration) : '...'}
+                            <Badge variant={(stage.duration === null || stage.duration === 0) ? 'outline' : 'default'} className="font-mono text-base">
+                                {stage.duration !== null && stage.duration > 0 ? formatSubTime(stage.duration) : '...'}
                             </Badge>
                         </div>
                     ))}
                 </div>
             </ScrollArea>
+             {stageTimings.length > 0 && (
+                <Button onClick={handleResetData} size="sm" variant="destructive" className="w-full">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Resetar Informações
+                </Button>
+            )}
 
         </div>
       </CardContent>
