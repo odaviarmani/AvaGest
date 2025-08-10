@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { PlusCircle, GripVertical } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import KanbanColumn from '@/components/kanban/KanbanColumn';
 import TaskForm from '@/components/kanban/TaskForm';
 import { columnNames, Task, ColumnId } from '@/lib/types';
@@ -17,7 +16,11 @@ const DEFAULT_TASKS: Task[] = [
   { id: 'task-2', name: 'Criar wireframes da UI', area: 'Design', priority: 'Média', startDate: new Date(), dueDate: null, columnId: 'Planejamento' },
   { id: 'task-3', name: 'Testar endpoint de login', area: 'Teste', priority: 'Alta', startDate: null, dueDate: null, columnId: 'Fazendo' },
   { id: 'task-4', name: 'Publicar landing page', area: 'Marketing', priority: 'Baixa', startDate: null, dueDate: null, columnId: 'Feito' },
+  { id: 'task-5', name: 'Revisar copy do site', area: 'Marketing', priority: 'Média', startDate: null, dueDate: null, columnId: 'Fazer' },
+  { id: 'task-6', name: 'Implementar autenticação', area: 'Desenvolvimento', priority: 'Alta', startDate: null, dueDate: null, columnId: 'Planejamento' },
 ];
+
+type TasksByArea = Record<string, Task[]>;
 
 export default function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -49,43 +52,62 @@ export default function KanbanBoard() {
     }
   }, [tasks, isClient]);
 
-  const columns = useMemo(() => {
-    const groupedTasks: Record<string, Task[]> = {};
-    columnNames.forEach(col => groupedTasks[col] = []);
-    tasks.forEach(task => {
-        if(groupedTasks[task.columnId]) {
-            groupedTasks[task.columnId].push(task);
-        }
-    });
-    return columnNames.map(id => ({ id, title: id, tasks: groupedTasks[id] || [] }));
+  const tasksByArea = useMemo(() => {
+    return tasks.reduce((acc, task) => {
+      const area = task.area || 'Sem Área';
+      if (!acc[area]) {
+        acc[area] = [];
+      }
+      acc[area].push(task);
+      return acc;
+    }, {} as TasksByArea);
   }, [tasks]);
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
 
-    if (source.droppableId === destination.droppableId && source.index === destination.index) return;
+    // droppableId is now "area--columnId"
+    const sourceDroppableId = source.droppableId;
+    const destDroppableId = destination.droppableId;
+
+    if (sourceDroppableId === destDroppableId && source.index === destination.index) return;
     
     setTasks(prev => {
         const newTasks = [...prev];
         const taskIndex = newTasks.findIndex(t => t.id === draggableId);
-        if (taskIndex > -1) {
-            const movedTask = newTasks[taskIndex];
-            movedTask.columnId = destination.droppableId as ColumnId;
-            
-            // Reorder tasks
-            const sourceColumnTasks = newTasks.filter(t => t.columnId === source.droppableId && t.id !== draggableId);
-            const destColumnTasks = newTasks.filter(t => t.columnId === destination.droppableId);
 
-            if(source.droppableId === destination.droppableId) {
-                destColumnTasks.splice(destination.index, 0, movedTask);
-                const otherTasks = newTasks.filter(t => t.columnId !== source.droppableId);
-                return [...otherTasks, ...destColumnTasks];
+        if (taskIndex > -1) {
+            const movedTask = { ...newTasks[taskIndex] };
+            const [, destColumnId] = destDroppableId.split('--');
+            
+            movedTask.columnId = destColumnId as ColumnId;
+            
+            // Remove task from its original position
+            newTasks.splice(taskIndex, 1);
+            // Insert it into its new position
+            const tasksInDestColumn = newTasks.filter(t => (t.area || 'Sem Área') === movedTask.area && t.columnId === destColumnId);
+            
+            // This is a simplified reordering logic. For a more precise positioning,
+            // we'd need a more complex way to calculate the exact index in the global tasks array.
+            // For now, we will add it to the column.
+            let targetIndex = newTasks.length;
+
+            if (tasksInDestColumn.length > 0) {
+              if (destination.index < tasksInDestColumn.length) {
+                const targetTask = tasksInDestColumn[destination.index];
+                targetIndex = newTasks.findIndex(t => t.id === targetTask.id);
+              } else {
+                 const lastTaskInColumn = tasksInDestColumn[tasksInDestColumn.length - 1];
+                 targetIndex = newTasks.findIndex(t => t.id === lastTaskInColumn.id) + 1;
+              }
             } else {
-                destColumnTasks.splice(destination.index, 0, movedTask);
-                const otherTasks = newTasks.filter(t => t.columnId !== source.droppableId && t.columnId !== destination.droppableId);
-                return [...otherTasks, ...sourceColumnTasks, ...destColumnTasks];
+                // If column is empty, find the area and place it there.
+                // This part can get complex. We'll simplify by adding to the end.
             }
+            newTasks.splice(targetIndex, 0, movedTask);
+
+            return newTasks;
         }
         return prev;
     });
@@ -158,24 +180,39 @@ export default function KanbanBoard() {
   }
 
   return (
-    <div className="flex-1 p-4 overflow-x-auto">
+    <div className="flex-1 p-4 overflow-y-auto">
         <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex gap-6 items-start">
-            {columns.map(column => (
-                <Droppable droppableId={column.id} key={column.id}>
-                {(provided, snapshot) => (
-                    <KanbanColumn
-                        column={column}
-                        provided={provided}
-                        isDraggingOver={snapshot.isDraggingOver}
-                        onEditTask={handleOpenDialog}
-                        onDeleteTask={handleDeleteRequest}
-                        onAddTask={handleOpenDialog}
-                    />
-                )}
-                </Droppable>
-            ))}
-            </div>
+            <Accordion type="multiple" defaultValue={Object.keys(tasksByArea)} className="w-full space-y-4">
+            {Object.entries(tasksByArea).map(([area, areaTasks]) => (
+                <AccordionItem value={area} key={area} className="border rounded-lg bg-card overflow-hidden">
+                    <AccordionTrigger className="px-4 py-3 text-lg font-semibold hover:no-underline">
+                        {area}
+                    </AccordionTrigger>
+                    <AccordionContent className="p-0">
+                        <div className="flex gap-6 items-start p-4 overflow-x-auto">
+                        {columnNames.map(columnId => {
+                            const columnTasks = areaTasks.filter(t => t.columnId === columnId);
+                            const column = { id: columnId, title: columnId, tasks: columnTasks };
+                            return (
+                                <Droppable droppableId={`${area}--${column.id}`} key={`${area}--${column.id}`}>
+                                {(provided, snapshot) => (
+                                    <KanbanColumn
+                                        column={column}
+                                        provided={provided}
+                                        isDraggingOver={snapshot.isDraggingOver}
+                                        onEditTask={handleOpenDialog}
+                                        onDeleteTask={handleDeleteRequest}
+                                        onAddTask={handleOpenDialog}
+                                    />
+                                )}
+                                </Droppable>
+                            )
+                        })}
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+             ))}
+            </Accordion>
         </DragDropContext>
 
         <Dialog open={isDialogOpen} onOpenChange={(isOpen) => { if(!isOpen) handleCloseDialog()}}>
@@ -208,3 +245,5 @@ export default function KanbanBoard() {
     </div>
   );
 }
+
+    
