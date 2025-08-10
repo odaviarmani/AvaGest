@@ -11,7 +11,7 @@ export default function DocumentationPage() {
       <header className="mb-8">
         <h1 className="text-3xl font-bold">Documentação</h1>
         <p className="text-muted-foreground">
-          Visualização dos arquivos e pastas do Google Drive.
+          Visualize os arquivos e pastas do Google Drive. Faça upload de PDFs, documentos e outros para colaborar.
         </p>
       </header>
       <div className="flex-1 border rounded-lg overflow-hidden">
@@ -32,7 +32,7 @@ export default function DocumentationPage() {
           <Link href="https://sheets.google.com/create" target="_blank">
             <Sheet className="mr-2 h-4 w-4" />
             Nova Planilha
-          </Link>
+          </Button>
         </Button>
       </div>
     </div>
