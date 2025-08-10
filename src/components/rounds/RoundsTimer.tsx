@@ -98,11 +98,14 @@ export default function RoundsTimer() {
       
       setStageTimings(prevTimings => {
         const newTimings = [...prevTimings];
-        const currentDuration = newTimings[currentStageIndex]?.duration || 0;
-        newTimings[currentStageIndex] = { 
-          ...newTimings[currentStageIndex], 
-          duration: currentDuration + elapsed 
-        };
+        // Ensure the current stage exists before trying to access it
+        if(newTimings[currentStageIndex]) {
+            const currentDuration = newTimings[currentStageIndex].duration || 0;
+            newTimings[currentStageIndex] = { 
+              ...newTimings[currentStageIndex], 
+              duration: currentDuration + elapsed 
+            };
+        }
         return newTimings;
       });
 
