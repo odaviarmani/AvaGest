@@ -22,13 +22,16 @@ const COLORS = [
 ];
 const NUM_SAIDAS = 6;
 
-type Drawing = [number, number, number, number, string, number][]; // [x1, y1, x2, y2, color, lineWidth]
+type Line = [number, number, number, number, string, number]; // [x1, y1, x2, y2, color, lineWidth]
+type Drawing = Line[];
 
 export default function StrategyBoard() {
   const [activeTab, setActiveTab] = useState(`saida-1`);
   const [color, setColor] = useState(COLORS[0].value);
   const [lineWidth, setLineWidth] = useState(3);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [startPoint, setStartPoint] = useState<{ x: number, y: number } | null>(null);
+  const [endPoint, setEndPoint] = useState<{ x: number, y: number } | null>(null);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -36,7 +39,7 @@ export default function StrategyBoard() {
   const historyRef = useRef<Record<string, Drawing[]>>({});
   const currentStepRef = useRef<Record<string, number>>({});
 
-  const initializeState = () => {
+  const initializeState = useCallback(() => {
     const history: Record<string, Drawing[]> = {};
     const steps: Record<string, number> = {};
     for (let i = 1; i <= NUM_SAIDAS; i++) {
@@ -45,13 +48,15 @@ export default function StrategyBoard() {
     }
     historyRef.current = history;
     currentStepRef.current = steps;
-  };
+  }, []);
 
-  if(Object.keys(historyRef.current).length === 0) {
-    initializeState();
-  }
+  useEffect(() => {
+    if(Object.keys(historyRef.current).length === 0) {
+        initializeState();
+    }
+  }, [initializeState]);
   
-  const draw = useCallback(() => {
+  const drawAllLines = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -60,7 +65,7 @@ export default function StrategyBoard() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     const currentHistory = historyRef.current[activeTab] || [];
-    const drawings = currentHistory.slice(0, currentStepRef.current[activeTab] + 1).flat();
+    const drawings = currentHistory.slice(0, currentStepRef.current[activeTab]).flat();
 
     drawings.forEach(([x1, y1, x2, y2, c, lw]) => {
       ctx.beginPath();
@@ -72,11 +77,24 @@ export default function StrategyBoard() {
       ctx.lineTo(x2, y2);
       ctx.stroke();
     });
-  }, [activeTab]);
+
+    // Draw the current line being drawn
+    if (isDrawing && startPoint && endPoint) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.moveTo(startPoint.x, startPoint.y);
+        ctx.lineTo(endPoint.x, endPoint.y);
+        ctx.stroke();
+    }
+  }, [activeTab, startPoint, endPoint, color, lineWidth, isDrawing]);
+
 
   useEffect(() => {
-    draw();
-  }, [activeTab, draw]);
+    drawAllLines();
+  }, [activeTab, drawAllLines]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -86,19 +104,27 @@ export default function StrategyBoard() {
         const { width, height } = image.getBoundingClientRect();
         canvas.width = width;
         canvas.height = height;
-        draw();
+        drawAllLines();
       };
       
       const observer = new ResizeObserver(resizeCanvas);
       observer.observe(image);
       window.addEventListener('resize', resizeCanvas);
       
+      image.onload = () => {
+          resizeCanvas();
+      }
+
+      if (image.complete) {
+          resizeCanvas();
+      }
+
       return () => {
         observer.disconnect();
         window.removeEventListener('resize', resizeCanvas);
       };
     }
-  }, [draw]);
+  }, [drawAllLines]);
 
   const getCoordinates = (event: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -125,73 +151,60 @@ export default function StrategyBoard() {
     if (!coords) return;
     
     setIsDrawing(true);
-    const ctx = canvasRef.current?.getContext('2d');
-    if(!ctx) return;
-    ctx.beginPath();
-    ctx.moveTo(coords.x, coords.y);
-
+    setStartPoint(coords);
+    setEndPoint(coords);
+    
     const step = currentStepRef.current[activeTab];
-    historyRef.current[activeTab] = historyRef.current[activeTab].slice(0, step + 1);
+    historyRef.current[activeTab] = historyRef.current[activeTab].slice(0, step);
   };
 
   const stopDrawing = () => {
-    if(!isDrawing) return;
-
-    const currentDrawing = historyRef.current[activeTab][currentStepRef.current[activeTab]];
-    if (currentDrawing && currentDrawing.length > 0) {
-       historyRef.current[activeTab].push([]);
-       currentStepRef.current[activeTab]++;
-    } else {
-        historyRef.current[activeTab][currentStepRef.current[activeTab]] = [];
-    }
-
+    if(!isDrawing || !startPoint || !endPoint) return;
     setIsDrawing(false);
+
+    const step = currentStepRef.current[activeTab];
+    const newDrawing: Drawing = [[startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth]];
+    historyRef.current[activeTab] = [...historyRef.current[activeTab].slice(0, step), newDrawing];
+    currentStepRef.current[activeTab]++;
+
+    setStartPoint(null);
+    setEndPoint(null);
+    drawAllLines();
   };
 
   const handleDrawing = (event: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing) return;
     const coords = getCoordinates(event);
     if (!coords) return;
-    const ctx = canvasRef.current?.getContext('2d');
-    if(!ctx) return;
-
-    const prevCoords = historyRef.current[activeTab][currentStepRef.current[activeTab]].slice(-1)[0] || [coords.x, coords.y, coords.x, coords.y];
-    const [prevX, prevY] = [prevCoords[2], prevCoords[3]];
     
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineTo(coords.x, coords.y);
-    ctx.stroke();
-
-    historyRef.current[activeTab][currentStepRef.current[activeTab]].push([prevX, prevY, coords.x, coords.y, color, lineWidth]);
+    setEndPoint(coords);
+    drawAllLines();
   };
 
   const undo = () => {
     if (currentStepRef.current[activeTab] > 0) {
         currentStepRef.current[activeTab]--;
-        draw();
+        drawAllLines();
     }
   };
 
   const redo = () => {
-    if (currentStepRef.current[activeTab] < historyRef.current[activeTab].length - 1) {
+    if (currentStepRef.current[activeTab] < historyRef.current[activeTab].length) {
         currentStepRef.current[activeTab]++;
-        draw();
+        drawAllLines();
     }
   };
 
   const clearCanvas = () => {
-    historyRef.current[activeTab] = [[]];
+    historyRef.current[activeTab] = [];
     currentStepRef.current[activeTab] = 0;
-    draw();
+    drawAllLines();
   };
 
 
   return (
     <div className="w-full flex flex-col md:flex-row gap-8 items-start">
-        <div className="relative w-full aspect-[1.84/1] rounded-lg border overflow-hidden shadow-lg">
+        <div className="relative w-full aspect-[1.84/1] rounded-lg border overflow-hidden shadow-lg bg-gray-200">
             <Image
                 ref={imageRef}
                 src="/fll_unearthed_map.jpg"
@@ -199,6 +212,7 @@ export default function StrategyBoard() {
                 layout="fill"
                 objectFit="contain"
                 priority
+                unoptimized
             />
             <canvas
                 ref={canvasRef}
@@ -256,7 +270,7 @@ export default function StrategyBoard() {
                             <Button variant="outline" onClick={undo} disabled={currentStepRef.current[activeTab] === 0}>
                                 <Undo className="mr-2 h-4 w-4"/> Desfazer
                             </Button>
-                            <Button variant="outline" onClick={redo} disabled={currentStepRef.current[activeTab] >= historyRef.current[activeTab].length - 1}>
+                            <Button variant="outline" onClick={redo} disabled={currentStepRef.current[activeTab] >= historyRef.current[activeTab].length}>
                                 <Redo className="mr-2 h-4 w-4"/> Refazer
                             </Button>
                         </div>
