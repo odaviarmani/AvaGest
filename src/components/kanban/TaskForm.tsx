@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { taskSchema, Task, priorities, columnNames } from '@/lib/types';
+import { taskSchema, Task, priorities, columnNames, areaNames } from '@/lib/types';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -61,9 +61,16 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Área</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Design" {...field} />
-              </FormControl>
+               <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a área" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {areaNames.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}
@@ -199,3 +206,5 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
     </Form>
   );
 }
+
+    

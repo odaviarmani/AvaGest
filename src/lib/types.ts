@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 export const priorities = ['Baixa', 'Média', 'Alta'] as const;
 export const columnNames = ['Planejamento', 'Fazer', 'Fazendo', 'Feito', 'Análise', 'Aprimoramento'] as const;
+export const areaNames = ['Projeto de Inovação', 'Construção', 'Programação', 'Core Values'] as const;
+
 
 export const taskSchema = z.object({
   id: z.string(),
@@ -16,3 +18,5 @@ export const taskSchema = z.object({
 export type Task = z.infer<typeof taskSchema>;
 export type Priority = Task['priority'];
 export type ColumnId = Task['columnId'];
+
+    

@@ -6,8 +6,6 @@ import TaskCard from './TaskCard';
 import { Task, ColumnId } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '../ui/button';
-import { PlusCircle } from 'lucide-react';
 
 interface KanbanColumnProps {
   column: {
@@ -19,10 +17,9 @@ interface KanbanColumnProps {
   isDraggingOver: boolean;
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
-  onAddTask: (task: null, columnId: ColumnId) => void;
 }
 
-export default function KanbanColumn({ column, provided, isDraggingOver, onEditTask, onDeleteTask, onAddTask }: KanbanColumnProps) {
+export default function KanbanColumn({ column, provided, isDraggingOver, onEditTask, onDeleteTask }: KanbanColumnProps) {
   return (
     <div
       ref={provided.innerRef}
@@ -66,14 +63,8 @@ export default function KanbanColumn({ column, provided, isDraggingOver, onEditT
           {provided.placeholder}
         </div>
       </ScrollArea>
-       {column.id === 'Planejamento' && (
-        <div className="p-2">
-            <Button variant="ghost" className="w-full justify-start" onClick={() => onAddTask(null, 'Planejamento')}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar nova tarefa
-            </Button>
-        </div>
-      )}
     </div>
   );
 }
+
+    

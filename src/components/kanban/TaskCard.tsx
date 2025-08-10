@@ -19,20 +19,59 @@ interface TaskCardProps {
 }
 
 const priorityIcons: Record<Priority, React.ReactNode> = {
-  'Baixa': <ArrowDown className="h-4 w-4 text-green-500" />,
-  'Média': <Minus className="h-4 w-4 text-yellow-500" />,
-  'Alta': <ArrowUp className="h-4 w-4 text-red-500" />,
+  'Baixa': <ArrowDown className="h-4 w-4" />,
+  'Média': <Minus className="h-4 w-4" />,
+  'Alta': <ArrowUp className="h-4 w-4" />,
 };
 
-const priorityBadgeVariant: Record<Priority, "secondary" | "default" | "destructive"> = {
-    'Baixa': 'secondary',
-    'Média': 'default',
-    'Alta': 'destructive'
-}
+const areaColors: Record<string, Record<Priority, string>> = {
+  "Projeto de Inovação": {
+    "Baixa": "bg-red-200/50",
+    "Média": "bg-red-400/50",
+    "Alta": "bg-red-600/50",
+  },
+  "Construção": {
+    "Baixa": "bg-green-200/50",
+    "Média": "bg-green-400/50",
+    "Alta": "bg-green-600/50",
+  },
+  "Programação": {
+    "Baixa": "bg-blue-200/50",
+    "Média": "bg-blue-400/50",
+    "Alta": "bg-blue-600/50",
+  },
+  "Core Values": {
+    "Baixa": "bg-yellow-200/50",
+    "Média": "bg-yellow-400/50",
+    "Alta": "bg-yellow-600/50",
+  },
+  "default": {
+    "Baixa": "bg-gray-200/50",
+    "Média": "bg-gray-400/50",
+    "Alta": "bg-gray-600/50",
+  }
+};
+
+const getTaskColorClass = (area: string, priority: Priority) => {
+    const colorSet = areaColors[area] || areaColors.default;
+    return colorSet[priority];
+};
 
 export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCardProps) {
+  const cardColorClass = getTaskColorClass(task.area, task.priority);
+
+  const priorityIconColor: Record<Priority, string> = {
+    'Baixa': 'text-green-700',
+    'Média': 'text-yellow-700',
+    'Alta': 'text-red-700'
+  }
+
   return (
-    <Card className={cn("w-full shadow-md hover:shadow-lg transition-shadow", isDragging && "shadow-xl ring-2 ring-primary")}>
+    <Card className={cn(
+        "w-full shadow-md hover:shadow-lg transition-all", 
+        isDragging && "shadow-xl ring-2 ring-primary",
+        cardColorClass
+    )}>
       <CardHeader className="p-4 flex flex-row items-start justify-between">
         <CardTitle className="text-base font-semibold leading-tight pr-4">{task.name}</CardTitle>
         <DropdownMenu>
@@ -52,11 +91,11 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCar
       </CardHeader>
       <CardContent className="p-4 pt-0 space-y-3">
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <Badge variant={priorityBadgeVariant[task.priority]} className="capitalize">
-                {priorityIcons[task.priority]}
+            <Badge variant="outline" className={cn("capitalize bg-card/80", priorityIconColor[task.priority])}>
+                {React.cloneElement(priorityIcons[task.priority] as React.ReactElement, { className: cn("h-4 w-4", priorityIconColor[task.priority]) })}
                 <span className="ml-1">{task.priority}</span>
             </Badge>
-            <Badge variant="outline">{task.area}</Badge>
+            <Badge variant="outline" className="bg-card/80">{task.area}</Badge>
         </div>
         <div className="flex flex-col gap-2 text-sm text-muted-foreground">
             {task.startDate && (
@@ -76,3 +115,5 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCar
     </Card>
   );
 }
+
+    
