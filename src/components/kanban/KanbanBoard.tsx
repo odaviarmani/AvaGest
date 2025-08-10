@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import KanbanColumn from '@/components/kanban/KanbanColumn';
 import TaskForm from '@/components/kanban/TaskForm';
-import { columnNames, Task } from '@/lib/types';
+import { columnNames, Task, ColumnId } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -65,38 +65,46 @@ export default function KanbanBoard() {
     if (!destination) return;
 
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
-
-    const sourceColumnId = source.droppableId;
-    const destColumnId = destination.droppableId;
     
     setTasks(prev => {
         const newTasks = [...prev];
         const taskIndex = newTasks.findIndex(t => t.id === draggableId);
         if (taskIndex > -1) {
-            const [movedTask] = newTasks.splice(taskIndex, 1);
-            movedTask.columnId = destColumnId as any;
+            const movedTask = newTasks[taskIndex];
+            movedTask.columnId = destination.droppableId as ColumnId;
+            
+            // Reorder tasks
+            const sourceColumnTasks = newTasks.filter(t => t.columnId === source.droppableId && t.id !== draggableId);
+            const destColumnTasks = newTasks.filter(t => t.columnId === destination.droppableId);
 
-            // This logic simply re-inserts the task into the main list. 
-            // A more precise insertion index might be needed for ordered lists.
-            const tasksInDestColumn = prev.filter(t => t.columnId === destColumnId);
-            const allOtherTasks = prev.filter(t => t.id !== draggableId);
-            
-            const finalTasks = [...allOtherTasks];
-            
-            // a bit complex to calculate the exact index in the main array
-            // just putting it at the end of the new column group is simpler.
-            // For a more robust solution, we'd need to reconstruct the list based on columns.
-            const targetIndex = allOtherTasks.filter(t => t.columnId !== destColumnId).length + destination.index;
-            finalTasks.splice(targetIndex, 0, movedTask);
-            
-            return newTasks; // simpler update works fine
+            if(source.droppableId === destination.droppableId) {
+                destColumnTasks.splice(destination.index, 0, movedTask);
+                const otherTasks = newTasks.filter(t => t.columnId !== source.droppableId);
+                return [...otherTasks, ...destColumnTasks];
+            } else {
+                destColumnTasks.splice(destination.index, 0, movedTask);
+                const otherTasks = newTasks.filter(t => t.columnId !== source.droppableId && t.columnId !== destination.droppableId);
+                return [...otherTasks, ...sourceColumnTasks, ...destColumnTasks];
+            }
         }
         return prev;
     });
   };
 
-  const handleOpenDialog = (task: Task | null) => {
-    setEditingTask(task);
+  const handleOpenDialog = (task: Task | null, columnId?: ColumnId) => {
+    if (task) {
+      setEditingTask(task);
+    } else {
+      setEditingTask({
+        id: crypto.randomUUID(),
+        name: '',
+        priority: 'Média',
+        area: '',
+        startDate: null,
+        dueDate: null,
+        columnId: columnId || 'Planejamento',
+      });
+    }
     setIsDialogOpen(true);
   };
 
@@ -106,7 +114,7 @@ export default function KanbanBoard() {
   };
 
   const handleSaveTask = (data: Task) => {
-    if (editingTask) {
+    if (tasks.some(t => t.id === data.id)) {
       setTasks(tasks.map(t => (t.id === data.id ? data : t)));
       toast({ title: "Tarefa atualizada!", description: `A tarefa "${data.name}" foi atualizada com sucesso.` });
     } else {
@@ -162,23 +170,18 @@ export default function KanbanBoard() {
                         isDraggingOver={snapshot.isDraggingOver}
                         onEditTask={handleOpenDialog}
                         onDeleteTask={handleDeleteRequest}
+                        onAddTask={handleOpenDialog}
                     />
                 )}
                 </Droppable>
             ))}
-            <div className="w-[300px] shrink-0 pt-2">
-                <Button variant="ghost" className="w-full justify-start" onClick={() => handleOpenDialog(null)}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar nova tarefa
-                </Button>
-            </div>
             </div>
         </DragDropContext>
 
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(isOpen) => { if(!isOpen) handleCloseDialog()}}>
             <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-                <DialogTitle>{editingTask ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
+                <DialogTitle>{editingTask && tasks.some(t => t.id === editingTask.id) ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
             </DialogHeader>
             <TaskForm 
                 task={editingTask} 
