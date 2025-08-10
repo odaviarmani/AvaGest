@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -24,6 +25,14 @@ const priorityIcons: Record<Priority, React.ReactNode> = {
   'Alta': <ArrowUp className="h-4 w-4" />,
 };
 
+const areaColorMap: Record<string, string> = {
+    "Projeto de Inovação": "bg-red-500/80",
+    "Construção": "bg-green-500/80",
+    "Programação": "bg-blue-500/80",
+    "Core Values": "bg-yellow-500/80",
+    "default": "bg-gray-500/80",
+};
+
 export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCardProps) {
   const priorityIconColor: Record<Priority, string> = {
     'Baixa': 'text-green-700 dark:text-green-300',
@@ -36,53 +45,61 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCar
   return (
     <Card 
       className={cn(
-        "w-full shadow-md hover:shadow-lg transition-all", 
+        "w-full shadow-md hover:shadow-lg transition-all relative overflow-hidden", 
         isDragging && "shadow-xl ring-2 ring-primary",
         "bg-card/80 text-card-foreground"
       )}
     >
-      <CardHeader className="p-4 flex flex-row items-start justify-between">
-        <CardTitle className="text-base font-semibold leading-tight pr-4">{task.name}</CardTitle>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 hover:bg-black/10">
-              <MoreVertical className="h-4 w-4" />
-              <span className="sr-only">Opções da Tarefa</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
-            <DropdownMenuItem onClick={onDelete} className="text-red-500 focus:text-red-500 focus:bg-red-50">
-                <Trash2 className="mr-2 h-4 w-4" /> Excluir
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </CardHeader>
-      <CardContent className="p-4 pt-0 space-y-3">
-        <div className="flex items-center justify-between text-sm">
-            <Badge variant="outline" className={cn("capitalize bg-card/80", priorityIconColor[task.priority])}>
-                {React.cloneElement(priorityIcons[task.priority] as React.ReactElement, { className: "h-4 w-4" })}
-                <span className="ml-1">{task.priority}</span>
-            </Badge>
-            <div className="flex flex-wrap gap-1 justify-end">
-                {taskAreas.map(a => <Badge key={a} variant="outline" className="bg-card/80">{a}</Badge>)}
+      <div className="absolute left-0 top-0 bottom-0 w-2 flex flex-col">
+          {taskAreas.map(area => (
+              <div key={area} className={cn("flex-1", areaColorMap[area] || areaColorMap.default)}></div>
+          ))}
+      </div>
+      <div className="pl-4">
+        <CardHeader className="p-4 flex flex-row items-start justify-between">
+            <CardTitle className="text-base font-semibold leading-tight pr-4">{task.name}</CardTitle>
+            <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 hover:bg-black/10">
+                <MoreVertical className="h-4 w-4" />
+                <span className="sr-only">Opções da Tarefa</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
+                <DropdownMenuItem onClick={onDelete} className="text-red-500 focus:text-red-500 focus:bg-red-50">
+                    <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+            </DropdownMenu>
+        </CardHeader>
+        <CardContent className="p-4 pt-0 space-y-3">
+            <div className="flex items-center justify-between text-sm">
+                <Badge variant="outline" className={cn("capitalize bg-card/80", priorityIconColor[task.priority])}>
+                    {React.cloneElement(priorityIcons[task.priority] as React.ReactElement, { className: "h-4 w-4" })}
+                    <span className="ml-1">{task.priority}</span>
+                </Badge>
+                <div className="flex flex-wrap gap-1 justify-end">
+                    {taskAreas.map(a => <Badge key={a} variant="outline" className="bg-card/80">{a}</Badge>)}
+                </div>
             </div>
-        </div>
-        <div className="flex flex-col gap-2 text-sm">
-            {task.startDate && (
-                <div className="flex items-center">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    <span>Início: {format(task.startDate, "dd/MM/yyyy", { locale: ptBR })}</span>
-                </div>
-            )}
-            {task.dueDate && (
-                <div className="flex items-center">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    <span>Entrega: {format(task.dueDate, "dd/MM/yyyy", { locale: ptBR })}</span>
-                </div>
-            )}
-        </div>
-      </CardContent>
+            <div className="flex flex-col gap-2 text-sm">
+                {task.startDate && (
+                    <div className="flex items-center">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <span>Início: {format(task.startDate, "dd/MM/yyyy", { locale: ptBR })}</span>
+                    </div>
+                )}
+                {task.dueDate && (
+                    <div className="flex items-center">
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        <span>Entrega: {format(task.dueDate, "dd/MM/yyyy", { locale: ptBR })}</span>
+                    </div>
+                )}
+            </div>
+        </CardContent>
+      </div>
     </Card>
   );
 }
+
