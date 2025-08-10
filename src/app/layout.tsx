@@ -30,7 +30,8 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-            <header className="p-4 border-b shrink-0 flex items-center justify-center">
+            <header className="p-4 border-b shrink-0 flex items-center justify-between">
+                <div className="w-10"></div>
                 <nav className="flex items-center gap-1">
                     <Button variant="ghost" asChild>
                         <Link href="/kanban">Kanban</Link>
@@ -48,9 +49,10 @@ export default function RootLayout({
                         <Link href="/documentation">Documentação</Link>
                     </Button>
                 </nav>
+                <ThemeToggle />
             </header>
             <main className="flex-1 flex flex-col">{children}</main>
-            <footer className="p-4 border-t shrink-0 flex items-center justify-between">
+            <footer className="p-4 border-t shrink-0 flex items-center justify-center">
             <iframe
                 style={{ borderRadius: '12px' }}
                 src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
@@ -60,7 +62,6 @@ export default function RootLayout({
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                 loading="lazy"
             ></iframe>
-             <ThemeToggle />
             </footer>
             <Toaster />
         </ThemeProvider>
