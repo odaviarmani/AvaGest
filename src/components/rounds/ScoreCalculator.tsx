@@ -223,10 +223,10 @@ export default function ScoreCalculator() {
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m06">
-                <AccordionTrigger>M06 – Forja (20)</AccordionTrigger>
+                <AccordionTrigger>M06 – Forja (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
                     <Label>Blocos de minério fora da forja: {missions.m06_forge}</Label>
-                    <Slider value={[missions.m06_forge]} onValueChange={([val]) => setMissions(prev => ({...prev, m06_forge: val}))} max={2} step={1} />
+                    <Slider value={[missions.m06_forge]} onValueChange={([val]) => setMissions(prev => ({...prev, m06_forge: val}))} max={3} step={1} />
                     <p className="text-sm text-muted-foreground">+10 pontos por bloco</p>
                 </AccordionContent>
             </AccordionItem>
