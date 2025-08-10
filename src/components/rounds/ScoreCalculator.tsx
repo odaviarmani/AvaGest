@@ -11,41 +11,39 @@ import { Slider } from '@/components/ui/slider';
 import { Trash2 } from 'lucide-react';
 
 interface MissionState {
-    m00_inspection: boolean;
-    m01_automated_drone: boolean;
-    m02_3d_model: boolean;
-    m03_emergency_supplies: number;
-    m04_emergency_exit_open: boolean;
-    m04_people_evacuated: number;
-    m05_artefact_revealed: boolean;
-    m06_warning_system_tested: boolean;
-    m07_gas_valve_shut_off: boolean;
-    m08_underground_structure: 'none' | 'moved' | 'discovered';
-    m09_dike_built: boolean;
-    m10_water_flow: 'none' | 'one' | 'both';
-    m11_tsunami_wall: boolean;
-    m12_geotechnical_testing: 'none' | 'pushed' | 'pushed_bldg';
-    m13_helicopter_lift: boolean;
+    m00_equipment_inspection: boolean;
+    m01_surface_cleanup: { part1: boolean; part2: boolean; part3: boolean };
+    m02_underwater_exploration: 'none' | 'discovered' | 'both';
+    m03_specimen_collection: number;
+    m04_trench_mapping: boolean;
+    m05_hydrothermal_vents: 'none' | 'one' | 'both';
+    m06_subsea_cables: number;
+    m07_robot_deployment: boolean;
+    m08_marine_life_monitoring: 'none' | 'one' | 'both';
+    m09_pipeline_maintenance: number;
+    m10_wreck_salvage: number;
+    m11_aquaculture_farming: boolean;
+    m12_autonomous_navigation: boolean;
+    m13_communication_network: boolean;
     precision_tokens: number;
 }
 
 
 const initialMissionState: MissionState = {
-    m00_inspection: false,
-    m01_automated_drone: false,
-    m02_3d_model: false,
-    m03_emergency_supplies: 0,
-    m04_emergency_exit_open: false,
-    m04_people_evacuated: 0,
-    m05_artefact_revealed: false,
-    m06_warning_system_tested: false,
-    m07_gas_valve_shut_off: false,
-    m08_underground_structure: 'none',
-    m09_dike_built: false,
-    m10_water_flow: 'none',
-    m11_tsunami_wall: false,
-    m12_geotechnical_testing: 'none',
-    m13_helicopter_lift: false,
+    m00_equipment_inspection: false,
+    m01_surface_cleanup: { part1: false, part2: false, part3: false },
+    m02_underwater_exploration: 'none',
+    m03_specimen_collection: 0,
+    m04_trench_mapping: false,
+    m05_hydrothermal_vents: 'none',
+    m06_subsea_cables: 0,
+    m07_robot_deployment: false,
+    m08_marine_life_monitoring: 'none',
+    m09_pipeline_maintenance: 0,
+    m10_wreck_salvage: 0,
+    m11_aquaculture_farming: false,
+    m12_autonomous_navigation: false,
+    m13_communication_network: false,
     precision_tokens: 6,
 };
 
@@ -55,43 +53,49 @@ export default function ScoreCalculator() {
 
   const calculateScore = (state: MissionState): number => {
     let score = 0;
-    if (state.m00_inspection) score += 10;
-    if (state.m01_automated_drone) score += 20;
-    if (state.m02_3d_model) score += 20;
-    
-    score += state.m03_emergency_supplies * 10;
-    
-    if (state.m04_emergency_exit_open) score += 10;
-    score += state.m04_people_evacuated * 10;
+    if (state.m00_equipment_inspection) score += 20;
 
-    if (state.m05_artefact_revealed) score += 20;
-    if (state.m06_warning_system_tested) score += 10;
-    if (state.m07_gas_valve_shut_off) score += 20;
+    if(state.m01_surface_cleanup.part1) score += 10;
+    if(state.m01_surface_cleanup.part2) score += 10;
+    if(state.m01_surface_cleanup.part3) score += 10;
 
-    if (state.m08_underground_structure === 'moved') score += 10;
-    if (state.m08_underground_structure === 'discovered') score += 20;
+    if (state.m02_underwater_exploration === 'discovered') score += 10;
+    if (state.m02_underwater_exploration === 'both') score += 20;
     
-    if (state.m09_dike_built) score += 20;
+    score += state.m03_specimen_collection * 10;
+    
+    if (state.m04_trench_mapping) score += 20;
 
-    if (state.m10_water_flow === 'one') score += 10;
-    if (state.m10_water_flow === 'both') score += 20;
+    if (state.m05_hydrothermal_vents === 'one') score += 10;
+    if (state.m05_hydrothermal_vents === 'both') score += 20;
 
-    if (state.m11_tsunami_wall) score += 20;
+    if (state.m06_subsea_cables >= 1) score += 10;
+    if (state.m06_subsea_cables >= 2) score += 10;
+
+    if(state.m07_robot_deployment) score += 20;
     
-    if (state.m12_geotechnical_testing === 'pushed') score += 10;
-    if (state.m12_geotechnical_testing === 'pushed_bldg') score += 20;
+    if (state.m08_marine_life_monitoring === 'one') score += 10;
+    if (state.m08_marine_life_monitoring === 'both') score += 20;
+
+    score += state.m09_pipeline_maintenance * 5;
+
+    score += state.m10_wreck_salvage;
+
+    if (state.m11_aquaculture_farming) score += 20;
     
-    if (state.m13_helicopter_lift) score += 20;
+    if (state.m12_autonomous_navigation) score += 20;
+    
+    if (state.m13_communication_network) score += 20;
 
     // Precision Tokens calculation
-    const precisionTokensUsed = 6 - state.precision_tokens;
-    if (precisionTokensUsed >= 1) score += 5;
-    if (precisionTokensUsed >= 2) score += 5;
-    if (precisionTokensUsed >= 3) score += 10;
-    if (precisionTokensUsed >= 4) score += 10;
-    if (precisionTokensUsed >= 5) score += 10;
-    if (precisionTokensUsed >= 6) score += 10;
-
+    const precisionTokensLeft = state.precision_tokens;
+    if (precisionTokensLeft <= 5) score += 10;
+    if (precisionTokensLeft <= 4) score += 5;
+    if (precisionTokensLeft <= 3) score += 5;
+    if (precisionTokensLeft <= 2) score += 10;
+    if (precisionTokensLeft <= 1) score += 10;
+    if (precisionTokensLeft <= 0) score += 10;
+    
     return score;
   };
 
@@ -101,12 +105,12 @@ export default function ScoreCalculator() {
     setMissions(initialMissionState);
   };
 
-  const MissionCheckbox = ({ id, label, field, disabled = false }: { id: string; label: string; field: keyof MissionState; disabled?: boolean }) => (
+  const MissionCheckbox = ({ id, label, checked, onCheckedChange, disabled = false }: { id: string; label: string; checked: boolean; onCheckedChange: (checked: boolean) => void; disabled?: boolean }) => (
     <div className="flex items-center space-x-2">
       <Checkbox
         id={id}
-        checked={missions[field] as boolean}
-        onCheckedChange={(checked) => setMissions(prev => ({ ...prev, [field]: checked }))}
+        checked={checked}
+        onCheckedChange={onCheckedChange}
         disabled={disabled}
       />
       <Label htmlFor={id} className={`cursor-pointer ${disabled ? 'text-muted-foreground' : ''}`}>{label}</Label>
@@ -123,96 +127,111 @@ export default function ScoreCalculator() {
         </CardTitle>
       </CardHeader>
       <CardContent className="max-h-[600px] overflow-y-auto pr-2">
-        <Accordion type="multiple" className="w-full">
+        <Accordion type="multiple" className="w-full" defaultValue={['m00', 'm01']}>
             <AccordionItem value="m00">
-                <AccordionTrigger>M00: Bônus de Inspeção (10)</AccordionTrigger>
-                <AccordionContent><MissionCheckbox id="m00" label="O equipamento está na área de inspeção" field="m00_inspection" /></AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m01">
-                <AccordionTrigger>M01: Drone Automatizado (20)</AccordionTrigger>
-                <AccordionContent><MissionCheckbox id="m01" label="Drone completamente sobre a plataforma de pouso" field="m01_automated_drone" /></AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m02">
-                <AccordionTrigger>M02: Modelo 3D (20)</AccordionTrigger>
-                <AccordionContent><MissionCheckbox id="m02" label="O modelo 3D está em seu alvo" field="m02_3d_model" /></AccordionContent>
-            </AccordionItem>
-             <AccordionItem value="m03">
-                <AccordionTrigger>M03: Suprimentos de Emergência (10/20)</AccordionTrigger>
-                 <AccordionContent className="space-y-2">
-                    <Label>Suprimentos na área alvo: {missions.m03_emergency_supplies}</Label>
-                    <Slider value={[missions.m03_emergency_supplies]} onValueChange={([val]) => setMissions(prev => ({...prev, m03_emergency_supplies: val}))} max={2} step={1} />
+                <AccordionTrigger>M00: Bônus de Inspeção (20)</AccordionTrigger>
+                <AccordionContent>
+                    <MissionCheckbox id="m00" label="O equipamento cabe na área de inspeção" checked={missions.m00_equipment_inspection} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m00_equipment_inspection: checked }))} />
                 </AccordionContent>
             </AccordionItem>
-             <AccordionItem value="m04">
-                <AccordionTrigger>M04: Evacuação de Emergência (10-30)</AccordionTrigger>
-                <AccordionContent className="space-y-4">
-                    <MissionCheckbox id="m04_exit" label="A saída de emergência está aberta (+10)" field="m04_emergency_exit_open" />
-                    <div className="space-y-2">
-                        <Label>Pessoas na área de evacuação (+10 cada)</Label>
-                        <Slider value={[missions.m04_people_evacuated]} onValueChange={([val]) => setMissions(prev => ({...prev, m04_people_evacuated: val}))} max={2} step={1} />
-                    </div>
+            <AccordionItem value="m01">
+                <AccordionTrigger>M01: Limpeza de Superfície (10+10+10)</AccordionTrigger>
+                <AccordionContent className="space-y-2">
+                    <MissionCheckbox id="m01_part1" label="Derramamento de óleo removido (10)" checked={missions.m01_surface_cleanup.part1} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m01_surface_cleanup: {...prev.m01_surface_cleanup, part1: checked} }))} />
+                    <MissionCheckbox id="m01_part2" label="Microplástico removido (10)" checked={missions.m01_surface_cleanup.part2} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m01_surface_cleanup: {...prev.m01_surface_cleanup, part2: checked} }))} />
+                    <MissionCheckbox id="m01_part3" label="Detritos flutuantes removidos (10)" checked={missions.m01_surface_cleanup.part3} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m01_surface_cleanup: {...prev.m01_surface_cleanup, part3: checked} }))} />
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="m02">
+                <AccordionTrigger>M02: Exploração Subaquática (10/20)</AccordionTrigger>
+                 <AccordionContent>
+                    <RadioGroup value={missions.m02_underwater_exploration} onValueChange={(value) => setMissions(prev => ({...prev, m02_underwater_exploration: value as any}))}>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="m02-none" /><Label htmlFor="m02-none">Nenhum</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="discovered" id="m02-one" /><Label htmlFor="m02-one">Navio descoberto (10)</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="m02-both" /><Label htmlFor="m02-both">Navio e container descobertos (20)</Label></div>
+                    </RadioGroup>
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="m03">
+                <AccordionTrigger>M03: Coleta de Espécimes (10/20/30)</AccordionTrigger>
+                 <AccordionContent className="space-y-2">
+                    <Label>Espécimes no microscópio: {missions.m03_specimen_collection}</Label>
+                    <Slider value={[missions.m03_specimen_collection]} onValueChange={([val]) => setMissions(prev => ({...prev, m03_specimen_collection: val}))} max={3} step={1} />
+                </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="m04">
+                <AccordionTrigger>M04: Mapeamento de Trincheiras (20)</AccordionTrigger>
+                <AccordionContent>
+                    <MissionCheckbox id="m04" label="A trincheira está mapeada" checked={missions.m04_trench_mapping} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m04_trench_mapping: checked }))} />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m05">
-                <AccordionTrigger>M05: Artefato (20)</AccordionTrigger>
+                <AccordionTrigger>M05: Fontes Hidrotermais (10/20)</AccordionTrigger>
                 <AccordionContent>
-                    <MissionCheckbox id="m05" label="O artefato foi revelado" field="m05_artefact_revealed" />
+                    <RadioGroup value={missions.m05_hydrothermal_vents} onValueChange={(value) => setMissions(prev => ({...prev, m05_hydrothermal_vents: value as any}))}>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="m05-none" /><Label htmlFor="m05-none">Nenhum</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="one" id="m05-one" /><Label htmlFor="m05-one">Uma fonte ativada (10)</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="m05-both" /><Label htmlFor="m05-both">Ambas as fontes ativadas (20)</Label></div>
+                    </RadioGroup>
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m06">
-                <AccordionTrigger>M06: Sistema de Aviso (10)</AccordionTrigger>
-                <AccordionContent>
-                     <MissionCheckbox id="m06" label="Sistema de aviso testado (alavanca empurrada)" field="m06_warning_system_tested" />
+                <AccordionTrigger>M06: Cabos Submarinos (10/20)</AccordionTrigger>
+                <AccordionContent className="space-y-2">
+                     <Label>Cabos conectados: {missions.m06_subsea_cables}</Label>
+                    <Slider value={[missions.m06_subsea_cables]} onValueChange={([val]) => setMissions(prev => ({...prev, m06_subsea_cables: val}))} max={2} step={1} />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m07">
-                <AccordionTrigger>M07: Válvula de Gás (20)</AccordionTrigger>
-                <AccordionContent><MissionCheckbox id="m07" label="Válvula de gás fechada (ponteiro no vermelho)" field="m07_gas_valve_shut_off" /></AccordionContent>
+                <AccordionTrigger>M07: Implantação de Robôs (20)</AccordionTrigger>
+                <AccordionContent>
+                    <MissionCheckbox id="m07" label="Robô implantado na área alvo" checked={missions.m07_robot_deployment} onCheckedChange={(checked) => setMissions(prev => ({...prev, m07_robot_deployment: checked }))} />
+                </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m08">
-                <AccordionTrigger>M08: Estrutura Subterrânea (10/20)</AccordionTrigger>
-                 <AccordionContent>
-                    <RadioGroup value={missions.m08_underground_structure} onValueChange={(value) => setMissions(prev => ({...prev, m08_underground_structure: value as any}))}>
+                <AccordionTrigger>M08: Monitoramento da Vida Marinha (10/20)</AccordionTrigger>
+                <AccordionContent>
+                     <RadioGroup value={missions.m08_marine_life_monitoring} onValueChange={(value) => setMissions(prev => ({...prev, m08_marine_life_monitoring: value as any}))}>
                         <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="m08-none" /><Label htmlFor="m08-none">Nenhum</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="moved" id="m08-moved" /><Label htmlFor="m08-moved">Estrutura movida para fora do círculo (+10)</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="discovered" id="m08-discovered" /><Label htmlFor="m08-discovered">Estrutura descoberta (lado amarelo para cima) (+20)</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="one" id="m08-one" /><Label htmlFor="m08-one">Um animal atravessou (10)</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="m08-both" /><Label htmlFor="m08-both">Ambos animais atravessaram (20)</Label></div>
                     </RadioGroup>
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m09">
-                <AccordionTrigger>M09: Dique (20)</AccordionTrigger>
-                <AccordionContent>
-                     <MissionCheckbox id="m09" label="Dique construído completamente no alvo" field="m09_dike_built" />
+                <AccordionTrigger>M09: Manutenção de Oleodutos (5/10/15)</AccordionTrigger>
+                <AccordionContent className="space-y-2">
+                     <Label>Válvulas correspondentes: {missions.m09_pipeline_maintenance}</Label>
+                    <Slider value={[missions.m09_pipeline_maintenance]} onValueChange={([val]) => setMissions(prev => ({...prev, m09_pipeline_maintenance: val}))} max={3} step={1} />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="m10">
-                <AccordionTrigger>M10: Fluxo de Água (10/20)</AccordionTrigger>
-                 <AccordionContent>
-                    <RadioGroup value={missions.m10_water_flow} onValueChange={(value) => setMissions(prev => ({...prev, m10_water_flow: value as any}))}>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="m10-none" /><Label htmlFor="m10-none">Nenhum</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="one" id="m10-one" /><Label htmlFor="m10-one">Uma água de fluxo no alvo (+10)</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="m10-both" /><Label htmlFor="m10-both">Ambas as águas de fluxo no alvo (+20)</Label></div>
+                <AccordionTrigger>M10: Resgate de Naufrágios (10/20/30)</AccordionTrigger>
+                <AccordionContent>
+                     <RadioGroup value={String(missions.m10_wreck_salvage)} onValueChange={(value) => setMissions(prev => ({...prev, m10_wreck_salvage: Number(value)}))}>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="0" id="m10-none" /><Label htmlFor="m10-none">Nenhum</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="10" id="m10-chest" /><Label htmlFor="m10-chest">Baú levantado (10)</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="20" id="m10-music" /><Label htmlFor="m10-music">Música antiga levantada (20)</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="30" id="m10-both" /><Label htmlFor="m10-both">Ambos levantados (30)</Label></div>
                     </RadioGroup>
                 </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="m11">
-                <AccordionTrigger>M11: Muro de Tsunami (20)</AccordionTrigger>
-                <AccordionContent><MissionCheckbox id="m11" label="O muro de tsunami está levantado" field="m11_tsunami_wall" /></AccordionContent>
+             <AccordionItem value="m11">
+                <AccordionTrigger>M11: Aquicultura (20)</AccordionTrigger>
+                <AccordionContent>
+                    <MissionCheckbox id="m11" label="Algas colhidas" checked={missions.m11_aquaculture_farming} onCheckedChange={(checked) => setMissions(prev => ({...prev, m11_aquaculture_farming: checked }))} />
+                </AccordionContent>
             </AccordionItem>
              <AccordionItem value="m12">
-                <AccordionTrigger>M12: Teste Geotécnico (10/20)</AccordionTrigger>
+                <AccordionTrigger>M12: Navegação Autônoma (20)</AccordionTrigger>
                 <AccordionContent>
-                     <RadioGroup value={missions.m12_geotechnical_testing} onValueChange={(value) => setMissions(prev => ({...prev, m12_geotechnical_testing: value as any}))}>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="none" id="m12-none" /><Label htmlFor="m12-none">Nenhum</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="pushed" id="m12-pushed" /><Label htmlFor="m12-pushed">Bloco empurrado para a área alvo (+10)</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="pushed_bldg" id="m12-pushed-bldg" /><Label htmlFor="m12-pushed-bldg">Bloco empurrado com o prédio sobre ele (+20)</Label></div>
-                    </RadioGroup>
+                    <MissionCheckbox id="m12" label="Robô no alvo de navegação" checked={missions.m12_autonomous_navigation} onCheckedChange={(checked) => setMissions(prev => ({...prev, m12_autonomous_navigation: checked }))} />
                 </AccordionContent>
             </AccordionItem>
              <AccordionItem value="m13">
-                <AccordionTrigger>M13: Resgate de Helicóptero (20)</AccordionTrigger>
+                <AccordionTrigger>M13: Rede de Comunicação (20)</AccordionTrigger>
                 <AccordionContent>
-                    <MissionCheckbox id="m13" label="O técnico está suspenso pelo helicóptero" field="m13_helicopter_lift" />
+                    <MissionCheckbox id="m13" label="Rede de satélites ativada" checked={missions.m13_communication_network} onCheckedChange={(checked) => setMissions(prev => ({...prev, m13_communication_network: checked }))} />
                 </AccordionContent>
             </AccordionItem>
             <AccordionItem value="precision">
@@ -233,3 +252,5 @@ export default function ScoreCalculator() {
     </Card>
   );
 }
+
+    
