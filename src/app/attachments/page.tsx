@@ -105,7 +105,7 @@ export default function AttachmentsPage() {
                 <div>
                     <h1 className="text-3xl font-bold">Anexos</h1>
                     <p className="text-muted-foreground">
-                        gerencie os anexos da equipe da temporada unearthed
+                        Gerencie os anexos da equipe da temporada Unearthed.
                     </p>
                 </div>
                 <Button onClick={() => handleOpenDialog(null)}>
