@@ -6,19 +6,19 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle } from 'lucide-react';
+import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle, File } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import Image from 'next/image';
 import StrategySteps from './StrategySteps';
 import type { Instruction } from './StrategySteps';
 
 const COLORS = [
-    { value: "#ef4444", label: "Vermelho" },
+    { value: "#f43f5e", label: "Vermelho" },
     { value: "#f97316", label: "Laranja" },
     { value: "#eab308", label: "Amarelo" },
     { value: "#22c55e", label: "Verde" },
     { value: "#3b82f6", label: "Azul" },
-    { value: "#8b5cf6", label: "Roxo" },
+    { value: "#a855f7", label: "Roxo" },
     { value: "#ec4899", label: "Rosa" },
     { value: "#14b8a6", label: "Ciano" },
 ];
@@ -93,25 +93,57 @@ const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
     const handleRemoveFile = () => {
         setFileInfo(null);
         saveFileToLocalStorage(null);
+        // Also clear the file input
+        if(fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
+    
+    const isImage = fileInfo?.url.startsWith('data:image');
 
     return (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden flex flex-col">
             <CardHeader>
                 <CardTitle>Recursos Saída {saidaKey.split('-')[1]}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 flex-1 flex flex-col">
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                
+                <div className="flex-1 flex items-center justify-center bg-muted/50 rounded-md aspect-video">
+                     {fileInfo ? (
+                        isImage ? (
+                            <Image 
+                                src={fileInfo.url} 
+                                alt={fileInfo.name} 
+                                width={300} 
+                                height={169} 
+                                className="object-contain w-full h-full"
+                                unoptimized
+                            />
+                        ) : (
+                           <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                                <File className="w-16 h-16"/>
+                                <span className="text-sm font-medium">Arquivo Genérico</span>
+                           </div>
+                        )
+                    ) : (
+                        <div className="text-center text-muted-foreground">
+                             <p>Nenhum anexo</p>
+                        </div>
+                    )}
+                </div>
+
                 {fileInfo ? (
-                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
-                        <span className="text-sm font-medium truncate pr-2">{fileInfo.name}</span>
-                        <div className="flex gap-1">
+                    <div className="space-y-2">
+                        <p className="text-sm font-medium truncate pr-2 text-center" title={fileInfo.name}>{fileInfo.name}</p>
+                        <div className="flex gap-2 justify-center">
                              <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>Trocar</Button>
                              <Button size="sm" variant="destructive" onClick={handleRemoveFile}>Remover</Button>
                         </div>
                     </div>
                 ) : (
                     <Button className="w-full" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                        <Upload className="mr-2 h-4 w-4" />
                         Anexar Arquivo
                     </Button>
                 )}
@@ -227,7 +259,7 @@ export default function StrategyBoard() {
             const finalAngle = displayAngle > 180 ? 360 - displayAngle : displayAngle;
             if (finalAngle > 1) { // Threshold to avoid tiny angle displays
                  const angleText = `${Math.round(finalAngle)}°`;
-                 drawMetricsOnCanvas(ctx, angleText, x1, y1, -5);
+                 drawMetricsOnCanvas(ctx, angleText, x1, y1, -15);
             }
           }
         }
@@ -560,8 +592,8 @@ export default function StrategyBoard() {
 
   return (
     <div className="w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-             <div className="lg:col-span-1 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
+             <div className="lg:col-span-2 xl:col-span-3 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
                 {isClient && mapImage ? (
                     <>
                         <Image
@@ -604,7 +636,7 @@ export default function StrategyBoard() {
                 )}
             </div>
 
-            <div className="w-full lg:col-span-1 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="w-full lg:col-span-1 xl:col-span-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-8">
                  <Card className="w-full shrink-0">
                     <CardContent className="p-4">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
