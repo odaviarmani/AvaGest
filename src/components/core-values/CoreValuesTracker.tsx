@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PlusCircle, Trash2, CheckCircle, Circle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { BRAZIL_STATES } from '@/lib/brazil-states';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Separator } from '../ui/separator';
 
 interface Team {
   id: string;
@@ -78,43 +78,42 @@ export default function CoreValuesTracker() {
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[500px] pr-4">
-             <Accordion type="multiple">
-                {Object.entries(BRAZIL_STATES).map(([uf, { name }]) => {
-                  const stateTeams = teamsByState[uf] || [];
-                  const hasTeams = stateTeams.length > 0;
-                  return (
-                     <AccordionItem value={uf} key={uf}>
-                       <AccordionTrigger>
-                          <div className="flex items-center gap-3">
-                            {hasTeams ? (
-                               <CheckCircle className="h-5 w-5 text-primary"/>
-                            ) : (
-                               <Circle className="h-5 w-5 text-muted-foreground"/>
-                            )}
-                            <span className="font-semibold">{name}</span>
-                            {hasTeams && <span className="text-xs font-normal text-muted-foreground">({stateTeams.length} equipe{stateTeams.length > 1 ? 's' : ''})</span>}
-                          </div>
-                       </AccordionTrigger>
-                       <AccordionContent className="pl-8">
-                         {hasTeams ? (
-                            <div className="space-y-2">
-                                {stateTeams.map(team => (
-                                    <div key={team.id} className="flex items-center justify-between bg-secondary/50 p-2 rounded-md">
-                                    <span>{team.name}</span>
-                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteTeam(team.id)}>
-                                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                    </Button>
-                                    </div>
-                                ))}
-                            </div>
-                         ) : (
-                           <p className="text-sm text-muted-foreground">Nenhuma equipe registrada neste estado ainda.</p>
-                         )}
-                       </AccordionContent>
-                     </AccordionItem>
-                  );
-                })}
-              </Accordion>
+            <div className="space-y-4">
+              {Object.entries(BRAZIL_STATES)
+                .sort((a,b) => a[1].name.localeCompare(b[1].name))
+                .map(([uf, { name }]) => {
+                const stateTeams = teamsByState[uf] || [];
+                const hasTeams = stateTeams.length > 0;
+                return (
+                  <div key={uf}>
+                    <div className="flex items-center gap-3 mb-2">
+                      {hasTeams ? (
+                          <CheckCircle className="h-5 w-5 text-primary"/>
+                      ) : (
+                          <Circle className="h-5 w-5 text-muted-foreground"/>
+                      )}
+                      <span className="font-semibold">{name}</span>
+                      {hasTeams && <span className="text-xs font-normal text-muted-foreground">({stateTeams.length} equipe{stateTeams.length > 1 ? 's' : ''})</span>}
+                    </div>
+                    <div className="pl-8 space-y-2">
+                      {hasTeams ? (
+                          stateTeams.map(team => (
+                              <div key={team.id} className="flex items-center justify-between bg-secondary/50 p-2 rounded-md">
+                              <span>{team.name}</span>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteTeam(team.id)}>
+                                  <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                              </Button>
+                              </div>
+                          ))
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Nenhuma equipe registrada neste estado ainda.</p>
+                      )}
+                    </div>
+                     <Separator className="mt-4"/>
+                  </div>
+                );
+              })}
+            </div>
           </ScrollArea>
         </CardContent>
       </Card>
