@@ -216,10 +216,13 @@ export default function StrategyBoard() {
         ctx.stroke();
         drawMetricsOnCanvas(ctx, lengthText, (x1 + x2) / 2, (y1 + y2) / 2);
 
-        const prevDrawing = index > 0 ? drawings.filter(d => d.type === 'line')[index-1] as Line : null;
-        if (prevDrawing && prevDrawing.type === 'line') {
+        const lineDrawings = drawings.filter(d => d.type === 'line') as Line[];
+        const currentLineIndex = lineDrawings.findIndex(l => l === drawing);
+        const prevDrawing = currentLineIndex > 0 ? lineDrawings[currentLineIndex - 1] : null;
+
+        if (prevDrawing) {
           const angleDiff = drawing.angleDeg - prevDrawing.angleDeg;
-          const displayAngle = Math.round((angleDiff + 360) % 360);
+          const displayAngle = (angleDiff + 360) % 360;
           if(displayAngle !== 0 && displayAngle !== 360) {
             const finalAngle = displayAngle > 180 ? 360 - displayAngle : displayAngle;
             if (finalAngle > 1) { // Threshold to avoid tiny angle displays
@@ -407,7 +410,7 @@ export default function StrategyBoard() {
   };
 
   const clearCanvas = () => {
-    historyRef.current[activeTab] = [];
+    historyRef.current[activeTab] = [[]];
     currentStepRef.current[activeTab] = 0;
     drawMainCanvas();
     saveData();
@@ -436,15 +439,69 @@ export default function StrategyBoard() {
     const bgImage = imageRef.current;
     if (!mainCanvas || !bgImage) return;
 
+    const tableData = instructions;
+    const tableWidth = 400;
+    const tablePadding = 20;
+    const cellPadding = 8;
+    const headerHeight = 40;
+    const rowHeight = 28;
+    const titleHeight = 50;
+
+    const tableHeight = titleHeight + headerHeight + tableData.length * rowHeight;
+    const finalCanvasWidth = mainCanvas.width + tableWidth + tablePadding;
+    const finalCanvasHeight = Math.max(mainCanvas.height, tableHeight);
+
     const downloadCanvas = document.createElement('canvas');
-    downloadCanvas.width = mainCanvas.width;
-    downloadCanvas.height = mainCanvas.height;
+    downloadCanvas.width = finalCanvasWidth;
+    downloadCanvas.height = finalCanvasHeight;
     const ctx = downloadCanvas.getContext('2d');
     
     if(!ctx) return;
 
+    // Fill background
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, finalCanvasWidth, finalCanvasHeight);
+
+    // Draw map and drawings
     ctx.drawImage(bgImage, 0, 0, mainCanvas.width, mainCanvas.height);
     ctx.drawImage(mainCanvas, 0, 0);
+
+    // Draw table
+    const tableStartX = mainCanvas.width + tablePadding;
+    let currentY = tablePadding;
+
+    // Table Title
+    ctx.fillStyle = '#111827'; // a dark gray
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText('Pseudocódigo', tableStartX, currentY);
+    currentY += titleHeight;
+
+    // Table Header
+    ctx.fillStyle = '#f3f4f6'; // a light gray for header bg
+    ctx.fillRect(tableStartX - cellPadding, currentY - cellPadding, tableWidth, headerHeight);
+    ctx.fillStyle = '#374151'; // a medium gray for header text
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('Passo', tableStartX, currentY);
+    ctx.fillText('Ação', tableStartX + 80, currentY);
+    ctx.textAlign = 'right';
+    ctx.fillText('Valor', tableStartX + tableWidth - (cellPadding * 2), currentY);
+    currentY += headerHeight;
+    
+    // Table Rows
+    ctx.font = '14px sans-serif';
+    tableData.forEach((row, index) => {
+        ctx.fillStyle = (index % 2 === 0) ? '#ffffff' : '#f9fafb'; // alternating row colors
+        ctx.fillRect(tableStartX - cellPadding, currentY - cellPadding, tableWidth, rowHeight);
+        ctx.fillStyle = '#111827';
+        ctx.textAlign = 'left';
+        ctx.fillText(row.step.toString(), tableStartX, currentY);
+        ctx.fillText(row.action, tableStartX + 80, currentY);
+        ctx.textAlign = 'right';
+        ctx.fillText(row.value, tableStartX + tableWidth - (cellPadding*2), currentY);
+        currentY += rowHeight;
+    });
 
     const link = document.createElement('a');
     link.download = `estrategia_${activeTab}_${new Date().toISOString()}.png`;
@@ -503,8 +560,8 @@ export default function StrategyBoard() {
 
   return (
     <div className="w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-             <div className="lg:col-span-2 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+             <div className="xl:col-span-2 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
                 {isClient && mapImage ? (
                     <>
                         <Image
@@ -547,7 +604,7 @@ export default function StrategyBoard() {
                 )}
             </div>
 
-            <div className="w-full">
+            <div className="w-full xl:col-span-1 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-8">
                  <Card className="w-full shrink-0">
                     <CardContent className="p-4">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -642,7 +699,7 @@ export default function StrategyBoard() {
                         </Tabs>
                     </CardContent>
                 </Card>
-                 <div className="mt-8">
+                 <div className="md:col-span-2 xl:col-span-1">
                     <StrategySteps instructions={instructions} />
                  </div>
             </div>

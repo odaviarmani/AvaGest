@@ -19,9 +19,9 @@ export default function StrategySteps({ instructions }: StrategyStepsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Passo a Passo da Programação</CardTitle>
+        <CardTitle>Pseudocódigo</CardTitle>
         <CardDescription>
-            Instruções geradas a partir do desenho para o robô.
+            Pseudocódigo gerado a partir do desenho para o robô.
         </CardDescription>
       </CardHeader>
       <CardContent>
