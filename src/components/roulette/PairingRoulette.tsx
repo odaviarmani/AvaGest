@@ -6,6 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Play, History, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 const NAMES = ["Davi", "Carol", "Lorenzo", "Thiago", "Miguel", "Italo"];
 const AREAS = ["Projeto de Inovação", "Construção", "Programação"];
@@ -81,38 +87,77 @@ export default function PairingRoulette() {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Roleta de Duplas Fixa</CardTitle>
-        <CardDescription>Sorteia 3 duplas e atribui uma área para cada uma.</CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center gap-6">
-          <div className="text-center p-4 border rounded-lg bg-secondary/50 w-full">
-              <p className="font-semibold">Nomes:</p>
-              <p className="text-sm text-muted-foreground">{NAMES.join(', ')}</p>
-              <Separator className="my-2"/>
-              <p className="font-semibold">Áreas:</p>
-              <p className="text-sm text-muted-foreground">{AREAS.join(', ')}</p>
-          </div>
-        <Button onClick={handleSpin} disabled={isSpinning} size="lg">
-          <Play className="mr-2 h-5 w-5" />
-          {isSpinning ? 'Sorteando...' : 'Sortear Duplas'}
-        </Button>
+    <div className="space-y-8">
+        <Card className="w-full">
+        <CardHeader>
+            <CardTitle>Roleta de Duplas Fixa</CardTitle>
+            <CardDescription>Sorteia 3 duplas e atribui uma área para cada uma.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center gap-6">
+            <div className="text-center p-4 border rounded-lg bg-secondary/50 w-full">
+                <p className="font-semibold">Nomes:</p>
+                <p className="text-sm text-muted-foreground">{NAMES.join(', ')}</p>
+                <Separator className="my-2"/>
+                <p className="font-semibold">Áreas:</p>
+                <p className="text-sm text-muted-foreground">{AREAS.join(', ')}</p>
+            </div>
+            <Button onClick={handleSpin} disabled={isSpinning} size="lg">
+            <Play className="mr-2 h-5 w-5" />
+            {isSpinning ? 'Sorteando...' : 'Sortear Duplas'}
+            </Button>
 
-        {latestResult && !isSpinning && (
-          <div className="mt-4 w-full p-4 bg-primary/20 text-primary-foreground rounded-lg animate-in fade-in-50">
-            <h3 className="text-lg font-bold text-center mb-2 text-primary">Resultado do Sorteio</h3>
-            <ul className="space-y-2">
-              {latestResult.pairs.map((p, index) => (
-                <li key={index} className="p-2 bg-background rounded-md shadow-sm">
-                  <p className="font-semibold">{p.pair.join(' & ')}</p>
-                  <p className="text-sm text-muted-foreground">{p.area}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
+            {latestResult && !isSpinning && (
+            <div className="mt-4 w-full p-4 bg-primary/20 text-primary-foreground rounded-lg animate-in fade-in-50">
+                <h3 className="text-lg font-bold text-center mb-2 text-primary">Resultado do Sorteio</h3>
+                <ul className="space-y-2">
+                {latestResult.pairs.map((p, index) => (
+                    <li key={index} className="p-2 bg-background rounded-md shadow-sm">
+                    <p className="font-semibold">{p.pair.join(' & ')}</p>
+                    <p className="text-sm text-muted-foreground">{p.area}</p>
+                    </li>
+                ))}
+                </ul>
+            </div>
+            )}
+        </CardContent>
+        </Card>
+        {isClient && history.length > 0 && (
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <History className="h-6 w-6"/>
+                        Histórico de Sorteios
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="h-[400px] pr-4">
+                        <div className="space-y-4">
+                            {history.map(result => (
+                                <div key={result.id} className="p-4 border rounded-lg bg-secondary/30">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-sm font-medium text-muted-foreground">{result.date}</p>
+                                            <ul className="mt-2 space-y-1">
+                                                {result.pairs.map((p, index) => (
+                                                    <li key={index}>
+                                                        <span className="font-semibold">{p.pair.join(' & ')}:</span>
+                                                        <span className="ml-2 text-muted-foreground">{p.area}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <Button variant="ghost" size="icon" onClick={() => handleDeleteHistoryItem(result.id)}>
+                                            <Trash2 className="h-5 w-5 text-red-500" />
+                                            <span className="sr-only">Excluir sorteio</span>
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
