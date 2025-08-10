@@ -51,7 +51,6 @@ export default function StrategyBoard() {
   const [endPoint, setEndPoint] = useState<{ x: number, y: number } | null>(null);
   const [mapImage, setMapImage] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const [metrics, setMetrics] = useState({ totalLength: 0, angles: [] as number[] });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -69,21 +68,42 @@ export default function StrategyBoard() {
     }
   }, []);
 
-  const calculateMetrics = useCallback((tab: string) => {
-    const currentHistory = historyRef.current[tab] || [];
-    const currentStep = currentStepRef.current[tab] || 0;
-    const drawings = currentHistory.slice(0, currentStep);
+  const drawLineWithMetrics = (
+    ctx: CanvasRenderingContext2D,
+    x1: number, y1: number, x2: number, y2: number,
+    lineColor: string, lineThickness: number
+  ) => {
+    // Draw the main line
+    ctx.beginPath();
+    ctx.strokeStyle = lineColor;
+    ctx.lineWidth = lineThickness;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
 
-    let totalLength = 0;
-    const angles: number[] = [];
+    // Calculate metrics
+    const pixelLength = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    const cmLength = (pixelLength / (canvasRef.current?.width || 1)) * MAT_WIDTH_CM;
+    const angleRad = Math.atan2(y2 - y1, x2 - x1);
+    const angleDeg = angleRad * (180 / Math.PI);
+    const text = `${cmLength.toFixed(1)}cm, ${angleDeg.toFixed(1)}°`;
 
-    drawings.forEach(drawing => {
-        totalLength += drawing[0].lengthCm;
-        angles.push(drawing[0].angleDeg);
-    });
+    // Draw the text
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    const textOffset = 10;
 
-    setMetrics({ totalLength, angles });
-  }, []);
+    ctx.font = 'bold 12px sans-serif';
+    ctx.fillStyle = 'black';
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 2;
+
+    // Position text slightly above the midpoint
+    ctx.strokeText(text, midX, midY - textOffset);
+    ctx.fillText(text, midX, midY - textOffset);
+  };
 
   const drawAllLines = useCallback(() => {
     const canvas = canvasRef.current;
@@ -101,33 +121,18 @@ export default function StrategyBoard() {
     
     drawings.forEach((drawing) => {
       const [x1, y1, x2, y2, c, lw] = drawing.line;
-      ctx.beginPath();
-      ctx.strokeStyle = c;
-      ctx.lineWidth = lw;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.stroke();
+      drawLineWithMetrics(ctx, x1, y1, x2, y2, c, lw);
     });
 
     if (isDrawing && startPoint && endPoint) {
-        ctx.beginPath();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.moveTo(startPoint.x, startPoint.y);
-        ctx.lineTo(endPoint.x, endPoint.y);
-        ctx.stroke();
+        drawLineWithMetrics(ctx, startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth);
     }
   }, [activeTab, startPoint, endPoint, color, lineWidth, isDrawing, mapImage]);
 
 
   useEffect(() => {
     drawAllLines();
-    calculateMetrics(activeTab);
-  }, [activeTab, drawAllLines, calculateMetrics]);
+  }, [activeTab, drawAllLines]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -195,7 +200,12 @@ export default function StrategyBoard() {
   };
 
   const stopDrawing = () => {
-    if(!isDrawing || !startPoint || !endPoint) return;
+    if(!isDrawing || !startPoint || !endPoint || (startPoint.x === endPoint.x && startPoint.y === endPoint.y)) {
+        setIsDrawing(false);
+        setStartPoint(null);
+        setEndPoint(null);
+        return
+    };
     
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -222,7 +232,6 @@ export default function StrategyBoard() {
     setStartPoint(null);
     setEndPoint(null);
     drawAllLines();
-    calculateMetrics(activeTab);
   };
 
   const handleDrawing = (event: React.MouseEvent | React.TouchEvent) => {
@@ -239,7 +248,6 @@ export default function StrategyBoard() {
     if (currentStepRef.current[activeTab] > 0) {
         currentStepRef.current[activeTab]--;
         drawAllLines();
-        calculateMetrics(activeTab);
     }
   };
 
@@ -248,7 +256,6 @@ export default function StrategyBoard() {
     if (currentStepRef.current[activeTab] < history.length) {
       currentStepRef.current[activeTab]++;
       drawAllLines();
-      calculateMetrics(activeTab);
     }
   };
 
@@ -256,7 +263,6 @@ export default function StrategyBoard() {
     historyRef.current[activeTab] = [];
     currentStepRef.current[activeTab] = 0;
     drawAllLines();
-    calculateMetrics(activeTab);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -280,7 +286,7 @@ export default function StrategyBoard() {
 
   return (
     <div className="w-full flex flex-col md:flex-row gap-8 items-start">
-        <div className="relative w-full aspect-[1.84/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+        <div className="relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
             {isClient && mapImage ? (
                 <>
                     <Image
@@ -375,32 +381,6 @@ export default function StrategyBoard() {
                             Limpar Desenho
                         </Button>
 
-                         {isClient && mapImage && (
-                            <div className="space-y-4 pt-4 border-t">
-                                <h3 className="flex items-center text-base font-semibold">
-                                    <BarChart2 className="mr-2 h-5 w-5" />
-                                    Métricas da Saída
-                                </h3>
-                                <div className="text-sm space-y-2">
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Distância Total:</span>
-                                        <span className="font-medium">{metrics.totalLength.toFixed(1)} cm</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Nº de Passos:</span>
-                                        <span className="font-medium">{metrics.angles.length}</span>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Ângulos (Graus):</p>
-                                        <p className="font-medium break-words">
-                                            {metrics.angles.map(a => a.toFixed(1)).join('°, ') || 'N/A'}
-                                            {metrics.angles.length > 0 && '°'}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
                          {mapImage && (
                             <Button variant="secondary" onClick={() => {
                                 setMapImage(null);
@@ -421,5 +401,3 @@ export default function StrategyBoard() {
     </div>
   );
 }
-
-    
