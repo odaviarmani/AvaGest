@@ -63,6 +63,9 @@ export default function RootLayout({
                     <Button variant="ghost" asChild>
                         <Link href="/apps">Apps</Link>
                     </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/rubricas">Rubricas</Link>
+                    </Button>
                 </nav>
                 <ThemeToggle />
             </header>
