@@ -19,4 +19,16 @@ export type Task = z.infer<typeof taskSchema>;
 export type Priority = Task['priority'];
 export type ColumnId = Task['columnId'];
 
-    
+export const attachmentSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, 'O nome é obrigatório'),
+    runExit: z.string().min(1, 'A saída é obrigatória'),
+    missions: z.string().min(1, 'As missões são obrigatórias'),
+    points: z.coerce.number().min(0, 'Os pontos devem ser positivos'),
+    avgTime: z.coerce.number().min(0, 'O tempo deve ser positivo'),
+    swapTime: z.coerce.number().min(0, 'O tempo de troca deve ser positivo'),
+    precision: z.coerce.number().min(0).max(100, 'A precisão é de 0 a 100'),
+    imageUrl: z.string().optional().nullable(),
+});
+
+export type Attachment = z.infer<typeof attachmentSchema>;
