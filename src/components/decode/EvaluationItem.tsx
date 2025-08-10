@@ -1,12 +1,13 @@
 "use client";
 
-import React from 'react';
+import React, { useRef } from 'react';
+import html2canvas from 'html2canvas';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Download } from 'lucide-react';
 import { Evaluation, CRITERIA } from '@/lib/types';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
@@ -21,6 +22,8 @@ const MAX_SCORE = CRITERIA.length * 4;
 const PASSING_PERCENTAGE = 70;
 
 export default function EvaluationItem({ evaluation, onUpdate, onDelete }: EvaluationItemProps) {
+    const cardRef = useRef<HTMLDivElement>(null);
+
     const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         onUpdate({ ...evaluation, name: e.target.value });
     };
@@ -35,22 +38,44 @@ export default function EvaluationItem({ evaluation, onUpdate, onDelete }: Evalu
         });
     };
 
+    const handleDownloadPNG = () => {
+        if (cardRef.current) {
+            html2canvas(cardRef.current, {
+                useCORS: true,
+                backgroundColor: null, 
+                scale: 2, 
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `avaliacao_${evaluation.name.replace(/\s+/g, '_')}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    };
+
+
     const totalScore = Object.values(evaluation.scores).reduce((sum, score) => sum + score, 0);
     const percentage = (totalScore / MAX_SCORE) * 100;
     const isGood = percentage >= PASSING_PERCENTAGE;
 
     return (
-        <Card>
+        <Card ref={cardRef}>
             <CardHeader className="flex-row items-center justify-between">
                 <Input
                     value={evaluation.name}
                     onChange={handleNameChange}
                     className="text-lg font-bold border-0 shadow-none focus-visible:ring-1 w-full"
                 />
-                <Button variant="ghost" size="icon" onClick={() => onDelete(evaluation.id)}>
-                    <Trash2 className="h-5 w-5 text-red-500" />
-                    <span className="sr-only">Excluir item</span>
-                </Button>
+                <div className="flex items-center">
+                    <Button variant="ghost" size="icon" onClick={handleDownloadPNG}>
+                        <Download className="h-5 w-5" />
+                        <span className="sr-only">Download como PNG</span>
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => onDelete(evaluation.id)}>
+                        <Trash2 className="h-5 w-5 text-red-500" />
+                        <span className="sr-only">Excluir item</span>
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
