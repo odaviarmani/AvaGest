@@ -32,7 +32,7 @@ export default function DocumentationPage() {
           <Link href="https://sheets.google.com/create" target="_blank">
             <Sheet className="mr-2 h-4 w-4" />
             Nova Planilha
-          </Button>
+          </Link>
         </Button>
       </div>
     </div>
