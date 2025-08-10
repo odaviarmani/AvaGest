@@ -16,11 +16,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const validUsers: Record<string, string> = {
     "Davi": "jesuscura10",
-    "Carol": "carol",
+    "Carol": "123456",
     "Lorenzo": "123456",
-    "Thiago": "thiago",
-    "Miguel": "miguel",
-    "Italo": "italo",
+    "Thiago": "123456",
+    "Miguel": "123456",
+    "Italo": "123456",
 }
 
 export const USERS = Object.keys(validUsers);

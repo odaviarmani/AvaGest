@@ -5,6 +5,8 @@ import { Heart, Gamepad2 } from "lucide-react";
 import DrawingCanvas from "@/components/core-values/DrawingCanvas";
 import TicTacToe from "@/components/core-values/TicTacToe";
 import { useAuth } from "@/contexts/AuthContext";
+import MemoryGame from "@/components/core-values/MemoryGame";
+import FlappyBirdGame from "@/components/core-values/FlappyBirdGame";
 
 export default function CoreValuesPage() {
   const { username } = useAuth();
@@ -24,7 +26,7 @@ export default function CoreValuesPage() {
         <CoreValuesTracker />
       </div>
 
-      {username !== 'Lorenzo' && (
+      {username === 'Davi' && (
         <div className="border-t pt-12">
            <header className="mb-8 flex items-center gap-4">
             <Gamepad2 className="w-8 h-8 text-primary" />
@@ -38,6 +40,8 @@ export default function CoreValuesPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
               <DrawingCanvas />
               <TicTacToe />
+              <MemoryGame />
+              <FlappyBirdGame />
           </div>
         </div>
       )}
