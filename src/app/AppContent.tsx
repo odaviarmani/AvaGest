@@ -56,10 +56,10 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                       <Link href="/apps">Apps</Link>
                   </Button>
                   <Button variant="ghost" asChild>
-                      <Link href="/notificacoes">Notificações</Link>
+                      <Link href="/rubricas">Rubricas</Link>
                   </Button>
                   <Button variant="ghost" asChild>
-                      <Link href="/rubricas">Rubricas</Link>
+                      <Link href="/notificacoes">Notificações</Link>
                   </Button>
               </nav>
               <div className="flex items-center gap-4">

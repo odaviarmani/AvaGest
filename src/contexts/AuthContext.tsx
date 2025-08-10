@@ -13,6 +13,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const validUsers: Record<string, string> = {
+    "Davi": "jesuscura10",
+    "Carol": "carol",
+    "Lorenzo": "123456",
+    "Thiago": "thiago",
+    "Miguel": "miguel",
+    "Italo": "italo",
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
@@ -31,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (user: string, pass: string): boolean => {
-    if ((user === 'Davi' && pass === 'jesuscura10') || (user === 'Lorenzo' && pass === '123456')) {
+    if (validUsers[user] && validUsers[user] === pass) {
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('username', user);
       setIsAuthenticated(true);
