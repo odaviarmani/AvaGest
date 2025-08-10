@@ -592,8 +592,8 @@ export default function StrategyBoard() {
 
   return (
     <div className="w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 items-start">
-             <div className="lg:col-span-1 xl:col-span-1 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+             <div className="lg:col-span-2 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
                 {isClient && mapImage ? (
                     <>
                         <Image
@@ -636,11 +636,7 @@ export default function StrategyBoard() {
                 )}
             </div>
 
-            <div className="lg:col-span-1 xl:col-span-1">
-                <StrategySteps instructions={instructions} />
-            </div>
-
-            <div className="w-full lg:col-span-2 xl:col-span-1">
+            <div className="lg:col-span-1">
                  <Card className="w-full shrink-0">
                     <CardContent className="p-4">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -735,6 +731,10 @@ export default function StrategyBoard() {
                         </Tabs>
                     </CardContent>
                 </Card>
+            </div>
+            
+            <div className="lg:col-span-1">
+                <StrategySteps instructions={instructions} />
             </div>
         </div>
 
