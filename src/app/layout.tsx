@@ -32,7 +32,7 @@ export default function RootLayout({
         >
             <header className="p-4 border-b shrink-0 flex items-center justify-between">
                 <div className="w-10"></div>
-                <nav className="flex items-center gap-1">
+                <nav className="flex items-center gap-1 flex-wrap justify-center">
                     <Button variant="ghost" asChild>
                         <Link href="/kanban">Kanban</Link>
                     </Button>
@@ -57,6 +57,9 @@ export default function RootLayout({
                     <Button variant="ghost" asChild>
                         <Link href="/documentation">Documentação</Link>
                     </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/apps">Apps</Link>
+                    </Button>
                 </nav>
                 <ThemeToggle />
             </header>
@@ -64,7 +67,7 @@ export default function RootLayout({
             <footer className="p-4 border-t shrink-0 flex items-center justify-center">
             <iframe
                 style={{ borderRadius: '12px' }}
-                src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
+                src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
                 width="80%"
                 height="80"
                 allowFullScreen={false}
