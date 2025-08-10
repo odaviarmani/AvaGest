@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -9,6 +9,8 @@ import { Slider } from '@/components/ui/slider';
 import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import Image from 'next/image';
+import StrategySteps from './StrategySteps';
+import type { Instruction } from './StrategySteps';
 
 const COLORS = [
   { value: "#ef4444", label: "Vermelho" },
@@ -129,6 +131,7 @@ export default function StrategyBoard() {
   const [endPoint, setEndPoint] = useState<{ x: number, y: number } | null>(null);
   const [mapImage, setMapImage] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [_, setForceRender] = useState(0); // Helper to force re-render on history change
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -156,6 +159,8 @@ export default function StrategyBoard() {
     }
     drawMainCanvas();
   }, []);
+  
+  const forceUpdate = () => setForceRender(v => v + 1);
 
   const saveData = useCallback(() => {
       if(!isClient) return;
@@ -165,7 +170,9 @@ export default function StrategyBoard() {
       } catch (error) {
         console.error("Failed to save drawing history to localStorage:", error);
       }
+      forceUpdate();
   }, [isClient]);
+  
 
    const drawMetricsOnCanvas = (
     ctx: CanvasRenderingContext2D,
@@ -177,8 +184,8 @@ export default function StrategyBoard() {
     ctx.fillStyle = 'black';
     ctx.strokeStyle = 'white';
     ctx.lineWidth = 2;
-    ctx.strokeText(text, x, y - textOffset);
-    ctx.fillText(text, x, y - textOffset);
+    ctx.strokeText(text, x + textOffset, y - textOffset);
+    ctx.fillText(text, x + textOffset, y - textOffset);
   };
 
   const drawAllLinesForCanvas = useCallback(() => {
@@ -209,13 +216,16 @@ export default function StrategyBoard() {
         ctx.stroke();
         drawMetricsOnCanvas(ctx, lengthText, (x1 + x2) / 2, (y1 + y2) / 2);
 
-        const prevDrawing = index > 0 ? drawings[index - 1] : null;
+        const prevDrawing = index > 0 ? drawings.filter(d => d.type === 'line')[index-1] as Line : null;
         if (prevDrawing && prevDrawing.type === 'line') {
           const angleDiff = drawing.angleDeg - prevDrawing.angleDeg;
-          const displayAngle = Math.round((angleDiff + 180) % 360 - 180);
-          if(displayAngle !== 0) {
-            const angleText = `${displayAngle}°`;
-            drawMetricsOnCanvas(ctx, angleText, x1, y1, -5);
+          const displayAngle = Math.round((angleDiff + 360) % 360);
+          if(displayAngle !== 0 && displayAngle !== 360) {
+            const finalAngle = displayAngle > 180 ? 360 - displayAngle : displayAngle;
+            if (finalAngle > 1) { // Threshold to avoid tiny angle displays
+                 const angleText = `${Math.round(finalAngle)}°`;
+                 drawMetricsOnCanvas(ctx, angleText, x1, y1, -5);
+            }
           }
         }
       } else if (drawing.type === 'circle') {
@@ -253,7 +263,7 @@ export default function StrategyBoard() {
 
   useEffect(() => {
     drawMainCanvas();
-  }, [drawMainCanvas, activeTab]);
+  }, [drawMainCanvas, activeTab, _]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -441,11 +451,60 @@ export default function StrategyBoard() {
     link.href = downloadCanvas.toDataURL('image/png');
     link.click();
   };
+  
+    const instructions = useMemo((): Instruction[] => {
+        if (!isClient) return [];
+        const currentDrawings = (historyRef.current[activeTab] || [])
+            .slice(0, currentStepRef.current[activeTab] || 0)
+            .flat()
+            .filter(d => d.type === 'line') as Line[];
+
+        const result: Instruction[] = [];
+        let stepCounter = 1;
+
+        currentDrawings.forEach((line, index) => {
+            // Add move instruction
+            result.push({
+                step: stepCounter++,
+                action: "Mover para frente",
+                value: `${line.lengthCm.toFixed(1)}cm`,
+            });
+
+            // Add turn instruction if there is a next line
+            if (index < currentDrawings.length - 1) {
+                const nextLine = currentDrawings[index + 1];
+                const angle1 = line.angleDeg;
+                const angle2 = nextLine.angleDeg;
+
+                // Calculate cross product to determine direction
+                const p1 = { x: line.points[2] - line.points[0], y: line.points[3] - line.points[1] };
+                const p2 = { x: nextLine.points[2] - nextLine.points[0], y: nextLine.points[3] - nextLine.points[1] };
+                const crossProduct = p1.x * p2.y - p1.y * p2.x;
+                const direction = crossProduct > 0 ? "Direita" : "Esquerda";
+                
+                let angleDiff = Math.abs(angle1 - angle2);
+                if (angleDiff > 180) {
+                    angleDiff = 360 - angleDiff;
+                }
+
+                if (angleDiff > 1) { // Threshold for turning
+                    result.push({
+                        step: stepCounter++,
+                        action: `Girar para ${direction}`,
+                        value: `${angleDiff.toFixed(0)}°`,
+                    });
+                }
+            }
+        });
+
+        return result;
+    }, [activeTab, isClient, _]);
+
 
   return (
-    <>
-        <div className="w-full flex flex-col md:flex-row gap-8 items-start">
-            <div className="relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+    <div className="w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+             <div className="lg:col-span-2 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
                 {isClient && mapImage ? (
                     <>
                         <Image
@@ -488,100 +547,105 @@ export default function StrategyBoard() {
                 )}
             </div>
 
-            <Card className="w-full md:w-[320px] shrink-0">
-                <CardContent className="p-4">
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-3">
+            <div className="w-full">
+                 <Card className="w-full shrink-0">
+                    <CardContent className="p-4">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                            <TabsList className="grid w-full grid-cols-3">
+                                {Array.from({ length: NUM_SAIDAS }, (_, i) => (
+                                <TabsTrigger key={i + 1} value={`saida-${i + 1}`}>
+                                    Saída {i + 1}
+                                </TabsTrigger>
+                                ))}
+                            </TabsList>
+                            
+                            <div className="p-1 pt-4 space-y-6">
+                                <div>
+                                    <Label className="text-base font-semibold">Ferramenta</Label>
+                                    <RadioGroup value={drawingTool} onValueChange={(v) => setDrawingTool(v as DrawingTool)} className="grid grid-cols-2 gap-2 mt-2">
+                                        <Label htmlFor="tool-line" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                            <RadioGroupItem value="line" id="tool-line" className="sr-only"/>
+                                            <MousePointer className="w-4 h-4"/> Linha
+                                        </Label>
+                                        <Label htmlFor="tool-circle" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                            <RadioGroupItem value="circle" id="tool-circle" className="sr-only"/>
+                                            <Circle className="w-4 h-4"/> Círculo
+                                        </Label>
+                                    </RadioGroup>
+                                </div>
+
+                                <div>
+                                    <Label className="text-base font-semibold">Cor do Pincel</Label>
+                                    <RadioGroup value={color} onValueChange={setColor} className="grid grid-cols-4 gap-2 mt-2">
+                                        {COLORS.map(c => (
+                                            <div key={c.value} className="flex items-center">
+                                                <RadioGroupItem value={c.value} id={c.value} className="sr-only" />
+                                                <Label htmlFor={c.value} className="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer" style={{ backgroundColor: c.value, 'boxShadow': color === c.value ? `0 0 0 3px ${c.value}` : 'none' }}></Label>
+                                            </div>
+                                        ))}
+                                    </RadioGroup>
+                                </div>
+                                
+                                <div>
+                                    <Label htmlFor="lineWidth" className="text-base font-semibold">
+                                        Espessura: {lineWidth}px
+                                    </Label>
+                                    <Slider
+                                        id="lineWidth"
+                                        value={[lineWidth]}
+                                        onValueChange={(val) => setLineWidth(val[0])}
+                                        min={1}
+                                        max={20}
+                                        step={1}
+                                        className="mt-2"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
+                                        <Undo className="mr-2 h-4 w-4"/> Desfazer
+                                    </Button>
+                                    <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length)}>
+                                        <Redo className="mr-2 h-4 w-4"/> Refazer
+                                    </Button>
+                                </div>
+                                
+                                <Button variant="destructive" onClick={clearCanvas} className="w-full" disabled={!mapImage}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Limpar Desenho
+                                </Button>
+
+                                <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Baixar Desenho
+                                </Button>
+
+                                {mapImage && (
+                                    <Button variant="secondary" onClick={() => {
+                                        setMapImage(null);
+                                        localStorage.removeItem('strategyMapImage');
+                                        const { history, steps } = initialHistory();
+                                        historyRef.current = history;
+                                        currentStepRef.current = steps;
+                                        saveData();
+                                        drawMainCanvas();
+                                    }} className="w-full mt-2">
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Trocar Imagem
+                                    </Button>
+                                )}
+                            </div>
+
                             {Array.from({ length: NUM_SAIDAS }, (_, i) => (
-                            <TabsTrigger key={i + 1} value={`saida-${i + 1}`}>
-                                Saída {i + 1}
-                            </TabsTrigger>
+                                <TabsContent key={i + 1} value={`saida-${i + 1}`} />
                             ))}
-                        </TabsList>
-                        
-                        <div className="p-4 space-y-6">
-                            <div>
-                                <Label className="text-base font-semibold">Ferramenta</Label>
-                                 <RadioGroup value={drawingTool} onValueChange={(v) => setDrawingTool(v as DrawingTool)} className="grid grid-cols-2 gap-2 mt-2">
-                                    <Label htmlFor="tool-line" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
-                                        <RadioGroupItem value="line" id="tool-line" className="sr-only"/>
-                                        <MousePointer className="w-4 h-4"/> Linha
-                                    </Label>
-                                    <Label htmlFor="tool-circle" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
-                                        <RadioGroupItem value="circle" id="tool-circle" className="sr-only"/>
-                                        <Circle className="w-4 h-4"/> Círculo
-                                    </Label>
-                                </RadioGroup>
-                            </div>
-
-                            <div>
-                                <Label className="text-base font-semibold">Cor do Pincel</Label>
-                                <RadioGroup value={color} onValueChange={setColor} className="grid grid-cols-4 gap-2 mt-2">
-                                    {COLORS.map(c => (
-                                        <div key={c.value} className="flex items-center">
-                                            <RadioGroupItem value={c.value} id={c.value} className="sr-only" />
-                                            <Label htmlFor={c.value} className="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer" style={{ backgroundColor: c.value, 'boxShadow': color === c.value ? `0 0 0 3px ${c.value}` : 'none' }}></Label>
-                                        </div>
-                                    ))}
-                                </RadioGroup>
-                            </div>
-                            
-                            <div>
-                                <Label htmlFor="lineWidth" className="text-base font-semibold">
-                                    Espessura: {lineWidth}px
-                                </Label>
-                                <Slider
-                                    id="lineWidth"
-                                    value={[lineWidth]}
-                                    onValueChange={(val) => setLineWidth(val[0])}
-                                    min={1}
-                                    max={20}
-                                    step={1}
-                                    className="mt-2"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
-                                <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
-                                    <Undo className="mr-2 h-4 w-4"/> Desfazer
-                                </Button>
-                                <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length)}>
-                                    <Redo className="mr-2 h-4 w-4"/> Refazer
-                                </Button>
-                            </div>
-                            
-                            <Button variant="destructive" onClick={clearCanvas} className="w-full" disabled={!mapImage}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Limpar Desenho
-                            </Button>
-
-                            <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Baixar Desenho
-                            </Button>
-
-                            {mapImage && (
-                                <Button variant="secondary" onClick={() => {
-                                    setMapImage(null);
-                                    localStorage.removeItem('strategyMapImage');
-                                    const { history, steps } = initialHistory();
-                                    historyRef.current = history;
-                                    currentStepRef.current = steps;
-                                    saveData();
-                                    drawMainCanvas();
-                                }} className="w-full mt-2">
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Trocar Imagem
-                                </Button>
-                            )}
-                        </div>
-
-                        {Array.from({ length: NUM_SAIDAS }, (_, i) => (
-                            <TabsContent key={i + 1} value={`saida-${i + 1}`} />
-                        ))}
-                    </Tabs>
-                </CardContent>
-            </Card>
+                        </Tabs>
+                    </CardContent>
+                </Card>
+                 <div className="mt-8">
+                    <StrategySteps instructions={instructions} />
+                 </div>
+            </div>
         </div>
 
         {isClient && mapImage && (
@@ -597,6 +661,6 @@ export default function StrategyBoard() {
                 </div>
             </div>
         )}
-    </>
+    </div>
   );
 }
