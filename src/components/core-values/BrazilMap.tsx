@@ -16,7 +16,9 @@ const BrazilMap: React.FC<BrazilMapProps> = ({ teamsByState }) => {
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 1000 960"
         aria-label="Mapa do Brasil"
-        className="w-full h-auto"
+        width="1000" 
+        height="960"
+        className="max-w-full h-auto"
       >
         {Object.entries(BRAZIL_STATES).map(([uf, { path, name }]) => {
           const hasTeam = teamsByState[uf] && teamsByState[uf].length > 0;
