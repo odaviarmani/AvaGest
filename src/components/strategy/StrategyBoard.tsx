@@ -13,10 +13,10 @@ import StrategySteps from './StrategySteps';
 import type { Instruction } from './StrategySteps';
 
 const COLORS = [
-    { value: "#f43f5e", label: "Vermelho" },
+    { value: "#ef4444", label: "Vermelho" },
     { value: "#f97316", label: "Laranja" },
     { value: "#eab308", label: "Amarelo" },
-    { value: "#22c55e", label: "Verde" },
+    { value: "#84cc16", label: "Verde" },
     { value: "#3b82f6", label: "Azul" },
     { value: "#a855f7", label: "Roxo" },
     { value: "#ec4899", label: "Rosa" },
@@ -592,8 +592,8 @@ export default function StrategyBoard() {
 
   return (
     <div className="w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
-             <div className="lg:col-span-2 xl:col-span-3 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 items-start">
+             <div className="lg:col-span-1 xl:col-span-1 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
                 {isClient && mapImage ? (
                     <>
                         <Image
@@ -636,7 +636,11 @@ export default function StrategyBoard() {
                 )}
             </div>
 
-            <div className="w-full lg:col-span-1 xl:col-span-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-8">
+            <div className="lg:col-span-1 xl:col-span-1">
+                <StrategySteps instructions={instructions} />
+            </div>
+
+            <div className="w-full lg:col-span-2 xl:col-span-1">
                  <Card className="w-full shrink-0">
                     <CardContent className="p-4">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -731,9 +735,6 @@ export default function StrategyBoard() {
                         </Tabs>
                     </CardContent>
                 </Card>
-                 <div>
-                    <StrategySteps instructions={instructions} />
-                 </div>
             </div>
         </div>
 
