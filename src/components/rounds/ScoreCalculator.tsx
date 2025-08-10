@@ -281,9 +281,9 @@ export default function ScoreCalculator() {
             <AccordionItem value="m14">
                 <AccordionTrigger>M14 – Fórum (35)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
-                    <Label>Discos da Missão no fórum: {missions.m14_forum.artifacts}</Label>
+                    <Label>Artefatos no fórum: {missions.m14_forum.artifacts}</Label>
                     <Slider value={[missions.m14_forum.artifacts]} onValueChange={([val]) => setMissions(prev => ({...prev, m14_forum: { artifacts: val }}))} max={7} step={1} />
-                    <p className="text-sm text-muted-foreground">+5 pontos por disco</p>
+                    <p className="text-sm text-muted-foreground">+5 pontos por artefato</p>
                 </AccordionContent>
             </AccordionItem>
              <AccordionItem value="m15">
