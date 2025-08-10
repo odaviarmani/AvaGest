@@ -19,6 +19,12 @@ const PIPE_INTERVAL = 1500; // ms
 
 const HIGH_SCORE_KEY = 'flappyBirdHighScore';
 
+interface Pipe {
+    x: number;
+    y: number;
+    passed?: boolean;
+}
+
 export default function FlappyBirdGame() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [score, setScore] = useState(0);
@@ -29,7 +35,7 @@ export default function FlappyBirdGame() {
     const gameLoopRef = useRef<number>();
     const birdY = useRef(GAME_HEIGHT / 2);
     const birdVelocity = useRef(0);
-    const pipes = useRef<{ x: number, y: number }[]>([]);
+    const pipes = useRef<Pipe[]>([]);
     const lastPipeTime = useRef(0);
     const frameCount = useRef(0);
     
@@ -110,7 +116,7 @@ export default function FlappyBirdGame() {
         if (time - lastPipeTime.current > PIPE_INTERVAL) {
             lastPipeTime.current = time;
             const pipeY = Math.random() * (GAME_HEIGHT - PIPE_GAP - 100) + 50;
-            pipes.current.push({ x: GAME_WIDTH, y: pipeY });
+            pipes.current.push({ x: GAME_WIDTH, y: pipeY, passed: false });
         }
 
         // Move pipes
