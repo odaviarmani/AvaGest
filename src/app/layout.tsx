@@ -5,84 +5,11 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { AuthProvider, AuthState } from '@/contexts/AuthContext';
-import { LogOut } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'KanbanFlow',
   description: 'Organize suas tarefas com um Kanban board interativo.',
 };
-
-function AppLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col min-h-screen">
-      <header className="p-4 border-b shrink-0 flex items-center justify-between">
-          <AuthState>
-              {({ user, logout }) => (
-                  <div className="flex items-center gap-4">
-                      {user && (
-                          <>
-                              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">
-                                  Olá, {user.email}
-                              </span>
-                              <Button variant="ghost" size="icon" onClick={logout}>
-                                  <LogOut className="h-4 w-4" />
-                                  <span className="sr-only">Sair</span>
-                              </Button>
-                          </>
-                      )}
-                  </div>
-              )}
-          </AuthState>
-          <nav className="flex items-center gap-1 flex-wrap justify-center">
-              <Button variant="ghost" asChild>
-                  <Link href="/kanban">Kanban</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                  <Link href="/calendar">Calendário</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                  <Link href="/roulette">Roletas (Revezamento)</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                  <Link href="/decode">Decode</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                  <Link href="/core-values">Core Values</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                  <Link href="/rounds">Rounds</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                  <Link href="/strategy">Estratégia</Link>
-              </Button>
-               <Button variant="ghost" asChild>
-                  <Link href="/attachments">Anexos</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                  <Link href="/apps">Apps</Link>
-              </Button>
-              <Button variant="ghost" asChild>
-                  <Link href="/rubricas">Rubricas</Link>
-              </Button>
-          </nav>
-          <ThemeToggle />
-      </header>
-      <main className="flex-1 flex flex-col">{children}</main>
-      <footer className="p-4 border-t shrink-0 flex items-center justify-center">
-      <iframe
-          style={{ borderRadius: '12px' }}
-          src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
-          width="80%"
-          height="80"
-          allowFullScreen={false}
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-          loading="lazy"
-      ></iframe>
-      </footer>
-      </div>
-  )
-}
 
 export default function RootLayout({
   children,
@@ -103,19 +30,54 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-            <AuthProvider>
-                <AuthState>
-                    {({ user, loading }) => {
-                        if (loading) {
-                            return <div className="flex-1 flex items-center justify-center"><p>Carregando...</p></div>;
-                        }
-                        if (user) {
-                            return <AppLayout>{children}</AppLayout>;
-                        }
-                        return <>{children}</>;
-                    }}
-                </AuthState>
-            </AuthProvider>
+            <header className="p-4 border-b shrink-0 flex items-center justify-between">
+                <div />
+                <nav className="flex items-center gap-1 flex-wrap justify-center">
+                    <Button variant="ghost" asChild>
+                        <Link href="/kanban">Kanban</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/calendar">Calendário</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/roulette">Roletas (Revezamento)</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/decode">Decode</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/core-values">Core Values</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/rounds">Rounds</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/strategy">Estratégia</Link>
+                    </Button>
+                     <Button variant="ghost" asChild>
+                        <Link href="/attachments">Anexos</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/apps">Apps</Link>
+                    </Button>
+                    <Button variant="ghost" asChild>
+                        <Link href="/rubricas">Rubricas</Link>
+                    </Button>
+                </nav>
+                <ThemeToggle />
+            </header>
+            <main className="flex-1 flex flex-col">{children}</main>
+            <footer className="p-4 border-t shrink-0 flex items-center justify-center">
+            <iframe
+                style={{ borderRadius: '12px' }}
+                src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
+                width="80%"
+                height="80"
+                allowFullScreen={false}
+                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                loading="lazy"
+            ></iframe>
+            </footer>
             <Toaster />
         </ThemeProvider>
       </body>
