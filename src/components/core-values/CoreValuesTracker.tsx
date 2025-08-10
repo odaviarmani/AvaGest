@@ -77,7 +77,9 @@ export default function CoreValuesTracker() {
           <CardDescription>Visualize as equipes com quem nos conectamos em todo o Brasil.</CardDescription>
         </CardHeader>
         <CardContent>
-          <BrazilMap teamsByState={teamsByState} />
+          <div className="relative w-full aspect-[1000/960] flex items-center justify-center">
+            <BrazilMap teamsByState={teamsByState} />
+          </div>
         </CardContent>
       </Card>
       
