@@ -87,7 +87,6 @@ export default function ScoreCalculator() {
     
     if (state.m13_communication_network) score += 20;
 
-    // Precision Tokens calculation
     const precisionTokensLeft = state.precision_tokens;
     if (precisionTokensLeft <= 5) score += 10;
     if (precisionTokensLeft <= 4) score += 5;
@@ -252,5 +251,3 @@ export default function ScoreCalculator() {
     </Card>
   );
 }
-
-    
