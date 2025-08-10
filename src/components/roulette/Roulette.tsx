@@ -14,6 +14,7 @@ export default function Roulette({ options }: RouletteProps) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rotationRef = useRef(0);
 
   const drawRoulette = (rotation = 0) => {
     const canvas = canvasRef.current;
@@ -21,7 +22,7 @@ export default function Roulette({ options }: RouletteProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const arc = Math.PI / (options.length / 2);
+    const arc = Math.PI * 2 / options.length;
     const radius = canvas.width / 2 - 10;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -42,8 +43,11 @@ export default function Roulette({ options }: RouletteProps) {
       ctx.font = "bold 14px Arial";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.rotate(i * arc + arc / 2);
-      ctx.fillText(option, radius / 2 + 10, 0);
+      const textAngle = i * arc + arc / 2;
+      ctx.rotate(textAngle);
+      // Adjust text position to be more centered in the slice
+      const textRadius = radius * 0.6;
+      ctx.fillText(option, textRadius, 0);
       ctx.restore();
     });
 
@@ -52,9 +56,9 @@ export default function Roulette({ options }: RouletteProps) {
     // Draw pointer
     ctx.fillStyle = 'black';
     ctx.beginPath();
-    ctx.moveTo(canvas.width / 2 - 10, 10);
-    ctx.lineTo(canvas.width / 2 + 10, 10);
-    ctx.lineTo(canvas.width / 2, 30);
+    ctx.moveTo(canvas.width / 2 - 10, 5);
+    ctx.lineTo(canvas.width / 2 + 10, 5);
+    ctx.lineTo(canvas.width / 2, 25);
     ctx.closePath();
     ctx.fill();
   };
@@ -69,23 +73,33 @@ export default function Roulette({ options }: RouletteProps) {
     setResult(null);
 
     let start = 0;
-    const spinAngle = Math.random() * 2 * Math.PI + Math.PI * 4; // Spin at least 2 times
+    const spinAngle = Math.random() * 4 * Math.PI + Math.PI * 8; // Spin at least 4 times
     const duration = 5000; // 5 seconds
+    const startRotation = rotationRef.current;
     
     const animate = (time: number) => {
         if (!start) start = time;
         const elapsed = time - start;
+        
+        // Ease-out cubic function
         const t = Math.min(elapsed / duration, 1);
-        const easeOut = t * (2 - t); // Ease-out quadratic
-        const currentAngle = spinAngle * easeOut;
+        const progress = 1 - Math.pow(1 - t, 3);
+
+        const currentAngle = startRotation + spinAngle * progress;
+        rotationRef.current = currentAngle;
         drawRoulette(currentAngle);
         
         if (t < 1) {
             requestAnimationFrame(animate);
         } else {
-            const finalAngle = spinAngle % (2 * Math.PI);
-            const winningSegment = Math.floor((2 * Math.PI - finalAngle) / (2 * Math.PI / options.length));
-            setResult(options[winningSegment]);
+            const finalAngle = currentAngle % (2 * Math.PI);
+            const arc = (2 * Math.PI) / options.length;
+            // The pointer is at the top (pointing down), which is Math.PI / 2 or 90 degrees on the circle.
+            // We need to adjust the angle to find the correct segment.
+            const pointerAngle = 2 * Math.PI - finalAngle + Math.PI / 2;
+            const winningSegmentIndex = Math.floor(pointerAngle / arc) % options.length;
+            
+            setResult(options[winningSegmentIndex]);
             setIsSpinning(false);
         }
     };
@@ -102,7 +116,7 @@ export default function Roulette({ options }: RouletteProps) {
             {isSpinning ? 'Girando...' : 'Girar Roleta'}
         </Button>
         {result && !isSpinning && (
-            <div className="mt-4 p-4 bg-primary text-primary-foreground rounded-lg">
+            <div className="mt-4 p-4 bg-primary text-primary-foreground rounded-lg animate-in fade-in-50">
                 <p className="text-lg font-bold">O escolhido é: {result}</p>
             </div>
         )}
