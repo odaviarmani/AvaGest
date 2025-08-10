@@ -63,8 +63,9 @@ const averageHsl = (colors: [number, number, number][]): [number, number, number
     ];
 };
 
-const getTaskBackgroundColor = (areas: string[], priority: Priority) => {
-    const baseColors = areas.map(area => parseHsl(areaColorMap[area] || "0 0 70"));
+const getTaskBackgroundColor = (areas: string[] | string, priority: Priority) => {
+    const areasArray = Array.isArray(areas) ? areas : [areas];
+    const baseColors = areasArray.map(area => parseHsl(areaColorMap[area] || "0 0 70"));
     const [h, s, initialL] = averageHsl(baseColors);
 
     // Adjust lightness based on priority
@@ -84,6 +85,8 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCar
     'Média': 'text-yellow-700 dark:text-yellow-300',
     'Alta': 'text-red-700 dark:text-red-300'
   }
+
+  const taskAreas = Array.isArray(task.area) ? task.area : [task.area];
 
   return (
     <Card 
@@ -117,7 +120,7 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCar
                 <span className="ml-1">{task.priority}</span>
             </Badge>
             <div className="flex flex-wrap gap-1 justify-end">
-                {task.area.map(a => <Badge key={a} variant="outline" className="bg-card/80">{a}</Badge>)}
+                {taskAreas.map(a => <Badge key={a} variant="outline" className="bg-card/80">{a}</Badge>)}
             </div>
         </div>
         <div className="flex flex-col gap-2 text-sm">
