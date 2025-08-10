@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart, LineChart, Pie, Sector, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart } from 'recharts';
+import { BarChart, LineChart, Pie, Sector, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Cell } from 'recharts';
 import { type RoundData } from './RoundLog';
 import { STAGE_NAMES } from './RoundsTimer';
 import { Skeleton } from '../ui/skeleton';
@@ -155,7 +155,7 @@ export default function RoundsStats() {
                             <PieChart>
                                 <Pie data={stats.errorCausesData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
                                     {stats.errorCausesData.map((entry, index) => (
-                                        <Pie key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                     ))}
                                 </Pie>
                                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }} />
@@ -176,7 +176,11 @@ export default function RoundsStats() {
                                 <YAxis type="category" dataKey="name" width={80}/>
                                 <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}/>
                                 <Legend />
-                                <Bar dataKey="value" name="Vezes Utilizado" fill="hsl(var(--primary))" />
+                                <Bar dataKey="value" name="Vezes Utilizado">
+                                    {stats.programmingTypesData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                    ))}
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
