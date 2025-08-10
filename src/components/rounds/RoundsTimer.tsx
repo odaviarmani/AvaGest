@@ -131,7 +131,9 @@ export default function RoundsTimer() {
     }
   }, [seconds, isActive, handlePause, currentStageIndex]);
 
-  const startTimers = () => {
+  const startTimers = useCallback(() => {
+    if (mainTimerIntervalRef.current) return;
+
     setIsActive(true);
 
     mainTimerIntervalRef.current = setInterval(() => {
@@ -145,7 +147,7 @@ export default function RoundsTimer() {
     }
     
     stageStartTimeRef.current = performance.now();
-  };
+  }, [stageTimings.length]);
 
   const handleStart = () => {
     if (seconds > 0) {
@@ -160,7 +162,7 @@ export default function RoundsTimer() {
   const handleAnimationFinish = useCallback(() => {
     setShowAnimation(false);
     startTimers();
-  },[]);
+  },[startTimers]);
 
   const handleResetTimer = () => {
     handlePause();
