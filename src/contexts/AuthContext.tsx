@@ -23,6 +23,8 @@ const validUsers: Record<string, string> = {
     "Italo": "italo",
 }
 
+export const USERS = Object.keys(validUsers);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);

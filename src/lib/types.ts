@@ -55,6 +55,7 @@ export const customNotificationSchema = z.object({
     title: z.string().min(1, "O título é obrigatório."),
     message: z.string().min(1, "A mensagem é obrigatória."),
     date: z.string(),
+    targetUsers: z.array(z.string()).optional(),
 });
 
 export type CustomNotification = z.infer<typeof customNotificationSchema>;
