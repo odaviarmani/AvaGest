@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import NotificationForm from '@/components/notifications/NotificationForm';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface Notification {
     id: string;
@@ -75,7 +76,7 @@ const staticNotifications: Notification[] = [
 const mapCustomToUINotification = (custom: CustomNotification): Notification => ({
   ...custom,
   type: 'custom',
-  icon: <MessageSquare className="h-6 w-6 text-purple-500" />
+  icon: <MessageSquare className="h-6 w-6 text-primary" />
 });
 
 
@@ -149,7 +150,13 @@ export default function NotificationsPage() {
             <div className="max-w-3xl mx-auto space-y-4">
                 {isClient && notifications.length > 0 ? (
                     notifications.map((notification) => (
-                        <Card key={notification.id} className="shadow-sm hover:shadow-md transition-shadow">
+                        <Card 
+                            key={notification.id} 
+                            className={cn(
+                                "shadow-sm hover:shadow-md transition-shadow",
+                                notification.type === 'custom' && 'bg-primary/10 border-primary/50'
+                            )}
+                        >
                             <CardContent className="p-4 flex items-start gap-4">
                                 <div className="flex-shrink-0 mt-1">
                                     {notification.icon}
