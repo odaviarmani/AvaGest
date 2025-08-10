@@ -92,31 +92,47 @@ export default function RoundsTimer() {
         mainTimerIntervalRef.current = null;
     }
 
-    // Pause sub-timer logic
-    if (stageStartTimeRef.current !== null && stageTimings[currentStageIndex]?.duration === null) {
+    if (stageStartTimeRef.current !== null) {
       const now = performance.now();
       const elapsed = now - stageStartTimeRef.current;
-      const newTimings = [...stageTimings];
-      // Important: We add to the existing duration if it's not null (which it won't be if we paused before)
-      const currentDuration = stageTimings[currentStageIndex]?.duration || 0;
-      newTimings[currentStageIndex] = { ...newTimings[currentStageIndex], duration: currentDuration + elapsed };
-      setStageTimings(newTimings);
+      
+      setStageTimings(prevTimings => {
+        const newTimings = [...prevTimings];
+        const currentDuration = newTimings[currentStageIndex]?.duration || 0;
+        newTimings[currentStageIndex] = { 
+          ...newTimings[currentStageIndex], 
+          duration: currentDuration + elapsed 
+        };
+        return newTimings;
+      });
+
       stageStartTimeRef.current = null; // Mark as paused
     }
-  }, [currentStageIndex, stageTimings]);
+  }, [currentStageIndex]);
 
 
   useEffect(() => {
     if (isActive && seconds <= 0) {
         handlePause();
+        if (stageStartTimeRef.current !== null) {
+            const now = performance.now();
+            const elapsed = now - stageStartTimeRef.current;
+            setStageTimings(prevTimings => {
+                const newTimings = [...prevTimings];
+                const currentDuration = newTimings[currentStageIndex].duration || 0;
+                newTimings[currentStageIndex] = { ...newTimings[currentStageIndex], duration: currentDuration + elapsed };
+                return newTimings;
+            });
+            stageStartTimeRef.current = null;
+        }
     }
-  }, [seconds, isActive, handlePause]);
+  }, [seconds, isActive, handlePause, currentStageIndex]);
 
   const startTimers = () => {
     setIsActive(true);
 
     mainTimerIntervalRef.current = setInterval(() => {
-        setSeconds(s => s - 1);
+        setSeconds(s => s > 0 ? s - 1 : 0);
     }, 1000);
 
     if (stageTimings.length === 0) {
@@ -125,13 +141,6 @@ export default function RoundsTimer() {
         setCurrentStageIndex(0);
     }
     
-    // If the stage was paused, its duration will be a number. If starting new, it's null.
-    if(stageTimings[currentStageIndex]?.duration === null){
-        const newTimings = [...(stageTimings.length > 0 ? stageTimings : STAGE_NAMES.map(name => ({name, duration: null})))];
-        newTimings[currentStageIndex] = {...newTimings[currentStageIndex], duration: 0};
-        setStageTimings(newTimings);
-    }
-
     stageStartTimeRef.current = performance.now();
   };
 
@@ -164,32 +173,39 @@ export default function RoundsTimer() {
   };
 
   const handleNextStage = () => {
-      if (!isActive || currentStageIndex >= STAGE_NAMES.length) return;
+      if (!isActive || currentStageIndex >= STAGE_NAMES.length - 1) {
+        if(isActive && currentStageIndex === STAGE_NAMES.length -1) {
+            // This is the final stage, so just stop it.
+            const now = performance.now();
+            if (stageStartTimeRef.current !== null) {
+                const elapsed = now - stageStartTimeRef.current;
+                setStageTimings(prevTimings => {
+                    const newTimings = [...prevTimings];
+                    const currentDuration = newTimings[currentStageIndex].duration || 0;
+                    newTimings[currentStageIndex] = { ...newTimings[currentStageIndex], duration: currentDuration + elapsed };
+                    return newTimings;
+                });
+            }
+            stageStartTimeRef.current = null;
+            handlePause();
+        }
+        return;
+      };
 
       const now = performance.now();
 
       if (stageStartTimeRef.current !== null) {
           const elapsed = now - stageStartTimeRef.current;
-          const newTimings = [...stageTimings];
-          // If the stage was paused, we get its partial duration, otherwise start from 0
-          const currentDuration = newTimings[currentStageIndex].duration || 0;
-          newTimings[currentStageIndex] = { ...newTimings[currentStageIndex], duration: currentDuration + elapsed };
-          setStageTimings(newTimings);
+          setStageTimings(prevTimings => {
+            const newTimings = [...prevTimings];
+            const currentDuration = newTimings[currentStageIndex].duration || 0;
+            newTimings[currentStageIndex] = { ...newTimings[currentStageIndex], duration: currentDuration + elapsed };
+            return newTimings;
+          });
       }
       
       stageStartTimeRef.current = now;
-
-      if(currentStageIndex < STAGE_NAMES.length - 1) {
-          const nextIndex = currentStageIndex + 1;
-          setCurrentStageIndex(nextIndex);
-          // Initialize next stage duration
-          const newTimings = [...stageTimings];
-          newTimings[nextIndex] = {...newTimings[nextIndex], duration: 0};
-          setStageTimings(newTimings);
-      } else {
-        // Last stage finished, stop timers
-        handlePause();
-      }
+      setCurrentStageIndex(prevIndex => prevIndex + 1);
   };
 
 
