@@ -123,6 +123,12 @@ function RouletteEditor({ roulette, onDelete, onUpdate }: RouletteEditorProps) {
         handleUpdate(title, options);
     }
 
+    const handleSpinResult = (result: string) => {
+        const updatedOptions = options.filter(option => option.name !== result);
+        setOptions(updatedOptions);
+        handleUpdate(title, updatedOptions);
+    };
+
     return (
         <Card className="flex flex-col">
             <CardHeader className='flex-row items-center justify-between'>
@@ -161,7 +167,7 @@ function RouletteEditor({ roulette, onDelete, onUpdate }: RouletteEditorProps) {
                 </div>
             </CardContent>
             <CardFooter className="flex items-center justify-center">
-                 <Roulette options={options.map(o => o.name)} />
+                 <Roulette options={options.map(o => o.name)} onSpinResult={handleSpinResult} />
             </CardFooter>
         </Card>
     );

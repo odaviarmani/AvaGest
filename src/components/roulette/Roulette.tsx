@@ -6,11 +6,12 @@ import { Play } from 'lucide-react';
 
 interface RouletteProps {
   options: string[];
+  onSpinResult: (result: string) => void;
 }
 
 const colors = ["#FFC107", "#FF5722", "#4CAF50", "#2196F3", "#9C27B0", "#E91E63", "#00BCD4"];
 
-export default function Roulette({ options }: RouletteProps) {
+export default function Roulette({ options, onSpinResult }: RouletteProps) {
   const [isSpinning, setIsSpinning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -18,7 +19,21 @@ export default function Roulette({ options }: RouletteProps) {
 
   const drawRoulette = (rotation = 0) => {
     const canvas = canvasRef.current;
-    if (!canvas || !options.length) return;
+    if (!canvas || !options.length) {
+        const ctx = canvas?.getContext('2d');
+        if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(canvas.width / 2, canvas.height / 2);
+            ctx.fillStyle = "gray";
+            ctx.font = "14px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("Adicione opções", 0, 0);
+            ctx.restore();
+        }
+        return
+    };
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -100,7 +115,11 @@ export default function Roulette({ options }: RouletteProps) {
             const winningAngle = (2 * Math.PI - finalAngle + pointerAngle) % (2 * Math.PI);
             const winningSegmentIndex = Math.floor(winningAngle / arc);
             
-            setResult(options[winningSegmentIndex]);
+            const winningResult = options[winningSegmentIndex];
+            setResult(winningResult);
+            if (onSpinResult) {
+                onSpinResult(winningResult);
+            }
             setIsSpinning(false);
         }
     };
