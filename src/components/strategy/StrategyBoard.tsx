@@ -13,14 +13,14 @@ import StrategySteps from './StrategySteps';
 import type { Instruction } from './StrategySteps';
 
 const COLORS = [
-  { value: "#ef4444", label: "Vermelho" },
-  { value: "#f97316", label: "Laranja" },
-  { value: "#eab308", label: "Amarelo" },
-  { value: "#22c55e", label: "Verde" },
-  { value: "#3b82f6", label: "Azul" },
-  { value: "#8b5cf6", label: "Roxo" },
-  { value: "#ec4899", label: "Rosa" },
-  { value: "#14b8a6", label: "Ciano" },
+    { value: "#ef4444", label: "Vermelho" },
+    { value: "#f97316", label: "Laranja" },
+    { value: "#eab308", label: "Amarelo" },
+    { value: "#22c55e", label: "Verde" },
+    { value: "#3b82f6", label: "Azul" },
+    { value: "#8b5cf6", label: "Roxo" },
+    { value: "#ec4899", label: "Rosa" },
+    { value: "#14b8a6", label: "Ciano" },
 ];
 const NUM_SAIDAS = 6;
 const MAT_WIDTH_CM = 240;
@@ -198,7 +198,7 @@ export default function StrategyBoard() {
     
     const currentHistory = historyRef.current[activeTab] || [];
     const currentStep = currentStepRef.current[activeTab] || 0;
-    const drawings = currentHistory.slice(0, currentStep).flat();
+    const drawings = (currentStep > 0 ? currentHistory.slice(0, currentStep) : []).flat();
     
     drawings.forEach((drawing, index) => {
       ctx.strokeStyle = drawing.color;
@@ -262,7 +262,7 @@ export default function StrategyBoard() {
 
   const drawMainCanvas = useCallback(() => {
       drawAllLinesForCanvas();
-  }, [activeTab, drawAllLinesForCanvas]);
+  }, [drawAllLinesForCanvas]);
 
   useEffect(() => {
     drawMainCanvas();
@@ -560,8 +560,8 @@ export default function StrategyBoard() {
 
   return (
     <div className="w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-             <div className="lg:col-span-3 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+             <div className="lg:col-span-1 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
                 {isClient && mapImage ? (
                     <>
                         <Image
@@ -604,7 +604,7 @@ export default function StrategyBoard() {
                 )}
             </div>
 
-            <div className="w-full lg:col-span-2 grid grid-cols-1 gap-8">
+            <div className="w-full lg:col-span-1 grid grid-cols-1 md:grid-cols-2 gap-8">
                  <Card className="w-full shrink-0">
                     <CardContent className="p-4">
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
