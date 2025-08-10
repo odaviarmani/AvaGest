@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (user: string, pass: string) => boolean;
   logout: () => void;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -24,7 +25,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = (user: string, pass: string): boolean => {
-    if (user === 'Davi' && pass === 'jesuscura10') {
+    if ((user === 'Davi' && pass === 'jesuscura10') || (user === 'Lorenzo' && pass === '123456')) {
       localStorage.setItem('isAuthenticated', 'true');
       setIsAuthenticated(true);
       router.push('/kanban');
