@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import html2canvas from 'html2canvas';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Button } from '../ui/button';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Download } from 'lucide-react';
 
 interface RubricItem {
     id: string;
@@ -25,6 +26,8 @@ const LEVEL_LABELS = ["Iniciante", "Em Desenvolvimento", "Realizado", "Excede"];
 export default function RubricTable({ title, data, storageKey }: RubricTableProps) {
     const [scores, setScores] = useState<Record<string, number>>({});
     const [isClient, setIsClient] = useState(false);
+    const cardRef = useRef<HTMLDivElement>(null);
+
 
     useEffect(() => {
         setIsClient(true);
@@ -51,13 +54,32 @@ export default function RubricTable({ title, data, storageKey }: RubricTableProp
         setScores({});
     }
 
+    const handleDownloadPNG = () => {
+        if (cardRef.current) {
+            html2canvas(cardRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+                scale: 2,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `rubrica_${title.replace(/\s+/g, '_')}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    };
+
     const totalScore = Object.values(scores).reduce((sum, score) => sum + score, 0);
     const maxScore = data.length * 4;
 
     return (
-        <Card>
-            <CardHeader>
+        <Card ref={cardRef}>
+            <CardHeader className="flex-row items-center justify-between">
                 <CardTitle>{title}</CardTitle>
+                <Button variant="ghost" size="icon" onClick={handleDownloadPNG}>
+                    <Download className="h-5 w-5" />
+                    <span className="sr-only">Baixar como PNG</span>
+                </Button>
             </CardHeader>
             <CardContent>
                 <Table>
