@@ -20,7 +20,7 @@ interface RubricTableProps {
 }
 
 const LEVELS = [1, 2, 3, 4];
-const LEVEL_LABELS = ["Beginning", "Developing", "Accomplished", "Exceeds"];
+const LEVEL_LABELS = ["Iniciante", "Em Desenvolvimento", "Realizado", "Excede"];
 
 export default function RubricTable({ title, data, storageKey }: RubricTableProps) {
     const [scores, setScores] = useState<Record<string, number>>({});
@@ -63,8 +63,8 @@ export default function RubricTable({ title, data, storageKey }: RubricTableProp
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead className="w-[50%]">Criterion</TableHead>
-                            <TableHead className="text-center">Level (1-4)</TableHead>
+                            <TableHead className="w-[50%]">Critério</TableHead>
+                            <TableHead className="text-center">Nível (1-4)</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -92,11 +92,11 @@ export default function RubricTable({ title, data, storageKey }: RubricTableProp
             </CardContent>
              <CardFooter className="flex-col items-end gap-4">
                 <div className="text-lg font-bold">
-                    Total Score: <span className="text-primary">{totalScore} / {maxScore}</span>
+                    Pontuação Total: <span className="text-primary">{totalScore} / {maxScore}</span>
                 </div>
                  <Button variant="destructive" size="sm" onClick={handleReset}>
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Reset Scores
+                    Resetar Pontuações
                 </Button>
             </CardFooter>
         </Card>
