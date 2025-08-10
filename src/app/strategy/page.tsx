@@ -9,7 +9,7 @@ export default function StrategyPage() {
           Planeje e visualize as estratégias de jogo desenhando sobre o mapa.
         </p>
       </header>
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center">
         <StrategyBoard />
       </div>
     </div>

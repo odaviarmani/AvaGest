@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Undo, Trash2, Redo, Upload, Download } from 'lucide-react';
-import { Card, CardContent } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import Image from 'next/image';
 
 const COLORS = [
@@ -51,10 +51,12 @@ export default function StrategyBoard() {
   const [endPoint, setEndPoint] = useState<{ x: number, y: number } | null>(null);
   const [mapImage, setMapImage] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [_, forceRender] = useState({}); // Helper to force re-renders for previews
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const previewCanvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
   
   const historyRef = useRef<Record<string, DrawingHistory[]>>({});
   const currentStepRef = useRef<Record<string, number>>({});
@@ -76,7 +78,7 @@ export default function StrategyBoard() {
         historyRef.current = history;
         currentStepRef.current = steps;
     }
-
+    forceRender({}); // render previews on initial load
   }, []);
 
   const saveData = useCallback(() => {
@@ -87,6 +89,7 @@ export default function StrategyBoard() {
       } catch (error) {
         console.error("Failed to save drawing history to localStorage:", error);
       }
+      forceRender({}); // Re-render previews on data change
   }, [isClient]);
 
    const drawMetricsOnCanvas = (
@@ -125,48 +128,96 @@ export default function StrategyBoard() {
     drawMetricsOnCanvas(ctx, lengthText, midX, midY);
   };
 
-  const drawAllLines = useCallback(() => {
-    const canvas = canvasRef.current;
+  const drawAllLinesForCanvas = useCallback((canvas: HTMLCanvasElement | null, saidaKey: string, isPreview: boolean) => {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-
+    
+    // Scale for previews
+    const scale = isPreview ? (canvas.width / (canvasRef.current?.width || canvas.width)) : 1;
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    if (!mapImage) return;
-
-    const currentHistory = historyRef.current[activeTab] || [];
-    const currentStep = currentStepRef.current[activeTab] || 0;
+    const currentHistory = historyRef.current[saidaKey] || [];
+    const currentStep = currentStepRef.current[saidaKey] || 0;
     const drawings = currentHistory.slice(0, currentStep).flat();
     
     drawings.forEach((drawing, index) => {
       const [x1, y1, x2, y2, c, lw] = drawing.line;
-      const lengthText = `${drawing.lengthCm.toFixed(1)}cm`;
-      drawLineWithMetrics(ctx, x1, y1, x2, y2, c, lw, lengthText);
+      const scaledX1 = x1 * scale;
+      const scaledY1 = y1 * scale;
+      const scaledX2 = x2 * scale;
+      const scaledY2 = y2 * scale;
+      const scaledLw = lw * scale;
 
-      // Draw transition angle
-      if (index > 0) {
-        const prevDrawing = drawings[index - 1];
-        const angleDiff = drawing.angleDeg - prevDrawing.angleDeg;
-        // Normalize angle to be between -180 and 180
-        const displayAngle = Math.round((angleDiff + 180) % 360 - 180);
-        const angleText = `${displayAngle}°`;
-        drawMetricsOnCanvas(ctx, angleText, x1, y1, -5);
+      // Don't draw metrics on previews to avoid clutter
+      if (isPreview) {
+        ctx.beginPath();
+        ctx.strokeStyle = c;
+        ctx.lineWidth = Math.max(1, scaledLw); // Ensure line is at least 1px
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.moveTo(scaledX1, scaledY1);
+        ctx.lineTo(scaledX2, scaledY2);
+        ctx.stroke();
+      } else {
+        const lengthText = `${drawing.lengthCm.toFixed(1)}cm`;
+        drawLineWithMetrics(ctx, scaledX1, scaledY1, scaledX2, scaledY2, c, scaledLw, lengthText);
+        
+        // Draw transition angle
+        if (index > 0) {
+          const prevDrawing = drawings[index - 1];
+          const angleDiff = drawing.angleDeg - prevDrawing.angleDeg;
+          const displayAngle = Math.round((angleDiff + 180) % 360 - 180);
+          const angleText = `${displayAngle}°`;
+          drawMetricsOnCanvas(ctx, angleText, scaledX1, scaledY1, -5);
+        }
       }
     });
 
-    if (isDrawing && startPoint && endPoint) {
+    if (!isPreview && isDrawing && startPoint && endPoint) {
         const pixelLength = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
         const cmLength = (pixelLength / (canvasRef.current?.width || 1)) * MAT_WIDTH_CM;
         const lengthText = `${cmLength.toFixed(1)}cm`;
         drawLineWithMetrics(ctx, startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth, lengthText);
     }
-  }, [activeTab, startPoint, endPoint, color, lineWidth, isDrawing, mapImage]);
+  }, [isDrawing, startPoint, endPoint, color, lineWidth]);
+
+
+  const drawMainCanvas = useCallback(() => {
+      drawAllLinesForCanvas(canvasRef.current, activeTab, false);
+  }, [activeTab, drawAllLinesForCanvas]);
+
+  const drawPreviewCanvases = useCallback(() => {
+    for (let i = 1; i <= NUM_SAIDAS; i++) {
+        const saidaKey = `saida-${i}`;
+        const previewCanvas = previewCanvasRefs.current[saidaKey];
+        if (previewCanvas) {
+            const previewCtx = previewCanvas.getContext('2d');
+            if (previewCtx && mapImage) {
+                const img = new window.Image();
+                img.src = mapImage;
+                img.onload = () => {
+                    previewCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+                    drawAllLinesForCanvas(previewCanvas, saidaKey, true);
+                };
+                 if (img.complete) {
+                    previewCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
+                    drawAllLinesForCanvas(previewCanvas, saidaKey, true);
+                }
+            }
+        }
+    }
+  }, [mapImage, drawAllLinesForCanvas]);
 
 
   useEffect(() => {
-    drawAllLines();
-  }, [activeTab, drawAllLines]);
+    drawMainCanvas();
+  }, [activeTab, drawMainCanvas]);
+
+  useEffect(() => {
+    drawPreviewCanvases();
+  }, [activeTab, mapImage, _, drawPreviewCanvases]); // Re-draw previews when map or data changes
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -176,7 +227,7 @@ export default function StrategyBoard() {
         const { width, height } = image.getBoundingClientRect();
         canvas.width = width;
         canvas.height = height;
-        drawAllLines();
+        drawMainCanvas();
       };
       
       const observer = new ResizeObserver(resizeCanvas);
@@ -196,7 +247,7 @@ export default function StrategyBoard() {
         window.removeEventListener('resize', resizeCanvas);
       };
     }
-  }, [drawAllLines, mapImage]);
+  }, [drawMainCanvas, mapImage]);
 
   const getCoordinates = (event: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -265,7 +316,7 @@ export default function StrategyBoard() {
     setIsDrawing(false);
     setStartPoint(null);
     setEndPoint(null);
-    drawAllLines();
+    drawMainCanvas();
     saveData();
   };
 
@@ -276,13 +327,13 @@ export default function StrategyBoard() {
     if (!coords) return;
     
     setEndPoint(coords);
-    drawAllLines();
+    drawMainCanvas();
   };
 
   const undo = () => {
     if ((currentStepRef.current[activeTab] || 0) > 0) {
         currentStepRef.current[activeTab]--;
-        drawAllLines();
+        drawMainCanvas();
         saveData();
     }
   };
@@ -291,7 +342,7 @@ export default function StrategyBoard() {
     const history = historyRef.current[activeTab] || [];
     if ((currentStepRef.current[activeTab] || 0) < history.length) {
       currentStepRef.current[activeTab]++;
-      drawAllLines();
+      drawMainCanvas();
       saveData();
     }
   };
@@ -299,7 +350,7 @@ export default function StrategyBoard() {
   const clearCanvas = () => {
     historyRef.current[activeTab] = [];
     currentStepRef.current[activeTab] = 0;
-    drawAllLines();
+    drawMainCanvas();
     saveData();
   };
 
@@ -346,130 +397,160 @@ export default function StrategyBoard() {
   };
 
   return (
-    <div className="w-full flex flex-col md:flex-row gap-8 items-start">
-        <div className="relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
-            {isClient && mapImage ? (
-                <>
-                    <Image
-                        ref={imageRef}
-                        src={mapImage}
-                        alt="Mapa da FLL"
-                        fill
-                        className='object-contain'
-                        priority
-                        unoptimized
-                        crossOrigin="anonymous" // Required for canvas toDataURL
-                    />
-                    <canvas
-                        ref={canvasRef}
-                        className="absolute top-0 left-0 w-full h-full cursor-crosshair"
-                        onMouseDown={startDrawing}
-                        onMouseUp={stopDrawing}
-                        onMouseLeave={stopDrawing}
-                        onMouseMove={handleDrawing}
-                        onTouchStart={startDrawing}
-                        onTouchEnd={stopDrawing}
-                        onTouchMove={handleDrawing}
-                    />
-                </>
-            ) : (
-                <div className="flex flex-col gap-4 items-center">
-                     <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageUpload}
-                        accept="image/*"
-                        className="hidden"
-                    />
-                    <Button onClick={() => fileInputRef.current?.click()}>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Fazer Upload do Mapa
-                    </Button>
-                    <p className="text-sm text-muted-foreground">Carregue a imagem do tapete da temporada.</p>
-                </div>
-            )}
+    <>
+        <div className="w-full flex flex-col md:flex-row gap-8 items-start">
+            <div className="relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+                {isClient && mapImage ? (
+                    <>
+                        <Image
+                            ref={imageRef}
+                            src={mapImage}
+                            alt="Mapa da FLL"
+                            fill
+                            className='object-contain'
+                            priority
+                            unoptimized
+                            crossOrigin="anonymous" // Required for canvas toDataURL
+                        />
+                        <canvas
+                            ref={canvasRef}
+                            className="absolute top-0 left-0 w-full h-full cursor-crosshair"
+                            onMouseDown={startDrawing}
+                            onMouseUp={stopDrawing}
+                            onMouseLeave={stopDrawing}
+                            onMouseMove={handleDrawing}
+                            onTouchStart={startDrawing}
+                            onTouchEnd={stopDrawing}
+                            onTouchMove={handleDrawing}
+                        />
+                    </>
+                ) : (
+                    <div className="flex flex-col gap-4 items-center">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageUpload}
+                            accept="image/*"
+                            className="hidden"
+                        />
+                        <Button onClick={() => fileInputRef.current?.click()}>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Fazer Upload do Mapa
+                        </Button>
+                        <p className="text-sm text-muted-foreground">Carregue a imagem do tapete da temporada.</p>
+                    </div>
+                )}
+            </div>
+
+            <Card className="w-full md:w-[320px] shrink-0">
+                <CardContent className="p-4">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <TabsList className="grid w-full grid-cols-3">
+                            {Array.from({ length: NUM_SAIDAS }, (_, i) => (
+                            <TabsTrigger key={i + 1} value={`saida-${i + 1}`}>
+                                Saída {i + 1}
+                            </TabsTrigger>
+                            ))}
+                        </TabsList>
+                        
+                        <div className="p-4 space-y-6">
+                            <div>
+                                <Label className="text-base font-semibold">Cor do Pincel</Label>
+                                <RadioGroup value={color} onValueChange={setColor} className="grid grid-cols-4 gap-2 mt-2">
+                                    {COLORS.map(c => (
+                                        <div key={c.value} className="flex items-center">
+                                            <RadioGroupItem value={c.value} id={c.value} className="sr-only" />
+                                            <Label htmlFor={c.value} className="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer" style={{ backgroundColor: c.value, 'boxShadow': color === c.value ? `0 0 0 3px ${c.value}` : 'none' }}></Label>
+                                        </div>
+                                    ))}
+                                </RadioGroup>
+                            </div>
+                            
+                            <div>
+                                <Label htmlFor="lineWidth" className="text-base font-semibold">
+                                    Espessura do Traço: {lineWidth}px
+                                </Label>
+                                <Slider
+                                    id="lineWidth"
+                                    value={[lineWidth]}
+                                    onValueChange={(val) => setLineWidth(val[0])}
+                                    min={1}
+                                    max={20}
+                                    step={1}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
+                                    <Undo className="mr-2 h-4 w-4"/> Desfazer
+                                </Button>
+                                <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length)}>
+                                    <Redo className="mr-2 h-4 w-4"/> Refazer
+                                </Button>
+                            </div>
+                            
+                            <Button variant="destructive" onClick={clearCanvas} className="w-full" disabled={!mapImage}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Limpar Desenho
+                            </Button>
+
+                            <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Baixar Desenho
+                            </Button>
+
+                            {mapImage && (
+                                <Button variant="secondary" onClick={() => {
+                                    setMapImage(null);
+                                    localStorage.removeItem('strategyMapImage');
+                                    const { history, steps } = initialHistory();
+                                    historyRef.current = history;
+                                    currentStepRef.current = steps;
+                                    saveData();
+                                    drawMainCanvas();
+                                }} className="w-full mt-2">
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Trocar Imagem
+                                </Button>
+                            )}
+                        </div>
+
+                        {Array.from({ length: NUM_SAIDAS }, (_, i) => (
+                            <TabsContent key={i + 1} value={`saida-${i + 1}`} />
+                        ))}
+                    </Tabs>
+                </CardContent>
+            </Card>
         </div>
 
-        <Card className="w-full md:w-[320px] shrink-0">
-            <CardContent className="p-4">
-                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                        {Array.from({ length: NUM_SAIDAS }, (_, i) => (
-                        <TabsTrigger key={i + 1} value={`saida-${i + 1}`}>
-                            Saída {i + 1}
-                        </TabsTrigger>
-                        ))}
-                    </TabsList>
-                    
-                    <div className="p-4 space-y-6">
-                        <div>
-                            <Label className="text-base font-semibold">Cor do Pincel</Label>
-                            <RadioGroup value={color} onValueChange={setColor} className="grid grid-cols-4 gap-2 mt-2">
-                                {COLORS.map(c => (
-                                    <div key={c.value} className="flex items-center">
-                                        <RadioGroupItem value={c.value} id={c.value} className="sr-only" />
-                                        <Label htmlFor={c.value} className="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer" style={{ backgroundColor: c.value, 'boxShadow': color === c.value ? `0 0 0 3px ${c.value}` : 'none' }}></Label>
+        {isClient && mapImage && (
+            <div className="mt-12 w-full">
+                <h2 className="text-2xl font-bold mb-4 text-center">Visão Geral das Saídas</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {Array.from({ length: NUM_SAIDAS }, (_, i) => {
+                        const saidaKey = `saida-${i + 1}`;
+                        return (
+                            <Card key={saidaKey} className="overflow-hidden">
+                                <CardHeader>
+                                    <CardTitle>Saída {i + 1}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="aspect-[2/1] bg-muted rounded-md overflow-hidden relative">
+                                        <canvas
+                                            ref={el => (previewCanvasRefs.current[saidaKey] = el)}
+                                            width={480} // Larger base size for better resolution
+                                            height={240}
+                                            className="w-full h-full object-contain"
+                                        />
                                     </div>
-                                ))}
-                            </RadioGroup>
-                        </div>
-                        
-                        <div>
-                            <Label htmlFor="lineWidth" className="text-base font-semibold">
-                                Espessura do Traço: {lineWidth}px
-                            </Label>
-                            <Slider
-                                id="lineWidth"
-                                value={[lineWidth]}
-                                onValueChange={(val) => setLineWidth(val[0])}
-                                min={1}
-                                max={20}
-                                step={1}
-                                className="mt-2"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
-                                <Undo className="mr-2 h-4 w-4"/> Desfazer
-                            </Button>
-                            <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length)}>
-                                <Redo className="mr-2 h-4 w-4"/> Refazer
-                            </Button>
-                        </div>
-                        
-                        <Button variant="destructive" onClick={clearCanvas} className="w-full" disabled={!mapImage}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Limpar Desenho
-                        </Button>
-
-                        <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Baixar Desenho
-                        </Button>
-
-                         {mapImage && (
-                            <Button variant="secondary" onClick={() => {
-                                setMapImage(null);
-                                localStorage.removeItem('strategyMapImage');
-                                const { history, steps } = initialHistory();
-                                historyRef.current = history;
-                                currentStepRef.current = steps;
-                                saveData();
-                                drawAllLines();
-                            }} className="w-full mt-2">
-                                <Upload className="mr-2 h-4 w-4" />
-                                Trocar Imagem
-                            </Button>
-                        )}
-                    </div>
-
-                    {Array.from({ length: NUM_SAIDAS }, (_, i) => (
-                        <TabsContent key={i + 1} value={`saida-${i + 1}`} />
-                    ))}
-                </Tabs>
-            </CardContent>
-        </Card>
-    </div>
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
+            </div>
+        )}
+    </>
   );
 }
