@@ -14,6 +14,7 @@ import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '../ui/checkbox';
 
 interface TaskFormProps {
   task: Task | null;
@@ -28,7 +29,7 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
       id: crypto.randomUUID(),
       name: '',
       priority: 'Média',
-      area: '',
+      area: [],
       startDate: null,
       dueDate: null,
       columnId: 'Planejamento',
@@ -58,19 +59,44 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
         <FormField
           control={form.control}
           name="area"
-          render={({ field }) => (
+          render={() => (
             <FormItem>
-              <FormLabel>Área</FormLabel>
-               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a área" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {areaNames.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <FormLabel>Área(s)</FormLabel>
+              <div className="grid grid-cols-2 gap-2">
+              {areaNames.map((item) => (
+                <FormField
+                  key={item}
+                  control={form.control}
+                  name="area"
+                  render={({ field }) => {
+                    return (
+                      <FormItem
+                        key={item}
+                        className="flex flex-row items-start space-x-3 space-y-0"
+                      >
+                        <FormControl>
+                          <Checkbox
+                            checked={field.value?.includes(item)}
+                            onCheckedChange={(checked) => {
+                              return checked
+                                ? field.onChange([...(field.value || []), item])
+                                : field.onChange(
+                                    (field.value || []).filter(
+                                      (value) => value !== item
+                                    )
+                                  )
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="font-normal">
+                          {item}
+                        </FormLabel>
+                      </FormItem>
+                    )
+                  }}
+                />
+              ))}
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -206,5 +232,3 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
     </Form>
   );
 }
-
-    

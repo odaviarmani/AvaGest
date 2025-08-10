@@ -10,10 +10,10 @@ import { format, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '../ui/skeleton';
 
-const areaColors: Record<string, string> = {
-  "Projeto de Inovação": "bg-red-500/80",
+const areaColorMap: Record<string, string> = {
+  "Projeto de Inovação": "bg-blue-500/80",
   "Construção": "bg-green-500/80",
-  "Programação": "bg-blue-500/80",
+  "Programação": "bg-purple-500/80",
   "Core Values": "bg-yellow-500/80",
   "default": "bg-gray-500/80",
 };
@@ -110,7 +110,11 @@ export default function TaskCalendar() {
           {tasksOnSelectedDate.length > 0 ? (
             tasksOnSelectedDate.map(task => (
               <div key={task.id} className="p-3 border rounded-lg bg-card-foreground/5 relative overflow-hidden">
-                <div className={cn("absolute left-0 top-0 bottom-0 w-2", areaColors[task.area] || areaColors.default)}></div>
+                 <div className="absolute left-0 top-0 bottom-0 w-2 flex flex-col">
+                    {task.area.map(area => (
+                        <div key={area} className={cn("flex-1", areaColorMap[area] || areaColorMap.default)}></div>
+                    ))}
+                </div>
                 <div className="ml-4">
                   <p className="font-semibold">{task.name}</p>
                   <div className="flex flex-wrap gap-2 text-sm mt-2">
@@ -122,6 +126,7 @@ export default function TaskCalendar() {
                     )}
                      <Badge variant="secondary">{task.priority}</Badge>
                      <Badge variant="secondary">{task.columnId}</Badge>
+                     {task.area.map(a => <Badge key={a} variant="outline">{a}</Badge>)}
                   </div>
                 </div>
               </div>

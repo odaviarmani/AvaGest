@@ -9,7 +9,7 @@ export const taskSchema = z.object({
   id: z.string(),
   name: z.string().min(1, { message: "O nome da tarefa é obrigatório." }),
   priority: z.enum(priorities, { required_error: "A prioridade é obrigatória." }),
-  area: z.string().min(1, { message: "A área é obrigatória." }),
+  area: z.array(z.string()).min(1, { message: "Selecione ao menos uma área." }),
   startDate: z.date().nullable(),
   dueDate: z.date().nullable(),
   columnId: z.enum(columnNames),

@@ -13,12 +13,12 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 
 const DEFAULT_TASKS: Task[] = [
-    { id: 'task-1', name: 'Configurar ambiente de desenvolvimento', area: 'Programação', priority: 'Alta', startDate: new Date(), dueDate: null, columnId: 'Fazer' },
-    { id: 'task-2', name: 'Criar wireframes da UI', area: 'Core Values', priority: 'Média', startDate: new Date(), dueDate: null, columnId: 'Planejamento' },
-    { id: 'task-3', name: 'Testar endpoint de login', area: 'Programação', priority: 'Alta', startDate: null, dueDate: null, columnId: 'Fazendo' },
-    { id: 'task-4', name: 'Publicar landing page', area: 'Construção', priority: 'Baixa', startDate: null, dueDate: null, columnId: 'Feito' },
-    { id: 'task-5', name: 'Revisar copy do site', area: 'Construção', priority: 'Média', startDate: null, dueDate: null, columnId: 'Fazer' },
-    { id: 'task-6', name: 'Implementar autenticação', area: 'Projeto de Inovação', priority: 'Alta', startDate: null, dueDate: null, columnId: 'Planejamento' },
+    { id: 'task-1', name: 'Configurar ambiente de desenvolvimento', area: ['Programação'], priority: 'Alta', startDate: new Date(), dueDate: null, columnId: 'Fazer' },
+    { id: 'task-2', name: 'Criar wireframes da UI', area: ['Core Values'], priority: 'Média', startDate: new Date(), dueDate: null, columnId: 'Planejamento' },
+    { id: 'task-3', name: 'Testar endpoint de login', area: ['Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Fazendo' },
+    { id: 'task-4', name: 'Publicar landing page', area: ['Construção'], priority: 'Baixa', startDate: null, dueDate: null, columnId: 'Feito' },
+    { id: 'task-5', name: 'Revisar copy do site', area: ['Construção'], priority: 'Média', startDate: null, dueDate: null, columnId: 'Fazer' },
+    { id: 'task-6', name: 'Implementar autenticação', area: ['Projeto de Inovação', 'Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Planejamento' },
 ];
 
 export default function KanbanBoard() {
@@ -126,7 +126,7 @@ export default function KanbanBoard() {
         id: crypto.randomUUID(),
         name: '',
         priority: 'Média',
-        area: '',
+        area: [],
         startDate: null,
         dueDate: null,
         columnId: columnId || 'Planejamento',
@@ -244,5 +244,3 @@ export default function KanbanBoard() {
     </div>
   );
 }
-
-    
