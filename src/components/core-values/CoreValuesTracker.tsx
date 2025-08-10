@@ -70,8 +70,8 @@ export default function CoreValuesTracker() {
   const percentageCovered = totalStates > 0 ? (statesWithTeams / totalStates) * 100 : 0;
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-      <Card className="lg:col-span-2">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+      <Card className="xl:col-span-2">
         <CardHeader>
           <CardTitle>Alcançe Nacional</CardTitle>
           <CardDescription>Acompanhe o registro de equipes em cada estado do Brasil.</CardDescription>
