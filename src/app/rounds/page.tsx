@@ -4,6 +4,9 @@ import React, { useState, useMemo } from "react";
 import RoundsTimer, { StageTime, STAGE_NAMES } from "@/components/rounds/RoundsTimer";
 import ScoreCalculator, { MissionState, initialMissionState } from "@/components/rounds/ScoreCalculator";
 import RoundLog, { RoundData } from "@/components/rounds/RoundLog";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { BarChart } from "lucide-react";
 
 const TOTAL_SECONDS = 150; // 2 minutes and 30 seconds
 
@@ -69,11 +72,19 @@ export default function RoundsPage() {
 
   return (
     <div className="flex-1 p-4 md:p-8">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold">Rounds</h1>
-        <p className="text-muted-foreground">
-          Acompanhe os dados e a evolução dos rounds.
-        </p>
+      <header className="mb-4 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">Rounds</h1>
+          <p className="text-muted-foreground">
+            Acompanhe os dados e a evolução dos rounds.
+          </p>
+        </div>
+        <Button asChild>
+            <Link href="/rounds/stats">
+                <BarChart className="mr-2 h-4 w-4" />
+                Ver Estatísticas
+            </Link>
+        </Button>
       </header>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
         <div className="md:col-span-1">
