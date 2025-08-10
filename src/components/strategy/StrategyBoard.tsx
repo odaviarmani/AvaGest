@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Undo, Trash2, Redo, Upload } from 'lucide-react';
+import { Undo, Trash2, Redo, Upload, BarChart2 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import Image from 'next/image';
 
@@ -21,12 +21,19 @@ const COLORS = [
   { value: "#14b8a6", label: "Ciano" },
 ];
 const NUM_SAIDAS = 6;
+const MAT_WIDTH_CM = 240;
+const MAT_HEIGHT_CM = 120;
 
 type Line = [number, number, number, number, string, number]; // [x1, y1, x2, y2, color, lineWidth]
-type Drawing = Line[];
+type Drawing = {
+    line: Line;
+    lengthCm: number;
+    angleDeg: number;
+};
+type DrawingHistory = Drawing[];
 
 const initialHistory = () => {
-    const history: Record<string, Drawing[]> = {};
+    const history: Record<string, DrawingHistory[]> = {};
     const steps: Record<string, number> = {};
     for (let i = 1; i <= NUM_SAIDAS; i++) {
         history[`saida-${i}`] = [];
@@ -44,13 +51,14 @@ export default function StrategyBoard() {
   const [endPoint, setEndPoint] = useState<{ x: number, y: number } | null>(null);
   const [mapImage, setMapImage] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
+  const [metrics, setMetrics] = useState({ totalLength: 0, angles: [] as number[] });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const { history: initialHistoryState, steps: initialStepsState } = useMemo(initialHistory, []);
-  const historyRef = useRef<Record<string, Drawing[]>>(initialHistoryState);
+  const historyRef = useRef<Record<string, DrawingHistory[]>>(initialHistoryState);
   const currentStepRef = useRef<Record<string, number>>(initialStepsState);
 
   useEffect(() => {
@@ -59,6 +67,22 @@ export default function StrategyBoard() {
     if (savedImage) {
         setMapImage(savedImage);
     }
+  }, []);
+
+  const calculateMetrics = useCallback((tab: string) => {
+    const currentHistory = historyRef.current[tab] || [];
+    const currentStep = currentStepRef.current[tab] || 0;
+    const drawings = currentHistory.slice(0, currentStep);
+
+    let totalLength = 0;
+    const angles: number[] = [];
+
+    drawings.forEach(drawing => {
+        totalLength += drawing[0].lengthCm;
+        angles.push(drawing[0].angleDeg);
+    });
+
+    setMetrics({ totalLength, angles });
   }, []);
 
   const drawAllLines = useCallback(() => {
@@ -75,7 +99,8 @@ export default function StrategyBoard() {
     const currentStep = currentStepRef.current[activeTab] || 0;
     const drawings = currentHistory.slice(0, currentStep).flat();
     
-    drawings.forEach(([x1, y1, x2, y2, c, lw]) => {
+    drawings.forEach((drawing) => {
+      const [x1, y1, x2, y2, c, lw] = drawing.line;
       ctx.beginPath();
       ctx.strokeStyle = c;
       ctx.lineWidth = lw;
@@ -101,7 +126,8 @@ export default function StrategyBoard() {
 
   useEffect(() => {
     drawAllLines();
-  }, [activeTab, drawAllLines]);
+    calculateMetrics(activeTab);
+  }, [activeTab, drawAllLines, calculateMetrics]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -171,7 +197,20 @@ export default function StrategyBoard() {
   const stopDrawing = () => {
     if(!isDrawing || !startPoint || !endPoint) return;
     
-    const currentDrawing: Drawing = [[startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth]];
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const pixelLength = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
+    const cmLength = (pixelLength / canvas.width) * MAT_WIDTH_CM;
+    
+    const angleRad = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
+    const angleDeg = angleRad * (180 / Math.PI);
+
+    const currentDrawing: DrawingHistory = [{
+        line: [startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth],
+        lengthCm: cmLength,
+        angleDeg: angleDeg,
+    }];
     
     const step = currentStepRef.current[activeTab] || 0;
     const newHistory = [...(historyRef.current[activeTab] || []).slice(0, step), currentDrawing];
@@ -183,6 +222,7 @@ export default function StrategyBoard() {
     setStartPoint(null);
     setEndPoint(null);
     drawAllLines();
+    calculateMetrics(activeTab);
   };
 
   const handleDrawing = (event: React.MouseEvent | React.TouchEvent) => {
@@ -199,6 +239,7 @@ export default function StrategyBoard() {
     if (currentStepRef.current[activeTab] > 0) {
         currentStepRef.current[activeTab]--;
         drawAllLines();
+        calculateMetrics(activeTab);
     }
   };
 
@@ -207,6 +248,7 @@ export default function StrategyBoard() {
     if (currentStepRef.current[activeTab] < history.length) {
       currentStepRef.current[activeTab]++;
       drawAllLines();
+      calculateMetrics(activeTab);
     }
   };
 
@@ -214,6 +256,7 @@ export default function StrategyBoard() {
     historyRef.current[activeTab] = [];
     currentStepRef.current[activeTab] = 0;
     drawAllLines();
+    calculateMetrics(activeTab);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -322,7 +365,7 @@ export default function StrategyBoard() {
                             <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
                                 <Undo className="mr-2 h-4 w-4"/> Desfazer
                             </Button>
-                            <Button variant="outline" onClick={redo} disabled={!mapImage || (currentStepRef.current[activeTab] >= (historyRef.current[activeTab] || []).length)}>
+                            <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length)}>
                                 <Redo className="mr-2 h-4 w-4"/> Refazer
                             </Button>
                         </div>
@@ -332,11 +375,37 @@ export default function StrategyBoard() {
                             Limpar Desenho
                         </Button>
 
+                         {isClient && mapImage && (
+                            <div className="space-y-4 pt-4 border-t">
+                                <h3 className="flex items-center text-base font-semibold">
+                                    <BarChart2 className="mr-2 h-5 w-5" />
+                                    Métricas da Saída
+                                </h3>
+                                <div className="text-sm space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Distância Total:</span>
+                                        <span className="font-medium">{metrics.totalLength.toFixed(1)} cm</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-muted-foreground">Nº de Passos:</span>
+                                        <span className="font-medium">{metrics.angles.length}</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-muted-foreground">Ângulos (Graus):</p>
+                                        <p className="font-medium break-words">
+                                            {metrics.angles.map(a => a.toFixed(1)).join('°, ') || 'N/A'}
+                                            {metrics.angles.length > 0 && '°'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                          {mapImage && (
                             <Button variant="secondary" onClick={() => {
                                 setMapImage(null);
                                 localStorage.removeItem('strategyMapImage');
-                            }} className="w-full">
+                            }} className="w-full mt-4">
                                 <Upload className="mr-2 h-4 w-4" />
                                 Trocar Imagem
                             </Button>
@@ -352,3 +421,5 @@ export default function StrategyBoard() {
     </div>
   );
 }
+
+    
