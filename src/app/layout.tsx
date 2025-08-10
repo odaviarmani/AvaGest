@@ -32,6 +32,9 @@ export default function RootLayout({
                     <Link href="/calendar">Calendário</Link>
                 </Button>
                 <Button variant="ghost" asChild>
+                    <Link href="/rounds">Dados e Evoluções de Rounds</Link>
+                </Button>
+                <Button variant="ghost" asChild>
                     <Link href="/roulette">Roletas (Revezamento)</Link>
                 </Button>
                 <Button variant="ghost" asChild>
@@ -43,7 +46,7 @@ export default function RootLayout({
         <footer className="p-4 border-t shrink-0">
           <iframe
             style={{ borderRadius: '12px' }}
-            src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
+            src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
             width="100%"
             height="80"
             allowFullScreen={false}
