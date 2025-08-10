@@ -30,9 +30,27 @@ export default function AttachmentsPage() {
 
     useEffect(() => {
         if (isClient) {
-            localStorage.setItem('attachments', JSON.stringify(attachments));
+            // Create a version of attachments without the large image data to avoid quota errors.
+            const attachmentsToStore = attachments.map(a => {
+                const { imageUrl, ...rest } = a;
+                // Only store imageUrl if it's not a base64 string
+                if (imageUrl && imageUrl.startsWith('data:image')) {
+                    return rest;
+                }
+                return a;
+            });
+            try {
+                localStorage.setItem('attachments', JSON.stringify(attachmentsToStore));
+            } catch (error) {
+                console.error("Failed to save attachments to localStorage:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Erro ao salvar",
+                    description: "Não foi possível salvar os anexos. O armazenamento local pode estar cheio."
+                })
+            }
         }
-    }, [attachments, isClient]);
+    }, [attachments, isClient, toast]);
 
     const handleOpenDialog = (attachment: Attachment | null) => {
         setEditingAttachment(attachment ? attachment : {
