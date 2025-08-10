@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Download } from 'lucide-react';
 import { Evaluation, CRITERIA } from '@/lib/types';
 import EvaluationItem from './EvaluationItem';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
@@ -49,6 +49,29 @@ export default function DecodeEvaluation() {
         setEvaluations([]);
     }
 
+    const handleDownloadCSV = () => {
+        if (evaluations.length === 0) return;
+
+        const headers = ["Item", ...CRITERIA.map(c => c.label), "Pontuação Total"];
+        const csvRows = [headers.join(',')];
+
+        evaluations.forEach(evaluation => {
+            const scores = CRITERIA.map(c => evaluation.scores[c.key]);
+            const totalScore = scores.reduce((sum, score) => sum + score, 0);
+            const row = [`"${evaluation.name}"`, ...scores, totalScore];
+            csvRows.push(row.join(','));
+        });
+
+        const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "decode_evaluations.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <div className="space-y-6">
              <Card>
@@ -62,10 +85,16 @@ export default function DecodeEvaluation() {
                         Adicionar Item
                     </Button>
                     {isClient && evaluations.length > 0 && (
+                        <>
                          <Button variant="destructive" onClick={handleDeleteAll}>
                             <Trash2 className="mr-2" />
                             Limpar Tudo
                         </Button>
+                        <Button variant="outline" onClick={handleDownloadCSV}>
+                            <Download className="mr-2" />
+                            Download CSV
+                        </Button>
+                        </>
                     )}
                 </CardContent>
             </Card>
