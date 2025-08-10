@@ -46,8 +46,10 @@ export default function StrategyBoard() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   
-  const historyRef = useRef<Record<string, Drawing[]>>(initialHistory().history);
-  const currentStepRef = useRef<Record<string, number>>(initialHistory().steps);
+  const { history: initialHistoryState, steps: initialStepsState } = useMemo(initialHistory, []);
+  const historyRef = useRef<Record<string, Drawing[]>>(initialHistoryState);
+  const currentStepRef = useRef<Record<string, number>>(initialStepsState);
+
 
   const drawAllLines = useCallback(() => {
     const canvas = canvasRef.current;
@@ -58,7 +60,8 @@ export default function StrategyBoard() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     const currentHistory = historyRef.current[activeTab] || [];
-    const drawings = currentHistory.slice(0, currentStepRef.current[activeTab] + 1).flat();
+    const currentStep = currentStepRef.current[activeTab] || 0;
+    const drawings = currentHistory.slice(0, currentStep).flat();
     
     drawings.forEach(([x1, y1, x2, y2, c, lw]) => {
       ctx.beginPath();
@@ -189,9 +192,10 @@ export default function StrategyBoard() {
   };
 
   const redo = () => {
-    if (currentStepRef.current[activeTab] < (historyRef.current[activeTab] || []).length) {
-        currentStepRef.current[activeTab]++;
-        drawAllLines();
+    const history = historyRef.current[activeTab] || [];
+    if (currentStepRef.current[activeTab] < history.length) {
+      currentStepRef.current[activeTab]++;
+      drawAllLines();
     }
   };
 
@@ -207,7 +211,7 @@ export default function StrategyBoard() {
         <div className="relative w-full aspect-[1.84/1] rounded-lg border overflow-hidden shadow-lg bg-gray-200">
             <Image
                 ref={imageRef}
-                src="/fll_unearthed_map.jpg"
+                src="https://fll-wro.github.io/fll-2023/unearthed.svg"
                 alt="Mapa da FLL Unearthed"
                 fill
                 className='object-contain'
@@ -290,3 +294,5 @@ export default function StrategyBoard() {
     </div>
   );
 }
+
+    
