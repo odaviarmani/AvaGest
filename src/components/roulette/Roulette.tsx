@@ -94,10 +94,11 @@ export default function Roulette({ options }: RouletteProps) {
         } else {
             const finalAngle = currentAngle % (2 * Math.PI);
             const arc = (2 * Math.PI) / options.length;
-            // The pointer is at the top (pointing down), which is Math.PI / 2 or 90 degrees on the circle.
-            // We need to adjust the angle to find the correct segment.
-            const pointerAngle = 2 * Math.PI - finalAngle + Math.PI / 2;
-            const winningSegmentIndex = Math.floor(pointerAngle / arc) % options.length;
+            // The pointer is at the top (pointing down). In a circle where 0 is at 3 o'clock, the top is at 1.5 * PI (270 degrees).
+            // We adjust the final angle to determine the winning segment.
+            const pointerAngle = 1.5 * Math.PI; // The pointer is at the top (270 degrees)
+            const winningAngle = (2 * Math.PI - finalAngle + pointerAngle) % (2 * Math.PI);
+            const winningSegmentIndex = Math.floor(winningAngle / arc);
             
             setResult(options[winningSegmentIndex]);
             setIsSpinning(false);
