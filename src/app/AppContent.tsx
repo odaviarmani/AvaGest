@@ -56,6 +56,9 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                       <Link href="/apps">Apps</Link>
                   </Button>
                   <Button variant="ghost" asChild>
+                      <Link href="/notificacoes">Notificações</Link>
+                  </Button>
+                  <Button variant="ghost" asChild>
                       <Link href="/rubricas">Rubricas</Link>
                   </Button>
               </nav>
