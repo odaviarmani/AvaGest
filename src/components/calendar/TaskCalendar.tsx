@@ -68,8 +68,8 @@ export default function TaskCalendar() {
 
   if (!isClient) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2">
+        <div className="grid grid-cols-1 gap-8">
+            <div>
                 <Skeleton className="w-full h-[400px] rounded-lg" />
             </div>
             <div>
@@ -81,9 +81,9 @@ export default function TaskCalendar() {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-      <Card className="lg:col-span-2 shadow-lg">
-        <CardContent className="p-2 md:p-6">
+    <div className="grid grid-cols-1 gap-8 items-start">
+      <Card className="shadow-lg">
+        <CardContent className="p-0 md:p-2">
             <Calendar
                 mode="single"
                 selected={selectedDate}
