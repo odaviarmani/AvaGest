@@ -32,3 +32,20 @@ export const attachmentSchema = z.object({
 });
 
 export type Attachment = z.infer<typeof attachmentSchema>;
+
+export const CRITERIA = [
+    { key: 'tema', label: 'Tema' },
+    { key: 'coerencia', label: 'Coerência T-P-S' },
+    { key: 'alinhamento', label: 'Alinhamento com Unearthed' },
+    { key: 'viabilidade', label: 'Viabilidade' },
+    { key: 'originalidade', label: 'Originalidade' },
+    { key: 'clareza', label: 'Clareza/Registros' },
+] as const;
+
+export const evaluationSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, 'O nome do item é obrigatório.'),
+    scores: z.record(z.string(), z.number().min(0).max(10)),
+});
+
+export type Evaluation = z.infer<typeof evaluationSchema>;
