@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Undo, Trash2, Redo, Upload, Download } from 'lucide-react';
+import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import Image from 'next/image';
 
@@ -22,41 +22,117 @@ const COLORS = [
 ];
 const NUM_SAIDAS = 6;
 const MAT_WIDTH_CM = 240;
-const MAT_HEIGHT_CM = 120;
 
-type Line = [number, number, number, number, string, number]; // [x1, y1, x2, y2, color, lineWidth]
-type Drawing = {
-    line: Line;
+type DrawingTool = 'line' | 'circle';
+
+type Line = {
+    type: 'line';
+    points: [number, number, number, number]; // [x1, y1, x2, y2]
+    color: string;
+    lineWidth: number;
     lengthCm: number;
     angleDeg: number;
 };
+
+type CircleShape = {
+    type: 'circle';
+    cx: number;
+    cy: number;
+    radius: number;
+    color: string;
+    lineWidth: number;
+};
+
+type Drawing = Line | CircleShape;
+
 type DrawingHistory = Drawing[];
 
 const initialHistory = () => {
     const history: Record<string, DrawingHistory[]> = {};
     const steps: Record<string, number> = {};
     for (let i = 1; i <= NUM_SAIDAS; i++) {
-        history[`saida-${i}`] = [];
+        history[`saida-${i}`] = [[]];
         steps[`saida-${i}`] = 0;
     }
     return {history, steps};
 }
 
+const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
+    const [fileInfo, setFileInfo] = useState<{ name: string; url: string } | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const savedFiles = JSON.parse(localStorage.getItem('strategyResources') || '{}');
+        if (savedFiles[saidaKey]) {
+            setFileInfo(savedFiles[saidaKey]);
+        }
+    }, [saidaKey]);
+
+    const saveFileToLocalStorage = (info: { name: string; url: string } | null) => {
+        const savedFiles = JSON.parse(localStorage.getItem('strategyResources') || '{}');
+        savedFiles[saidaKey] = info;
+        localStorage.setItem('strategyResources', JSON.stringify(savedFiles));
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const url = reader.result as string;
+                const newFileInfo = { name: file.name, url };
+                setFileInfo(newFileInfo);
+                saveFileToLocalStorage(newFileInfo);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveFile = () => {
+        setFileInfo(null);
+        saveFileToLocalStorage(null);
+    };
+
+    return (
+        <Card className="overflow-hidden">
+            <CardHeader>
+                <CardTitle>Recursos Saída {saidaKey.split('-')[1]}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+                {fileInfo ? (
+                    <div className="flex items-center justify-between p-2 rounded-md bg-muted">
+                        <span className="text-sm font-medium truncate pr-2">{fileInfo.name}</span>
+                        <div className="flex gap-1">
+                             <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>Trocar</Button>
+                             <Button size="sm" variant="destructive" onClick={handleRemoveFile}>Remover</Button>
+                        </div>
+                    </div>
+                ) : (
+                    <Button className="w-full" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                        Anexar Arquivo
+                    </Button>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
+
+
 export default function StrategyBoard() {
   const [activeTab, setActiveTab] = useState(`saida-1`);
   const [color, setColor] = useState(COLORS[0].value);
   const [lineWidth, setLineWidth] = useState(3);
+  const [drawingTool, setDrawingTool] = useState<DrawingTool>('line');
   const [isDrawing, setIsDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState<{ x: number, y: number } | null>(null);
   const [endPoint, setEndPoint] = useState<{ x: number, y: number } | null>(null);
   const [mapImage, setMapImage] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
-  const [_, forceRender] = useState({}); // Helper to force re-renders for previews
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const previewCanvasRefs = useRef<Record<string, HTMLCanvasElement | null>>({});
   
   const historyRef = useRef<Record<string, DrawingHistory[]>>({});
   const currentStepRef = useRef<Record<string, number>>({});
@@ -78,7 +154,7 @@ export default function StrategyBoard() {
         historyRef.current = history;
         currentStepRef.current = steps;
     }
-    forceRender({}); // render previews on initial load
+    drawMainCanvas();
   }, []);
 
   const saveData = useCallback(() => {
@@ -89,7 +165,6 @@ export default function StrategyBoard() {
       } catch (error) {
         console.error("Failed to save drawing history to localStorage:", error);
       }
-      forceRender({}); // Re-render previews on data change
   }, [isClient]);
 
    const drawMetricsOnCanvas = (
@@ -106,118 +181,79 @@ export default function StrategyBoard() {
     ctx.fillText(text, x, y - textOffset);
   };
 
-
-  const drawLineWithMetrics = (
-    ctx: CanvasRenderingContext2D,
-    x1: number, y1: number, x2: number, y2: number,
-    lineColor: string, lineThickness: number,
-    lengthText: string
-  ) => {
-    // Draw the main line
-    ctx.beginPath();
-    ctx.strokeStyle = lineColor;
-    ctx.lineWidth = lineThickness;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-
-    const midX = (x1 + x2) / 2;
-    const midY = (y1 + y2) / 2;
-    drawMetricsOnCanvas(ctx, lengthText, midX, midY);
-  };
-
-  const drawAllLinesForCanvas = useCallback((canvas: HTMLCanvasElement | null, saidaKey: string, isPreview: boolean) => {
+  const drawAllLinesForCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
-    // Scale for previews
-    const scale = isPreview ? (canvas.width / (canvasRef.current?.width || canvas.width)) : 1;
-    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const currentHistory = historyRef.current[saidaKey] || [];
-    const currentStep = currentStepRef.current[saidaKey] || 0;
+    const currentHistory = historyRef.current[activeTab] || [];
+    const currentStep = currentStepRef.current[activeTab] || 0;
     const drawings = currentHistory.slice(0, currentStep).flat();
     
     drawings.forEach((drawing, index) => {
-      const [x1, y1, x2, y2, c, lw] = drawing.line;
-      const scaledX1 = x1 * scale;
-      const scaledY1 = y1 * scale;
-      const scaledX2 = x2 * scale;
-      const scaledY2 = y2 * scale;
-      const scaledLw = lw * scale;
+      ctx.strokeStyle = drawing.color;
+      ctx.lineWidth = drawing.lineWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
 
-      // Don't draw metrics on previews to avoid clutter
-      if (isPreview) {
-        ctx.beginPath();
-        ctx.strokeStyle = c;
-        ctx.lineWidth = Math.max(1, scaledLw); // Ensure line is at least 1px
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.moveTo(scaledX1, scaledY1);
-        ctx.lineTo(scaledX2, scaledY2);
-        ctx.stroke();
-      } else {
+      if (drawing.type === 'line') {
+        const [x1, y1, x2, y2] = drawing.points;
         const lengthText = `${drawing.lengthCm.toFixed(1)}cm`;
-        drawLineWithMetrics(ctx, scaledX1, scaledY1, scaledX2, scaledY2, c, scaledLw, lengthText);
-        
-        // Draw transition angle
-        if (index > 0) {
-          const prevDrawing = drawings[index - 1];
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        drawMetricsOnCanvas(ctx, lengthText, (x1 + x2) / 2, (y1 + y2) / 2);
+
+        const prevDrawing = index > 0 ? drawings[index - 1] : null;
+        if (prevDrawing && prevDrawing.type === 'line') {
           const angleDiff = drawing.angleDeg - prevDrawing.angleDeg;
           const displayAngle = Math.round((angleDiff + 180) % 360 - 180);
-          const angleText = `${displayAngle}°`;
-          drawMetricsOnCanvas(ctx, angleText, scaledX1, scaledY1, -5);
+          if(displayAngle !== 0) {
+            const angleText = `${displayAngle}°`;
+            drawMetricsOnCanvas(ctx, angleText, x1, y1, -5);
+          }
         }
+      } else if (drawing.type === 'circle') {
+          ctx.beginPath();
+          ctx.arc(drawing.cx, drawing.cy, drawing.radius, 0, 2 * Math.PI);
+          ctx.stroke();
       }
     });
 
-    if (!isPreview && isDrawing && startPoint && endPoint) {
-        const pixelLength = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
-        const cmLength = (pixelLength / (canvasRef.current?.width || 1)) * MAT_WIDTH_CM;
-        const lengthText = `${cmLength.toFixed(1)}cm`;
-        drawLineWithMetrics(ctx, startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth, lengthText);
-    }
-  }, [isDrawing, startPoint, endPoint, color, lineWidth]);
+    if (isDrawing && startPoint && endPoint) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        if (drawingTool === 'line') {
+            const pixelLength = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
+            const cmLength = (pixelLength / (canvasRef.current?.width || 1)) * MAT_WIDTH_CM;
+            const lengthText = `${cmLength.toFixed(1)}cm`;
 
-
-  const drawMainCanvas = useCallback(() => {
-      drawAllLinesForCanvas(canvasRef.current, activeTab, false);
-  }, [activeTab, drawAllLinesForCanvas]);
-
-  const drawPreviewCanvases = useCallback(() => {
-    for (let i = 1; i <= NUM_SAIDAS; i++) {
-        const saidaKey = `saida-${i}`;
-        const previewCanvas = previewCanvasRefs.current[saidaKey];
-        if (previewCanvas) {
-            const previewCtx = previewCanvas.getContext('2d');
-            if (previewCtx && mapImage) {
-                const img = new window.Image();
-                img.src = mapImage;
-                img.onload = () => {
-                    previewCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
-                    drawAllLinesForCanvas(previewCanvas, saidaKey, true);
-                };
-                 if (img.complete) {
-                    previewCtx.drawImage(img, 0, 0, previewCanvas.width, previewCanvas.height);
-                    drawAllLinesForCanvas(previewCanvas, saidaKey, true);
-                }
-            }
+            ctx.beginPath();
+            ctx.moveTo(startPoint.x, startPoint.y);
+            ctx.lineTo(endPoint.x, endPoint.y);
+            ctx.stroke();
+            drawMetricsOnCanvas(ctx, lengthText, (startPoint.x + endPoint.x) / 2, (startPoint.y + endPoint.y) / 2);
+        } else if (drawingTool === 'circle') {
+            const radius = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
+            ctx.beginPath();
+            ctx.arc(startPoint.x, startPoint.y, radius, 0, 2 * Math.PI);
+            ctx.stroke();
         }
     }
-  }, [mapImage, drawAllLinesForCanvas]);
+  }, [activeTab, isDrawing, startPoint, endPoint, color, lineWidth, drawingTool]);
 
+  const drawMainCanvas = useCallback(() => {
+      drawAllLinesForCanvas();
+  }, [activeTab, drawAllLinesForCanvas]);
 
   useEffect(() => {
     drawMainCanvas();
-  }, [activeTab, drawMainCanvas]);
-
-  useEffect(() => {
-    drawPreviewCanvases();
-  }, [activeTab, mapImage, _, drawPreviewCanvases]); // Re-draw previews when map or data changes
+  }, [drawMainCanvas, activeTab]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -234,13 +270,8 @@ export default function StrategyBoard() {
       observer.observe(image);
       window.addEventListener('resize', resizeCanvas);
       
-      image.onload = () => {
-          resizeCanvas();
-      }
-
-      if (image.complete) {
-          resizeCanvas();
-      }
+      image.onload = () => resizeCanvas();
+      if (image.complete) resizeCanvas();
 
       return () => {
         observer.disconnect();
@@ -280,7 +311,8 @@ export default function StrategyBoard() {
     setEndPoint(coords);
 
     const step = currentStepRef.current[activeTab] || 0;
-    const newHistory = (historyRef.current[activeTab] || []).slice(0, step);
+    const historyForTab = historyRef.current[activeTab] || [];
+    const newHistory = historyForTab.slice(0, step);
     historyRef.current[activeTab] = newHistory;
   };
 
@@ -294,21 +326,36 @@ export default function StrategyBoard() {
     
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    const pixelLength = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
-    const cmLength = (pixelLength / canvas.width) * MAT_WIDTH_CM;
     
-    const angleRad = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
-    const angleDeg = angleRad * (180 / Math.PI);
-
-    const currentDrawing: DrawingHistory = [{
-        line: [startPoint.x, startPoint.y, endPoint.x, endPoint.y, color, lineWidth],
-        lengthCm: cmLength,
-        angleDeg: angleDeg,
-    }];
+    let newDrawing: Drawing;
+    
+    if (drawingTool === 'line') {
+        const pixelLength = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
+        const cmLength = (pixelLength / canvas.width) * MAT_WIDTH_CM;
+        const angleRad = Math.atan2(endPoint.y - startPoint.y, endPoint.x - startPoint.x);
+        const angleDeg = angleRad * (180 / Math.PI);
+        newDrawing = {
+            type: 'line',
+            points: [startPoint.x, startPoint.y, endPoint.x, endPoint.y],
+            color,
+            lineWidth,
+            lengthCm: cmLength,
+            angleDeg: angleDeg,
+        };
+    } else { // circle
+        const radius = Math.sqrt(Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2));
+        newDrawing = {
+            type: 'circle',
+            cx: startPoint.x,
+            cy: startPoint.y,
+            radius,
+            color,
+            lineWidth,
+        };
+    }
     
     const step = currentStepRef.current[activeTab] || 0;
-    const newHistory = [...(historyRef.current[activeTab] || []).slice(0, step), currentDrawing];
+    const newHistory = [...(historyRef.current[activeTab] || []).slice(0, step), [newDrawing]];
     
     historyRef.current[activeTab] = newHistory;
     currentStepRef.current[activeTab] = newHistory.length;
@@ -331,8 +378,9 @@ export default function StrategyBoard() {
   };
 
   const undo = () => {
-    if ((currentStepRef.current[activeTab] || 0) > 0) {
-        currentStepRef.current[activeTab]--;
+    const currentStep = currentStepRef.current[activeTab] || 0;
+    if (currentStep > 0) {
+        currentStepRef.current[activeTab] = currentStep - 1;
         drawMainCanvas();
         saveData();
     }
@@ -340,8 +388,9 @@ export default function StrategyBoard() {
 
   const redo = () => {
     const history = historyRef.current[activeTab] || [];
-    if ((currentStepRef.current[activeTab] || 0) < history.length) {
-      currentStepRef.current[activeTab]++;
+    const currentStep = currentStepRef.current[activeTab] || 0;
+    if (currentStep < history.length) {
+      currentStepRef.current[activeTab] = currentStep + 1;
       drawMainCanvas();
       saveData();
     }
@@ -384,10 +433,7 @@ export default function StrategyBoard() {
     
     if(!ctx) return;
 
-    // Draw the background image first
     ctx.drawImage(bgImage, 0, 0, mainCanvas.width, mainCanvas.height);
-    
-    // Draw the drawings canvas on top
     ctx.drawImage(mainCanvas, 0, 0);
 
     const link = document.createElement('a');
@@ -410,7 +456,7 @@ export default function StrategyBoard() {
                             className='object-contain'
                             priority
                             unoptimized
-                            crossOrigin="anonymous" // Required for canvas toDataURL
+                            crossOrigin="anonymous"
                         />
                         <canvas
                             ref={canvasRef}
@@ -455,6 +501,20 @@ export default function StrategyBoard() {
                         
                         <div className="p-4 space-y-6">
                             <div>
+                                <Label className="text-base font-semibold">Ferramenta</Label>
+                                 <RadioGroup value={drawingTool} onValueChange={(v) => setDrawingTool(v as DrawingTool)} className="grid grid-cols-2 gap-2 mt-2">
+                                    <Label htmlFor="tool-line" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                        <RadioGroupItem value="line" id="tool-line" className="sr-only"/>
+                                        <MousePointer className="w-4 h-4"/> Linha
+                                    </Label>
+                                    <Label htmlFor="tool-circle" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                        <RadioGroupItem value="circle" id="tool-circle" className="sr-only"/>
+                                        <Circle className="w-4 h-4"/> Círculo
+                                    </Label>
+                                </RadioGroup>
+                            </div>
+
+                            <div>
                                 <Label className="text-base font-semibold">Cor do Pincel</Label>
                                 <RadioGroup value={color} onValueChange={setColor} className="grid grid-cols-4 gap-2 mt-2">
                                     {COLORS.map(c => (
@@ -468,7 +528,7 @@ export default function StrategyBoard() {
                             
                             <div>
                                 <Label htmlFor="lineWidth" className="text-base font-semibold">
-                                    Espessura do Traço: {lineWidth}px
+                                    Espessura: {lineWidth}px
                                 </Label>
                                 <Slider
                                     id="lineWidth"
@@ -526,26 +586,12 @@ export default function StrategyBoard() {
 
         {isClient && mapImage && (
             <div className="mt-12 w-full">
-                <h2 className="text-2xl font-bold mb-4 text-center">Visão Geral das Saídas</h2>
+                <h2 className="text-2xl font-bold mb-4 text-center">Recursos das Saídas</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {Array.from({ length: NUM_SAIDAS }, (_, i) => {
                         const saidaKey = `saida-${i + 1}`;
                         return (
-                            <Card key={saidaKey} className="overflow-hidden">
-                                <CardHeader>
-                                    <CardTitle>Saída {i + 1}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="aspect-[2/1] bg-muted rounded-md overflow-hidden relative">
-                                        <canvas
-                                            ref={el => (previewCanvasRefs.current[saidaKey] = el)}
-                                            width={480} // Larger base size for better resolution
-                                            height={240}
-                                            className="w-full h-full object-contain"
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
+                           <SaidaResources key={saidaKey} saidaKey={saidaKey} />
                         );
                     })}
                 </div>
