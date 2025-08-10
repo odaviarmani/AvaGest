@@ -14,7 +14,7 @@ const BrazilMap: React.FC<BrazilMapProps> = ({ teamsByState }) => {
     <TooltipProvider>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 800 800"
+        viewBox="0 0 900 800"
         aria-label="Mapa do Brasil"
         className="w-full h-auto"
       >
