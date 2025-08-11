@@ -52,9 +52,6 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                           <Link href="/kanban">Kanban</Link>
                       </Button>
                       <Button variant="ghost" asChild>
-                          <Link href="/chat">Chat</Link>
-                      </Button>
-                      <Button variant="ghost" asChild>
                           <Link href="/calendar">Calendário</Link>
                       </Button>
                       <Button variant="ghost" asChild>
@@ -80,6 +77,9 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                       </Button>
                       <Button variant="ghost" asChild>
                           <Link href="/rubricas">Rubricas</Link>
+                      </Button>
+                      <Button variant="ghost" asChild>
+                          <Link href="/chat">Chat</Link>
                       </Button>
                        {isDavi && (
                          <Button variant="ghost" asChild>
