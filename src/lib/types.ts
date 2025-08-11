@@ -68,3 +68,12 @@ export const activityLogSchema = z.object({
 });
 
 export type ActivityLog = z.infer<typeof activityLogSchema>;
+
+export const chatMessageSchema = z.object({
+    id: z.string(),
+    username: z.string(),
+    message: z.string(),
+    timestamp: z.string(),
+});
+
+export type ChatMessage = z.infer<typeof chatMessageSchema>;

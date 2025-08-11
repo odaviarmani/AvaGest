@@ -51,6 +51,9 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                       <Button variant="ghost" asChild>
                           <Link href="/kanban">Kanban</Link>
                       </Button>
+                       <Button variant="ghost" asChild>
+                          <Link href="/chat">Chat</Link>
+                      </Button>
                       <Button variant="ghost" asChild>
                           <Link href="/calendar">Calendário</Link>
                       </Button>
