@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -17,7 +16,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const validUsers: Record<string, string> = {
     "Davi": "jesuscura10",
-    "Carol": "123456",
+    "Carol": "SAAVPCSPFC",
     "Lorenzo": "123456",
     "Thiago": "123456",
     "Miguel": "123456",
