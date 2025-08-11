@@ -6,23 +6,18 @@ import { useAuth, USERS } from '@/contexts/AuthContext';
 import { ChatMessage } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, Trash2, Paperclip, X } from 'lucide-react';
+import { Send, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import ChatMessageItem from './ChatMessage';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import Image from 'next/image';
 
 export default function ChatWindow() {
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [newMessage, setNewMessage] = useState('');
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [imageData, setImageData] = useState<string | null>(null);
-    const [isUploading, setIsUploading] = useState(false);
     const { username, isAuthenticated } = useAuth();
     const [isClient, setIsClient] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const isDavi = username === 'Davi';
     
     // For mentions
@@ -53,42 +48,18 @@ export default function ChatWindow() {
         }
     };
     
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setIsUploading(true);
-            setImagePreview(URL.createObjectURL(file));
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImageData(reader.result as string);
-                setIsUploading(false);
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    const clearImage = () => {
-        setImagePreview(null);
-        setImageData(null);
-        if(fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    }
-
     const handleSendMessage = () => {
-        if ((newMessage.trim() === '' && !imageData) || !isAuthenticated || !username) return;
+        if (newMessage.trim() === '' || !isAuthenticated || !username) return;
 
         const message: ChatMessage = {
             id: crypto.randomUUID(),
             username,
             message: newMessage,
             timestamp: new Date().toISOString(),
-            imageUrl: imageData,
         };
 
         setMessages([...messages, message]);
         setNewMessage('');
-        clearImage();
     };
 
     const handleDeleteRequest = (messageId: string) => {
@@ -163,14 +134,6 @@ export default function ChatWindow() {
                 </div>
             </ScrollArea>
             <div className="p-4 border-t bg-background">
-                {imagePreview && (
-                    <div className="relative w-24 h-24 mb-2">
-                        <Image src={imagePreview} alt="Preview" layout="fill" objectFit="cover" className="rounded-md"/>
-                        <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={clearImage}>
-                            <X className="h-4 w-4"/>
-                        </Button>
-                    </div>
-                )}
                  {suggestions.length > 0 && (
                     <div className="mb-2 p-2 border rounded-md bg-secondary max-h-40 overflow-y-auto">
                         <p className="text-sm font-semibold mb-1">Mencionar:</p>
@@ -198,10 +161,6 @@ export default function ChatWindow() {
                     }}
                     className="flex items-center gap-2"
                 >
-                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" className="hidden"/>
-                    <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                        <Paperclip/>
-                    </Button>
                     <Input
                         value={newMessage}
                         onChange={handleInputChange}

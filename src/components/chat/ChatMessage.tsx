@@ -49,11 +49,7 @@ export default function ChatMessageItem({ message, currentUser, isDavi, onDelete
             )}>
                 {!isCurrentUser && <p className="font-bold text-sm mb-1">{message.username}</p>}
                 
-                {message.imageUrl ? (
-                    <Image src={message.imageUrl} alt="Imagem enviada" width={200} height={200} className="rounded-md max-w-full h-auto" />
-                ) : (
-                    <p className="text-base whitespace-pre-wrap break-words">{message.message}</p>
-                )}
+                <p className="text-base whitespace-pre-wrap break-words">{message.message}</p>
 
                 <p className="text-xs mt-1 opacity-75">
                     {formatDistanceToNow(new Date(message.timestamp), { locale: ptBR, addSuffix: true })}
