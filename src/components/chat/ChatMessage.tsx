@@ -9,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button } from '../ui/button';
 import { Trash2 } from 'lucide-react';
+import Image from 'next/image';
 
 const legoAvatars: Record<string, string> = {
   "Davi": "https://fll-wro.github.io/assets/images/lego_avatars/davi.png",
@@ -30,6 +31,7 @@ interface ChatMessageItemProps {
 export default function ChatMessageItem({ message, currentUser, isDavi, onDelete }: ChatMessageItemProps) {
     const isCurrentUser = message.username === currentUser;
     const avatarSrc = legoAvatars[message.username];
+    const isMentioned = currentUser ? message.message.includes(`@${currentUser}`) : false;
 
     return (
         <div className={cn("flex items-start gap-3 group", isCurrentUser ? "justify-end" : "justify-start")}>
@@ -42,10 +44,17 @@ export default function ChatMessageItem({ message, currentUser, isDavi, onDelete
 
             <div className={cn(
                 "rounded-lg px-4 py-2 max-w-sm relative",
-                isCurrentUser ? "bg-primary text-primary-foreground" : "bg-secondary"
+                isCurrentUser ? "bg-primary text-primary-foreground" : "bg-secondary",
+                isMentioned && "bg-purple-500/20 ring-2 ring-purple-500"
             )}>
                 {!isCurrentUser && <p className="font-bold text-sm mb-1">{message.username}</p>}
-                <p className="text-base">{message.message}</p>
+                
+                {message.imageUrl ? (
+                    <Image src={message.imageUrl} alt="Imagem enviada" width={200} height={200} className="rounded-md max-w-full h-auto" />
+                ) : (
+                    <p className="text-base whitespace-pre-wrap break-words">{message.message}</p>
+                )}
+
                 <p className="text-xs mt-1 opacity-75">
                     {formatDistanceToNow(new Date(message.timestamp), { locale: ptBR, addSuffix: true })}
                 </p>
@@ -74,4 +83,3 @@ export default function ChatMessageItem({ message, currentUser, isDavi, onDelete
         </div>
     );
 }
-

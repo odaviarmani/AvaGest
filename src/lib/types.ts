@@ -74,6 +74,7 @@ export const chatMessageSchema = z.object({
     username: z.string(),
     message: z.string(),
     timestamp: z.string(),
+    imageUrl: z.string().nullable().optional(),
 });
 
 export type ChatMessage = z.infer<typeof chatMessageSchema>;

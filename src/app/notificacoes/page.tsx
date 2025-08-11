@@ -2,9 +2,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Bell, AlertTriangle, CheckCircle, Info, CalendarClock, MessageSquarePlus, MessageSquare, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Bell, AlertTriangle, CheckCircle, Info, CalendarClock, MessageSquarePlus, MessageSquare, MoreVertical, Pencil, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Task, CustomNotification } from '@/lib/types';
+import { Task, CustomNotification, ChatMessage } from '@/lib/types';
 import { differenceInDays, formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,13 +19,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 interface Notification {
     id: string;
-    type: 'warning' | 'info' | 'success' | 'custom';
+    type: 'warning' | 'info' | 'success' | 'custom' | 'chat';
     title: string;
     message: string;
     date: string;
     icon: React.ReactNode;
     isCustom: boolean;
     targetUsers?: string[];
+    isMention?: boolean;
 }
 
 const generateDeadlineNotifications = (tasks: Task[]): Notification[] => {
@@ -40,7 +41,6 @@ const generateDeadlineNotifications = (tasks: Task[]): Notification[] => {
         }))
         .filter(task => {
             const dueDate = task.dueDate!;
-            // Clone the date to avoid modifying the original task object
             const dueDateWithoutTime = new Date(dueDate);
             dueDateWithoutTime.setHours(0, 0, 0, 0);
             const daysUntilDue = differenceInDays(dueDateWithoutTime, today);
@@ -89,6 +89,28 @@ const mapCustomToUINotification = (custom: CustomNotification): Notification => 
   isCustom: true
 });
 
+const generateChatNotifications = (chatMessages: ChatMessage[], currentUser: string, isChatMuted: boolean): Notification[] => {
+    return chatMessages.map(msg => {
+        const isMention = msg.message.includes(`@${currentUser}`);
+        
+        // Don't notify the user about their own messages
+        if (msg.username === currentUser) return null;
+
+        // If chat is muted and it's not a mention, don't show notification
+        if(isChatMuted && !isMention) return null;
+
+        return {
+            id: `chat-${msg.id}`,
+            type: 'chat',
+            title: `Nova mensagem de ${msg.username}`,
+            message: msg.message.length > 50 ? `${msg.message.substring(0, 50)}...` : msg.message,
+            date: msg.timestamp,
+            icon: <MessageSquare className="h-6 w-6 text-purple-500"/>,
+            isCustom: false,
+            isMention,
+        }
+    }).filter(Boolean) as Notification[];
+}
 
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -98,13 +120,14 @@ export default function NotificationsPage() {
     const [editingNotification, setEditingNotification] = useState<CustomNotification | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
+    const [isChatMuted, setIsChatMuted] = useState(false);
 
     const { username } = useAuth();
     const { toast } = useToast();
     
     const isDavi = username === 'Davi';
 
-     const updateNotifications = (customNotifs: CustomNotification[]) => {
+     const updateNotifications = (customNotifs: CustomNotification[], chatMuted: boolean) => {
         const customUINotifs = customNotifs
             .filter(cn => {
                 if (isDavi) return true;
@@ -116,7 +139,11 @@ export default function NotificationsPage() {
         const savedTasks = localStorage.getItem('kanbanTasks');
         const deadlineNotifications = savedTasks ? generateDeadlineNotifications(JSON.parse(savedTasks)) : [];
 
-        const allNotifications = [...deadlineNotifications, ...staticNotifications, ...customUINotifs]
+        const savedChatMessages = localStorage.getItem('chatMessages');
+        const chatNotifications = savedChatMessages && username ? generateChatNotifications(JSON.parse(savedChatMessages), username, chatMuted) : [];
+
+
+        const allNotifications = [...deadlineNotifications, ...staticNotifications, ...customUINotifs, ...chatNotifications]
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         setNotifications(allNotifications);
     };
@@ -128,7 +155,12 @@ export default function NotificationsPage() {
             const savedCustom = localStorage.getItem('customNotifications');
             const customNotifs = savedCustom ? JSON.parse(savedCustom) : [];
             setCustomNotifications(customNotifs);
-            updateNotifications(customNotifs);
+            
+            const savedMutePref = localStorage.getItem('chatMuted');
+            const muted = savedMutePref ? JSON.parse(savedMutePref) : false;
+            setIsChatMuted(muted);
+
+            updateNotifications(customNotifs, muted);
         } catch (e) {
             console.error(e)
         }
@@ -137,9 +169,18 @@ export default function NotificationsPage() {
      useEffect(() => {
         if (isClient) {
             localStorage.setItem('customNotifications', JSON.stringify(customNotifications));
-            updateNotifications(customNotifications);
+            updateNotifications(customNotifications, isChatMuted);
         }
-    }, [customNotifications, isClient]);
+    }, [customNotifications, isChatMuted, isClient]);
+
+    const handleToggleMute = () => {
+        const newMutedState = !isChatMuted;
+        setIsChatMuted(newMutedState);
+        localStorage.setItem('chatMuted', JSON.stringify(newMutedState));
+        toast({
+            title: newMutedState ? "Notificações do chat silenciadas" : "Notificações do chat ativadas",
+        });
+    }
 
     const handleOpenDialog = (notification: CustomNotification | null) => {
         setEditingNotification(notification);
@@ -188,7 +229,7 @@ export default function NotificationsPage() {
 
     return (
         <div className="flex-1 p-4 md:p-8">
-            <header className="mb-8 flex justify-between items-center">
+            <header className="mb-8 flex justify-between items-center flex-wrap gap-4">
                 <div className="flex items-center gap-4">
                     <Bell className="w-8 h-8 text-primary" />
                     <div>
@@ -198,12 +239,18 @@ export default function NotificationsPage() {
                         </p>
                     </div>
                 </div>
-                {isDavi && (
-                    <Button onClick={() => handleOpenDialog(null)}>
-                        <MessageSquarePlus className="mr-2" />
-                        Criar Notificação
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={handleToggleMute}>
+                        {isChatMuted ? <VolumeX className="mr-2"/> : <Volume2 className="mr-2"/>}
+                        {isChatMuted ? 'Ativar Notificações do Chat' : 'Silenciar Chat'}
                     </Button>
-                )}
+                    {isDavi && (
+                        <Button onClick={() => handleOpenDialog(null)}>
+                            <MessageSquarePlus className="mr-2" />
+                            Criar Notificação
+                        </Button>
+                    )}
+                </div>
             </header>
 
             <div className="max-w-3xl mx-auto space-y-4">
@@ -213,7 +260,9 @@ export default function NotificationsPage() {
                             key={notification.id} 
                             className={cn(
                                 "shadow-sm hover:shadow-md transition-shadow relative",
-                                notification.type === 'custom' && 'bg-primary/10 border-primary/50'
+                                notification.isCustom && 'bg-primary/10 border-primary/50',
+                                notification.type === 'chat' && 'bg-purple-500/10 border-purple-500/50',
+                                notification.isMention && 'ring-2 ring-offset-2 ring-purple-500'
                             )}
                         >
                             <CardContent className="p-4 flex items-start gap-4">
