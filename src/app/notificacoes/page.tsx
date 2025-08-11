@@ -40,11 +40,14 @@ const generateDeadlineNotifications = (tasks: Task[]): Notification[] => {
         }))
         .filter(task => {
             const dueDate = task.dueDate!;
-            dueDate.setHours(0, 0, 0, 0);
-            const daysUntilDue = differenceInDays(dueDate, today);
+            // Clone the date to avoid modifying the original task object
+            const dueDateWithoutTime = new Date(dueDate);
+            dueDateWithoutTime.setHours(0, 0, 0, 0);
+            const daysUntilDue = differenceInDays(dueDateWithoutTime, today);
             return daysUntilDue >= 0 && daysUntilDue <= 3;
         })
         .map(task => {
+            const timeDistance = formatDistanceToNow(task.dueDate!, { locale: ptBR, addSuffix: true });
             return {
                 id: `task-${task.id}`,
                 type: 'warning',
@@ -121,10 +124,14 @@ export default function NotificationsPage() {
 
     useEffect(() => {
         setIsClient(true);
-        const savedCustom = localStorage.getItem('customNotifications');
-        const customNotifs = savedCustom ? JSON.parse(savedCustom) : [];
-        setCustomNotifications(customNotifs);
-        updateNotifications(customNotifs);
+        try {
+            const savedCustom = localStorage.getItem('customNotifications');
+            const customNotifs = savedCustom ? JSON.parse(savedCustom) : [];
+            setCustomNotifications(customNotifs);
+            updateNotifications(customNotifs);
+        } catch (e) {
+            console.error(e)
+        }
     }, [isClient, username]);
 
      useEffect(() => {
