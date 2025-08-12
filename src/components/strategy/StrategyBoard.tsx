@@ -562,25 +562,25 @@ export default function StrategyBoard() {
             // Add turn instruction if there is a next line
             if (index < currentDrawings.length - 1) {
                 const nextLine = currentDrawings[index + 1];
-                const angle1 = line.angleDeg;
-                const angle2 = nextLine.angleDeg;
 
-                // Calculate cross product to determine direction
-                const p1 = { x: line.points[2] - line.points[0], y: line.points[3] - line.points[1] };
-                const p2 = { x: nextLine.points[2] - nextLine.points[0], y: nextLine.points[3] - nextLine.points[1] };
-                const crossProduct = p1.x * p2.y - p1.y * p2.x;
-                const direction = crossProduct > 0 ? "Direita" : "Esquerda";
-                
-                let angleDiff = Math.abs(angle1 - angle2);
-                if (angleDiff > 180) {
-                    angleDiff = 360 - angleDiff;
-                }
+                // Calculate vectors
+                const v1 = { x: line.points[2] - line.points[0], y: line.points[3] - line.points[1] };
+                const v2 = { x: nextLine.points[2] - nextLine.points[0], y: nextLine.points[3] - nextLine.points[1] };
 
-                if (angleDiff > 1) { // Threshold for turning
+                // Calculate angle between vectors
+                const angleRad = Math.atan2(v2.y, v2.x) - Math.atan2(v1.y, v1.x);
+                let angleDeg = angleRad * (180 / Math.PI);
+
+                // Normalize angle to be between -180 and 180
+                if (angleDeg > 180) angleDeg -= 360;
+                if (angleDeg < -180) angleDeg += 360;
+
+                if (Math.abs(angleDeg) > 1) { // Threshold for turning
+                    const direction = angleDeg > 0 ? "Esquerda" : "Direita";
                     result.push({
                         step: stepCounter++,
                         action: `Girar para ${direction}`,
-                        value: `${angleDiff.toFixed(0)}°`,
+                        value: `${Math.abs(angleDeg).toFixed(0)}°`,
                     });
                 }
             }
