@@ -20,6 +20,7 @@ const userThemes: Record<string, { primary: string, primaryForeground: string, r
     'Leandro':   { primary: '215 80% 55%', primaryForeground: '210 20% 98%', ring: '215 80% 55%' }, // Royal Blue
     'Valquíria': { primary: '320 70% 50%', primaryForeground: '210 20% 98%', ring: '320 70% 50%' }, // Hot Pink
     'Sthefany':  { primary: '50 90% 50%',  primaryForeground: '50 90% 10%',  ring: '50 90% 50%' }, // Gold
+    'Avalon':    { primary: '0 0% 0%',  primaryForeground: '0 0% 98%',  ring: '0 0% 0%' }, // Black
 };
 
 export default function AppContent({ children }: { children: React.ReactNode }) {

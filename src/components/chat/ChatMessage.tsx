@@ -21,6 +21,7 @@ const legoAvatars: Record<string, string> = {
   "Leandro": "https://fll-wro.github.io/assets/images/lego_avatars/leandro.png",
   "Valquíria": "https://fll-wro.github.io/assets/images/lego_avatars/valquiria.png",
   "Sthefany": "https://fll-wro.github.io/assets/images/lego_avatars/sthefany.png",
+  "Avalon": "https://fll-wro.github.io/assets/images/lego_avatars/avalon.png",
 };
 
 
