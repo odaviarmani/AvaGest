@@ -32,8 +32,8 @@ const LOCALSTORAGE_KEYS = [
     'activityLog',
 ];
 
-// Keys that represent arrays of items and should be concatenated.
-const ARRAY_KEYS_TO_CONCAT = [
+// Keys that represent arrays of items with unique IDs.
+const ARRAY_KEYS_TO_MERGE = [
     'kanbanTasks',
     'customRoulettes',
     'pairingRouletteHistory',
@@ -121,7 +121,6 @@ export default function BackupPage() {
 
                 const importedData = JSON.parse(text);
 
-                // Basic validation
                 const importedKeys = Object.keys(importedData);
                 if (importedKeys.length === 0 || !LOCALSTORAGE_KEYS.some(key => importedKeys.includes(key))) {
                      throw new Error("Este não parece ser um arquivo de backup válido.");
@@ -131,20 +130,22 @@ export default function BackupPage() {
                     if (LOCALSTORAGE_KEYS.includes(key)) {
                         const importedValue = importedData[key];
                         
-                        if (ARRAY_KEYS_TO_CONCAT.includes(key) && Array.isArray(importedValue)) {
-                            // Concatenate arrays
+                        if (ARRAY_KEYS_TO_MERGE.includes(key) && Array.isArray(importedValue)) {
+                            // Merge arrays, avoiding duplicates based on 'id'
                             const existingValueRaw = localStorage.getItem(key);
-                            const existingValue = existingValueRaw ? JSON.parse(existingValueRaw) : [];
+                            const existingValue: any[] = existingValueRaw ? JSON.parse(existingValueRaw) : [];
                             
                             if (Array.isArray(existingValue)) {
-                                const combined = [...existingValue, ...importedValue];
+                                const existingIds = new Set(existingValue.map(item => item.id));
+                                const itemsToAdd = importedValue.filter(item => !existingIds.has(item.id));
+                                const combined = [...existingValue, ...itemsToAdd];
                                 localStorage.setItem(key, JSON.stringify(combined));
                             } else {
                                 // If existing is not an array, overwrite
                                 localStorage.setItem(key, JSON.stringify(importedValue));
                             }
                         } else {
-                            // For non-array keys or keys not in the concat list, simply overwrite.
+                            // For non-array keys or keys not in the merge list, simply overwrite.
                             localStorage.setItem(key, JSON.stringify(importedValue));
                         }
                     }
@@ -152,7 +153,7 @@ export default function BackupPage() {
                 
                 toast({
                     title: 'Importação Concluída!',
-                    description: 'Os dados foram restaurados. A página será recarregada.',
+                    description: 'Os dados foram mesclados. A página será recarregada.',
                 });
                 
                 // Reload the page to apply changes everywhere
@@ -180,7 +181,7 @@ export default function BackupPage() {
                 <div>
                     <h1 className="text-3xl font-bold">Backup e Restauração de Dados</h1>
                     <p className="text-muted-foreground">
-                        Exporte seus dados para um arquivo de backup ou importe para restaurar seu ambiente.
+                        Exporte seus dados para um arquivo de backup ou importe para mesclar com seu ambiente atual.
                     </p>
                 </div>
             </header>
@@ -204,7 +205,7 @@ export default function BackupPage() {
                     <CardHeader>
                         <CardTitle>Importar Dados</CardTitle>
                         <CardDescription>
-                            Selecione um arquivo de backup para restaurar os dados. Os dados do backup serão ADICIONADOS aos dados já existentes.
+                            Selecione um arquivo de backup para restaurar os dados. Os dados do backup serão MESCLADOS aos dados já existentes. Itens duplicados (com o mesmo ID) serão ignorados.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -230,7 +231,7 @@ export default function BackupPage() {
                         </div>
                         <AlertDialogTitle className="text-center">Aviso de Importação</AlertDialogTitle>
                         <AlertDialogDescription className="text-center">
-                           Você está prestes a ADICIONAR os dados do arquivo selecionado aos dados existentes neste navegador. Itens não serão sobrescritos, apenas adicionados.
+                           Você está prestes a MESCLAR os dados do arquivo selecionado com os dados existentes. Itens novos serão adicionados e itens duplicados serão ignorados.
                            <br/><br/>
                            Arquivo: <span className="font-semibold">{fileToImport?.name}</span>
                         </AlertDialogDescription>
@@ -238,7 +239,7 @@ export default function BackupPage() {
                     <AlertDialogFooter className="sm:justify-center">
                         <AlertDialogCancel onClick={() => setImportAlertOpen(false)}>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={handleImportConfirm}>
-                            Sim, adicionar dados
+                            Sim, mesclar dados
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
