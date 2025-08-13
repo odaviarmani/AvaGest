@@ -8,7 +8,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { LogOut, Bell, History } from 'lucide-react';
+import { LogOut, Bell, History, DatabaseBackup } from 'lucide-react';
 
 const userThemes: Record<string, { primary: string, primaryForeground: string, ring: string }> = {
     'Davi':      { primary: '221 44% 40%', primaryForeground: '210 20% 98%', ring: '221 44% 40%' }, // Navy Blue
@@ -99,6 +99,9 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                             </span>
                           </Link>
                       </Button>
+                      <Button variant="ghost" asChild>
+                        <Link href="/backup">Backup</Link>
+                      </Button>
                   </nav>
                   <div className="flex items-center gap-4">
                     {isAuthenticated && (
@@ -113,7 +116,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
               <footer className="p-4 border-t shrink-0 flex items-center justify-center">
               <iframe
                   style={{ borderRadius: '12px' }}
-                  src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
+                  src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
                   width="80%"
                   height="80"
                   allowFullScreen={false}
