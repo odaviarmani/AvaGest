@@ -32,6 +32,21 @@ const LOCALSTORAGE_KEYS = [
     'activityLog',
 ];
 
+// Keys that represent arrays of objects with an 'id' property and should be merged.
+const ARRAY_KEYS_TO_MERGE = [
+    'kanbanTasks',
+    'customRoulettes',
+    'pairingRouletteHistory',
+    'decodeEvaluations',
+    'coreValuesTeams',
+    'roundsHistory',
+    'chatMessages',
+    'customNotifications',
+    'attachments',
+    'activityLog',
+];
+
+
 export default function BackupPage() {
     const { toast } = useToast();
     const [isImportAlertOpen, setImportAlertOpen] = useState(false);
@@ -104,23 +119,41 @@ export default function BackupPage() {
                     throw new Error("O arquivo está vazio ou corrompido.");
                 }
 
-                const data = JSON.parse(text);
+                const importedData = JSON.parse(text);
 
                 // Basic validation
-                const importedKeys = Object.keys(data);
+                const importedKeys = Object.keys(importedData);
                 if (importedKeys.length === 0 || !LOCALSTORAGE_KEYS.some(key => importedKeys.includes(key))) {
                      throw new Error("Este não parece ser um arquivo de backup válido.");
                 }
 
-                // Clear existing data before import
-                LOCALSTORAGE_KEYS.forEach(key => {
-                    localStorage.removeItem(key);
-                });
-
-                // Import new data
                 importedKeys.forEach(key => {
                     if (LOCALSTORAGE_KEYS.includes(key)) {
-                        localStorage.setItem(key, JSON.stringify(data[key]));
+                        const importedValue = importedData[key];
+                        
+                        if (ARRAY_KEYS_TO_MERGE.includes(key) && Array.isArray(importedValue)) {
+                            // Merge arrays by ID
+                            const existingValueRaw = localStorage.getItem(key);
+                            const existingValue = existingValueRaw ? JSON.parse(existingValueRaw) : [];
+                            
+                            if (Array.isArray(existingValue)) {
+                                const combined = [...existingValue, ...importedValue];
+                                const uniqueMap = new Map();
+                                combined.forEach(item => {
+                                    if (item && typeof item === 'object' && 'id' in item) {
+                                        uniqueMap.set(item.id, item);
+                                    }
+                                });
+                                const mergedValue = Array.from(uniqueMap.values());
+                                localStorage.setItem(key, JSON.stringify(mergedValue));
+                            } else {
+                                // If existing is not an array, overwrite
+                                localStorage.setItem(key, JSON.stringify(importedValue));
+                            }
+                        } else {
+                            // For non-array keys or keys not in the merge list, simply overwrite.
+                            localStorage.setItem(key, JSON.stringify(importedValue));
+                        }
                     }
                 });
                 
@@ -178,7 +211,7 @@ export default function BackupPage() {
                     <CardHeader>
                         <CardTitle>Importar Dados</CardTitle>
                         <CardDescription>
-                            Selecione um arquivo de backup para restaurar os dados. Esta ação irá sobrescrever todos os dados existentes neste navegador.
+                            Selecione um arquivo de backup para restaurar os dados. Os dados existentes serão mesclados com os dados do backup.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -199,20 +232,20 @@ export default function BackupPage() {
              <AlertDialog open={isImportAlertOpen} onOpenChange={setImportAlertOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mb-4">
-                            <AlertTriangle className="h-6 w-6 text-red-600" />
+                         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 mb-4">
+                            <AlertTriangle className="h-6 w-6 text-yellow-600" />
                         </div>
-                        <AlertDialogTitle className="text-center">Atenção! Ação Irreversível</AlertDialogTitle>
+                        <AlertDialogTitle className="text-center">Aviso de Importação</AlertDialogTitle>
                         <AlertDialogDescription className="text-center">
-                           Você está prestes a substituir todos os dados salvos neste navegador pelos dados do arquivo selecionado. Esta ação não pode ser desfeita.
+                           Você está prestes a mesclar os dados do arquivo selecionado com os dados existentes neste navegador. Itens com o mesmo ID serão atualizados.
                            <br/><br/>
                            Arquivo: <span className="font-semibold">{fileToImport?.name}</span>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="sm:justify-center">
                         <AlertDialogCancel onClick={() => setImportAlertOpen(false)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleImportConfirm} className="bg-destructive hover:bg-destructive/90">
-                            Sim, substituir dados
+                        <AlertDialogAction onClick={handleImportConfirm}>
+                            Sim, mesclar dados
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
