@@ -32,8 +32,8 @@ const LOCALSTORAGE_KEYS = [
     'activityLog',
 ];
 
-// Keys that represent arrays of objects with an 'id' property and should be merged.
-const ARRAY_KEYS_TO_MERGE = [
+// Keys that represent arrays of items and should be concatenated.
+const ARRAY_KEYS_TO_CONCAT = [
     'kanbanTasks',
     'customRoulettes',
     'pairingRouletteHistory',
@@ -131,27 +131,20 @@ export default function BackupPage() {
                     if (LOCALSTORAGE_KEYS.includes(key)) {
                         const importedValue = importedData[key];
                         
-                        if (ARRAY_KEYS_TO_MERGE.includes(key) && Array.isArray(importedValue)) {
-                            // Merge arrays by ID
+                        if (ARRAY_KEYS_TO_CONCAT.includes(key) && Array.isArray(importedValue)) {
+                            // Concatenate arrays
                             const existingValueRaw = localStorage.getItem(key);
                             const existingValue = existingValueRaw ? JSON.parse(existingValueRaw) : [];
                             
                             if (Array.isArray(existingValue)) {
                                 const combined = [...existingValue, ...importedValue];
-                                const uniqueMap = new Map();
-                                combined.forEach(item => {
-                                    if (item && typeof item === 'object' && 'id' in item) {
-                                        uniqueMap.set(item.id, item);
-                                    }
-                                });
-                                const mergedValue = Array.from(uniqueMap.values());
-                                localStorage.setItem(key, JSON.stringify(mergedValue));
+                                localStorage.setItem(key, JSON.stringify(combined));
                             } else {
                                 // If existing is not an array, overwrite
                                 localStorage.setItem(key, JSON.stringify(importedValue));
                             }
                         } else {
-                            // For non-array keys or keys not in the merge list, simply overwrite.
+                            // For non-array keys or keys not in the concat list, simply overwrite.
                             localStorage.setItem(key, JSON.stringify(importedValue));
                         }
                     }
@@ -211,7 +204,7 @@ export default function BackupPage() {
                     <CardHeader>
                         <CardTitle>Importar Dados</CardTitle>
                         <CardDescription>
-                            Selecione um arquivo de backup para restaurar os dados. Os dados existentes serão mesclados com os dados do backup.
+                            Selecione um arquivo de backup para restaurar os dados. Os dados do backup serão ADICIONADOS aos dados já existentes.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -237,7 +230,7 @@ export default function BackupPage() {
                         </div>
                         <AlertDialogTitle className="text-center">Aviso de Importação</AlertDialogTitle>
                         <AlertDialogDescription className="text-center">
-                           Você está prestes a mesclar os dados do arquivo selecionado com os dados existentes neste navegador. Itens com o mesmo ID serão atualizados.
+                           Você está prestes a ADICIONAR os dados do arquivo selecionado aos dados existentes neste navegador. Itens não serão sobrescritos, apenas adicionados.
                            <br/><br/>
                            Arquivo: <span className="font-semibold">{fileToImport?.name}</span>
                         </AlertDialogDescription>
@@ -245,7 +238,7 @@ export default function BackupPage() {
                     <AlertDialogFooter className="sm:justify-center">
                         <AlertDialogCancel onClick={() => setImportAlertOpen(false)}>Cancelar</AlertDialogCancel>
                         <AlertDialogAction onClick={handleImportConfirm}>
-                            Sim, mesclar dados
+                            Sim, adicionar dados
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
