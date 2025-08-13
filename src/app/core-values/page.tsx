@@ -4,12 +4,13 @@ import CoreValuesTracker from "@/components/core-values/CoreValuesTracker";
 import { Heart, Gamepad2 } from "lucide-react";
 import DrawingCanvas from "@/components/core-values/DrawingCanvas";
 import TicTacToe from "@/components/core-values/TicTacToe";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, ADMIN_USERS } from "@/contexts/AuthContext";
 import MemoryGame from "@/components/core-values/MemoryGame";
 import FlappyBirdGame from "@/components/core-values/FlappyBirdGame";
 
 export default function CoreValuesPage() {
   const { username } = useAuth();
+  const isAdmin = username && ADMIN_USERS.includes(username);
 
   return (
     <div className="flex-1 p-4 md:p-8 space-y-12">
@@ -26,7 +27,7 @@ export default function CoreValuesPage() {
         <CoreValuesTracker />
       </div>
 
-      {username === 'Davi' && (
+      {isAdmin && (
         <div className="border-t pt-12">
            <header className="mb-8 flex items-center gap-4">
             <Gamepad2 className="w-8 h-8 text-primary" />

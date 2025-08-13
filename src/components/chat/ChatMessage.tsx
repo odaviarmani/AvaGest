@@ -18,17 +18,20 @@ const legoAvatars: Record<string, string> = {
   "Thiago": "https://fll-wro.github.io/assets/images/lego_avatars/thiago.png",
   "Miguel": "https://fll-wro.github.io/assets/images/lego_avatars/miguel.png",
   "Italo": "https://fll-wro.github.io/assets/images/lego_avatars/italo.png",
+  "Leandro": "https://fll-wro.github.io/assets/images/lego_avatars/leandro.png",
+  "Valquíria": "https://fll-wro.github.io/assets/images/lego_avatars/valquiria.png",
+  "Sthefany": "https://fll-wro.github.io/assets/images/lego_avatars/sthefany.png",
 };
 
 
 interface ChatMessageItemProps {
     message: ChatMessage;
     currentUser: string | null;
-    isDavi: boolean;
+    isAdmin: boolean;
     onDelete: () => void;
 }
 
-export default function ChatMessageItem({ message, currentUser, isDavi, onDelete }: ChatMessageItemProps) {
+export default function ChatMessageItem({ message, currentUser, isAdmin, onDelete }: ChatMessageItemProps) {
     const isCurrentUser = message.username === currentUser;
     const avatarSrc = legoAvatars[message.username];
     const isMentioned = currentUser ? message.message.includes(`@${currentUser}`) : false;
@@ -55,7 +58,7 @@ export default function ChatMessageItem({ message, currentUser, isDavi, onDelete
                     {formatDistanceToNow(new Date(message.timestamp), { locale: ptBR, addSuffix: true })}
                 </p>
                 
-                 {isDavi && (
+                 {isAdmin && (
                      <Button 
                         variant="ghost" 
                         size="icon" 

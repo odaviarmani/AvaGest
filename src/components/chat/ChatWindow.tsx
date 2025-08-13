@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useAuth, USERS } from '@/contexts/AuthContext';
+import { useAuth, USERS, ADMIN_USERS } from '@/contexts/AuthContext';
 import { ChatMessage } from '@/lib/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ export default function ChatWindow() {
     const [isClient, setIsClient] = useState(false);
     const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
-    const isDavi = username === 'Davi';
+    const isAdmin = username && ADMIN_USERS.includes(username);
     
     // For mentions
     const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -108,7 +108,7 @@ export default function ChatWindow() {
     const handleSuggestionClick = (suggestion: string) => {
         const words = newMessage.split(' ');
         words.pop();
-        setNewMessage(words.join(' ') + ` @${suggestion} `);
+        setNewMessage(words.join(' ') + `@${suggestion} `);
         setSuggestions([]);
     }
     
@@ -122,7 +122,7 @@ export default function ChatWindow() {
                                 key={msg.id}
                                 message={msg}
                                 currentUser={username}
-                                isDavi={isDavi}
+                                isAdmin={isAdmin}
                                 onDelete={() => handleDeleteRequest(msg.id)}
                             />
                         ))

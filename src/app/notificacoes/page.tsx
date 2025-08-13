@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Task, CustomNotification, ChatMessage } from '@/lib/types';
 import { differenceInDays, formatDistanceToNow, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, ADMIN_USERS } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import NotificationForm from '@/components/notifications/NotificationForm';
@@ -125,12 +125,12 @@ export default function NotificationsPage() {
     const { username } = useAuth();
     const { toast } = useToast();
     
-    const isDavi = username === 'Davi';
+    const isAdmin = username && ADMIN_USERS.includes(username);
 
      const updateNotifications = (customNotifs: CustomNotification[], chatMuted: boolean) => {
         const customUINotifs = customNotifs
             .filter(cn => {
-                if (isDavi) return true;
+                if (isAdmin) return true;
                 if (!cn.targetUsers || cn.targetUsers.length === 0) return true;
                 return cn.targetUsers.includes(username!);
             })
@@ -244,7 +244,7 @@ export default function NotificationsPage() {
                         {isChatMuted ? <VolumeX className="mr-2"/> : <Volume2 className="mr-2"/>}
                         {isChatMuted ? 'Ativar Notificações do Chat' : 'Silenciar Chat'}
                     </Button>
-                    {isDavi && (
+                    {isAdmin && (
                         <Button onClick={() => handleOpenDialog(null)}>
                             <MessageSquarePlus className="mr-2" />
                             Criar Notificação
@@ -277,14 +277,14 @@ export default function NotificationsPage() {
                                         </span>
                                     </div>
                                     <p className="text-sm text-muted-foreground">{notification.message}</p>
-                                    {isDavi && notification.targetUsers && notification.targetUsers.length > 0 && (
+                                    {isAdmin && notification.targetUsers && notification.targetUsers.length > 0 && (
                                         <p className="text-xs text-muted-foreground mt-2">
                                             <b>Direcionado para:</b> {notification.targetUsers.join(', ')}
                                         </p>
                                     )}
                                 </div>
                             </CardContent>
-                             {isDavi && notification.isCustom && (
+                             {isAdmin && notification.isCustom && (
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-7 w-7">

@@ -21,9 +21,13 @@ const validUsers: Record<string, string> = {
     "Thiago": "123456",
     "Miguel": "123456",
     "Italo": "123456",
+    "Leandro": "123456",
+    "Valquíria": "123456",
+    "Sthefany": "123456",
 }
 
 export const USERS = Object.keys(validUsers);
+export const ADMIN_USERS = ["Davi", "Leandro", "Valquíria", "Sthefany"];
 
 const addActivityLog = (username: string, action: 'login' | 'logout') => {
     const newLog: ActivityLog = {

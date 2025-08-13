@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, ADMIN_USERS } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -11,19 +11,22 @@ import Link from 'next/link';
 import { LogOut, Bell, History } from 'lucide-react';
 
 const userThemes: Record<string, { primary: string, primaryForeground: string, ring: string }> = {
-    'Davi':    { primary: '221 44% 40%', primaryForeground: '210 20% 98%', ring: '221 44% 40%' }, // Navy Blue
-    'Carol':   { primary: '262 52% 47%', primaryForeground: '210 20% 98%', ring: '262 52% 47%' }, // Purple
-    'Lorenzo': { primary: '145 63% 49%', primaryForeground: '145 63% 15%', ring: '145 63% 49%' }, // Light Green
-    'Thiago':  { primary: '25 95% 53%',  primaryForeground: '0 0% 98%',   ring: '25 95% 53%' }, // Orange
-    'Miguel':  { primary: '195 91% 48%', primaryForeground: '210 20% 98%', ring: '195 91% 48%' }, // Cyan Blue
-    'Italo':   { primary: '147 65% 31%', primaryForeground: '210 20% 98%', ring: '147 65% 31%' }, // Dark Green
+    'Davi':      { primary: '221 44% 40%', primaryForeground: '210 20% 98%', ring: '221 44% 40%' }, // Navy Blue
+    'Carol':     { primary: '262 52% 47%', primaryForeground: '210 20% 98%', ring: '262 52% 47%' }, // Purple
+    'Lorenzo':   { primary: '145 63% 49%', primaryForeground: '145 63% 15%', ring: '145 63% 49%' }, // Light Green
+    'Thiago':    { primary: '25 95% 53%',  primaryForeground: '0 0% 98%',   ring: '25 95% 53%' }, // Orange
+    'Miguel':    { primary: '195 91% 48%', primaryForeground: '210 20% 98%', ring: '195 91% 48%' }, // Cyan Blue
+    'Italo':     { primary: '147 65% 31%', primaryForeground: '210 20% 98%', ring: '147 65% 31%' }, // Dark Green
+    'Leandro':   { primary: '215 80% 55%', primaryForeground: '210 20% 98%', ring: '215 80% 55%' }, // Royal Blue
+    'Valquíria': { primary: '320 70% 50%', primaryForeground: '210 20% 98%', ring: '320 70% 50%' }, // Hot Pink
+    'Sthefany':  { primary: '50 90% 50%',  primaryForeground: '50 90% 10%',  ring: '50 90% 50%' }, // Gold
 };
 
 export default function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated, username, logout } = useAuth();
   const isAuthPage = pathname === '/login';
-  const isDavi = username === 'Davi';
+  const isAdmin = username && ADMIN_USERS.includes(username);
   
   const theme = username ? userThemes[username] : null;
 
@@ -81,7 +84,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                       <Button variant="ghost" asChild>
                           <Link href="/chat">Chat</Link>
                       </Button>
-                       {isDavi && (
+                       {isAdmin && (
                          <Button variant="ghost" asChild>
                            <Link href="/activity-log">Log de Atividade</Link>
                          </Button>

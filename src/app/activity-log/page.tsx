@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, ADMIN_USERS } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,11 +23,11 @@ export default function ActivityLogPage() {
     const [isClearAllDialogOpen, setIsClearAllDialogOpen] = useState(false);
     const { toast } = useToast();
 
-    const isDavi = username === 'Davi';
+    const isAdmin = username && ADMIN_USERS.includes(username);
 
     useEffect(() => {
         setIsClient(true);
-        if (!isDavi) {
+        if (!isAdmin) {
             router.push('/kanban');
             return;
         }
@@ -45,7 +45,7 @@ export default function ActivityLogPage() {
                 description: "Não foi possível carregar os dados do log de atividade."
             });
         }
-    }, [isDavi, router, toast]);
+    }, [isAdmin, router, toast]);
 
     const updateLog = (newLog: ActivityLog[]) => {
         setLog(newLog);
@@ -69,7 +69,7 @@ export default function ActivityLogPage() {
         toast({ title: "Histórico limpo!", description: "Todos os registros foram removidos." });
     };
 
-    if (!isClient || !isDavi) {
+    if (!isClient || !isAdmin) {
         return (
              <div className="flex flex-1 items-center justify-center p-8">
                 <Card className="w-full max-w-md text-center">
