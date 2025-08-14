@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InventoryItem, inventoryItemSchema } from '@/lib/types';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
@@ -76,7 +76,10 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Quantidade</FormLabel>
-                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                        <FormControl><Input placeholder="Ex: 10" {...field} /></FormControl>
+                                        <FormDescription>
+                                            Use números ou "Pouco", "Médio", "Muitas".
+                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}

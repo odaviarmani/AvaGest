@@ -82,7 +82,10 @@ export const inventoryItemSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'O nome é obrigatório'),
     category: z.string().min(1, 'A categoria é obrigatória.'),
-    quantity: z.coerce.number().int().min(0, 'A quantidade não pode ser negativa'),
+    quantity: z.union([
+        z.string().min(1, "A quantidade é obrigatória."),
+        z.coerce.number().int().min(0, 'A quantidade não pode ser negativa')
+    ]),
     location: z.string().min(1, 'A localização é obrigatória'),
     imageUrl: z.string().optional().nullable(),
 });
