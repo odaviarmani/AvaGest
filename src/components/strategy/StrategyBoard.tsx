@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -545,44 +546,51 @@ export default function StrategyBoard() {
         if (!isClient) return [];
         const currentDrawings = (historyRef.current[activeTab] || [])
             .slice(0, currentStepRef.current[activeTab] || 0)
-            .flat()
-            .filter(d => d.type === 'line') as Line[];
+            .flat();
 
         const result: Instruction[] = [];
         let stepCounter = 1;
+        
+        const allLines = currentDrawings.filter(d => d.type === 'line') as Line[];
 
-        currentDrawings.forEach((line, index) => {
-            // Add move instruction
-            result.push({
-                step: stepCounter++,
-                action: "Mover para frente",
-                value: `${line.lengthCm.toFixed(1)}cm`,
-            });
+        currentDrawings.forEach((drawing, index) => {
+            if (drawing.type === 'line') {
+                // Add move instruction
+                result.push({
+                    step: stepCounter++,
+                    action: "Mover para frente",
+                    value: `${drawing.lengthCm.toFixed(1)}cm`,
+                });
 
-            // Add turn instruction if there is a next line
-            if (index < currentDrawings.length - 1) {
-                const nextLine = currentDrawings[index + 1];
+                // Find the next line drawing to calculate the turn
+                const nextLine = currentDrawings.slice(index + 1).find(d => d.type === 'line') as Line | undefined;
 
-                // Calculate vectors
-                const v1 = { x: line.points[2] - line.points[0], y: line.points[3] - line.points[1] };
-                const v2 = { x: nextLine.points[2] - nextLine.points[0], y: nextLine.points[3] - nextLine.points[1] };
+                if (nextLine) {
+                    const v1 = { x: drawing.points[2] - drawing.points[0], y: drawing.points[3] - drawing.points[1] };
+                    const v2 = { x: nextLine.points[2] - nextLine.points[0], y: nextLine.points[3] - nextLine.points[1] };
 
-                // Calculate angle between vectors
-                const angleRad = Math.atan2(v2.y, v2.x) - Math.atan2(v1.y, v1.x);
-                let angleDeg = angleRad * (180 / Math.PI);
+                    const angleRad = Math.atan2(v2.y, v2.x) - Math.atan2(v1.y, v1.x);
+                    let angleDeg = angleRad * (180 / Math.PI);
 
-                // Normalize angle to be between -180 and 180
-                if (angleDeg > 180) angleDeg -= 360;
-                if (angleDeg < -180) angleDeg += 360;
+                    if (angleDeg > 180) angleDeg -= 360;
+                    if (angleDeg < -180) angleDeg += 360;
 
-                if (Math.abs(angleDeg) > 1) { // Threshold for turning
-                    const direction = angleDeg > 0 ? "Esquerda" : "Direita";
-                    result.push({
-                        step: stepCounter++,
-                        action: `Girar para ${direction}`,
-                        value: `${Math.abs(angleDeg).toFixed(0)}°`,
-                    });
+                    if (Math.abs(angleDeg) > 1) { // Threshold for turning
+                        const crossProduct = v1.x * v2.y - v1.y * v2.x;
+                        const direction = crossProduct > 0 ? "Esquerda" : "Direita";
+                        result.push({
+                            step: stepCounter++,
+                            action: `Girar para ${direction}`,
+                            value: `${Math.abs(angleDeg).toFixed(0)}°`,
+                        });
+                    }
                 }
+            } else if (drawing.type === 'circle') {
+                 result.push({
+                    step: stepCounter++,
+                    action: "Girar garra",
+                    value: ``,
+                });
             }
         });
 
