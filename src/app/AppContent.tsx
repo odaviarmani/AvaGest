@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -77,13 +78,13 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                           <Link href="/attachments">Anexos</Link>
                       </Button>
                       <Button variant="ghost" asChild>
-                          <Link href="/inventory">Inventário</Link>
-                      </Button>
-                      <Button variant="ghost" asChild>
                           <Link href="/apps">Apps</Link>
                       </Button>
                       <Button variant="ghost" asChild>
                           <Link href="/rubricas">Rubricas</Link>
+                      </Button>
+                       <Button variant="ghost" asChild>
+                          <Link href="/inventory">Inventário</Link>
                       </Button>
                       <Button variant="ghost" asChild>
                           <Link href="/chat">Chat</Link>
@@ -119,7 +120,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
               <footer className="p-4 border-t shrink-0 flex items-center justify-center">
               <iframe
                   style={{ borderRadius: '12px' }}
-                  src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
+                  src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
                   width="80%"
                   height="80"
                   allowFullScreen={false}
