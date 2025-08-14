@@ -50,7 +50,6 @@ export default function InventoryPage() {
             category: 'Outros',
             quantity: 1,
             location: '',
-            imageUrl: null,
         });
         setIsDialogOpen(true);
     };

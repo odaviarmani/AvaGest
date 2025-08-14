@@ -87,7 +87,6 @@ export const inventoryItemSchema = z.object({
         z.coerce.number().int().min(0, 'A quantidade não pode ser negativa')
     ]),
     location: z.string().min(1, 'A localização é obrigatória'),
-    imageUrl: z.string().optional().nullable(),
 });
 
 export type InventoryItem = z.infer<typeof inventoryItemSchema>;

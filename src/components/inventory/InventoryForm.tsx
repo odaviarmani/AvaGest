@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { InventoryItem, inventoryItemSchema } from '@/lib/types';
@@ -17,24 +17,10 @@ interface InventoryFormProps {
 }
 
 export default function InventoryForm({ item, onSave, onCancel }: InventoryFormProps) {
-    const [isUploading, setIsUploading] = useState(false);
     const form = useForm<InventoryItem>({
         resolver: zodResolver(inventoryItemSchema),
         defaultValues: item,
     });
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setIsUploading(true);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                form.setValue('imageUrl', reader.result as string);
-                setIsUploading(false);
-            };
-            reader.readAsDataURL(file);
-        }
-    }
 
     const onSubmit = (data: InventoryItem) => {
         onSave(data);
@@ -43,7 +29,7 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
-                 <ScrollArea className="h-[60vh] pr-6">
+                 <ScrollArea className="h-auto max-h-[60vh] pr-6">
                     <div className="space-y-4">
                         <FormField
                             control={form.control}
@@ -96,28 +82,6 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
                                 )}
                             />
                         </div>
-                        
-                         <FormField
-                            control={form.control}
-                            name="imageUrl"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Imagem do Item</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            type="file" 
-                                            accept="image/*" 
-                                            onChange={handleImageUpload}
-                                            disabled={isUploading}
-                                        />
-                                    </FormControl>
-                                    {isUploading && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
-                                    {field.value && <img src={field.value} alt="Preview" className="mt-2 max-h-32 w-auto object-contain rounded-md" />}
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
                     </div>
                 </ScrollArea>
 
@@ -125,7 +89,7 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
                     <Button type="button" variant="ghost" onClick={onCancel}>
                         Cancelar
                     </Button>
-                    <Button type="submit" disabled={isUploading}>Salvar</Button>
+                    <Button type="submit">Salvar</Button>
                 </div>
             </form>
         </Form>

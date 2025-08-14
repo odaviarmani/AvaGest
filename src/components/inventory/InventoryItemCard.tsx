@@ -4,12 +4,10 @@
 import React from 'react';
 import { InventoryItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
-import Image from 'next/image';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { MoreVertical, Pencil, Trash2, Package, MapPin } from 'lucide-react';
 import { Badge } from '../ui/badge';
-import { Separator } from '../ui/separator';
 
 interface InventoryItemCardProps {
     item: InventoryItem;
@@ -18,7 +16,7 @@ interface InventoryItemCardProps {
 }
 
 export default function InventoryItemCard({ item, onEdit, onDelete }: InventoryItemCardProps) {
-    const { name, category, quantity, location, imageUrl } = item;
+    const { name, category, quantity, location } = item;
 
     return (
         <Card className="flex flex-col">
@@ -41,11 +39,7 @@ export default function InventoryItemCard({ item, onEdit, onDelete }: InventoryI
             </CardHeader>
             <CardContent className="flex-1 flex flex-col justify-center items-center gap-4">
                 <div className="aspect-square w-full rounded-md overflow-hidden bg-muted flex items-center justify-center p-2">
-                    {imageUrl ? (
-                        <Image src={imageUrl} alt={`Foto de ${name}`} width={150} height={150} className="object-contain w-full h-full" />
-                    ) : (
-                        <Package className="w-16 h-16 text-muted-foreground" />
-                    )}
+                    <Package className="w-16 h-16 text-muted-foreground" />
                 </div>
             </CardContent>
             <CardFooter className="flex flex-col items-start pt-4 gap-2">
