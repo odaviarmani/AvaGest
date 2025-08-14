@@ -8,7 +8,7 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { LogOut, Bell, History, DatabaseBackup } from 'lucide-react';
+import { LogOut, Bell, History, DatabaseBackup, Archive } from 'lucide-react';
 
 const userThemes: Record<string, { primary: string, primaryForeground: string, ring: string }> = {
     'Davi':      { primary: '221 44% 40%', primaryForeground: '210 20% 98%', ring: '221 44% 40%' }, // Navy Blue
@@ -75,6 +75,9 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                       </Button>
                        <Button variant="ghost" asChild>
                           <Link href="/attachments">Anexos</Link>
+                      </Button>
+                      <Button variant="ghost" asChild>
+                          <Link href="/inventory">Inventário</Link>
                       </Button>
                       <Button variant="ghost" asChild>
                           <Link href="/apps">Apps</Link>

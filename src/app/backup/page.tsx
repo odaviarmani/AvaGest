@@ -30,6 +30,7 @@ const LOCALSTORAGE_KEYS = [
     'strategyResources',
     'attachments',
     'activityLog',
+    'inventoryItems',
 ];
 
 // Keys that represent arrays of items with unique IDs.
@@ -44,6 +45,7 @@ const ARRAY_KEYS_TO_MERGE = [
     'customNotifications',
     'attachments',
     'activityLog',
+    'inventoryItems',
 ];
 
 
