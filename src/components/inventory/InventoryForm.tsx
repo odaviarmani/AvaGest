@@ -4,12 +4,11 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { InventoryItem, inventoryItemSchema, ITEM_CATEGORIES } from '@/lib/types';
+import { InventoryItem, inventoryItemSchema } from '@/lib/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 interface InventoryFormProps {
     item: InventoryItem;
@@ -64,16 +63,7 @@ export default function InventoryForm({ item, onSave, onCancel }: InventoryFormP
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Categoria</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Selecione uma categoria" />
-                                        </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {ITEM_CATEGORIES.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormControl><Input placeholder="Ex: Sensores" {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
