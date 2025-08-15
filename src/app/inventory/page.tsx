@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Archive } from 'lucide-react';
 import { InventoryItem } from '@/lib/types';
@@ -42,6 +42,17 @@ export default function InventoryPage() {
             }
         }
     }, [inventoryItems, isClient, toast]);
+
+    const groupedItems = useMemo(() => {
+        return inventoryItems.reduce((acc, item) => {
+            const category = item.category || 'Sem Categoria';
+            if (!acc[category]) {
+                acc[category] = [];
+            }
+            acc[category].push(item);
+            return acc;
+        }, {} as Record<string, InventoryItem[]>);
+    }, [inventoryItems]);
 
     const handleOpenDialog = (item: InventoryItem | null) => {
         setEditingItem(item ? item : {
@@ -104,14 +115,21 @@ export default function InventoryPage() {
             </header>
 
             {isClient && inventoryItems.length > 0 ? (
-                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                    {inventoryItems.map(item => (
-                        <InventoryItemCard 
-                            key={item.id} 
-                            item={item}
-                            onEdit={() => handleOpenDialog(item)}
-                            onDelete={() => handleDeleteRequest(item.id)}
-                        />
+                <div className="space-y-8">
+                    {Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
+                        <div key={category}>
+                            <h2 className="text-2xl font-semibold mb-4 border-b pb-2">{category}</h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                                {items.map(item => (
+                                    <InventoryItemCard 
+                                        key={item.id} 
+                                        item={item}
+                                        onEdit={() => handleOpenDialog(item)}
+                                        onDelete={() => handleDeleteRequest(item.id)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     ))}
                 </div>
             ) : (
