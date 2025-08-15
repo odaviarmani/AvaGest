@@ -90,3 +90,27 @@ export const inventoryItemSchema = z.object({
 });
 
 export type InventoryItem = z.infer<typeof inventoryItemSchema>;
+
+export const missionSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, "O nome da missão é obrigatório."),
+    imageUrl: z.string().nullable().optional(),
+    points: z.coerce.number().min(0, "A pontuação não pode ser negativa."),
+    description: z.string().min(1, "A descrição é obrigatória."),
+    hasBonus: z.boolean(),
+    canLeaveAttachment: z.boolean(),
+    priority: z.enum(priorities, { required_error: "A prioridade é obrigatória." }),
+    location: z.string().min(1, "A localização é obrigatória."),
+});
+
+export type Mission = z.infer<typeof missionSchema>;
+
+export const robotTestSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, "O nome do teste é obrigatório."),
+    type: z.enum(['Robô', 'Anexo', 'Programação']),
+    date: z.date(),
+    successPercentage: z.coerce.number().min(0).max(100, "A porcentagem deve ser entre 0 e 100."),
+});
+
+export type RobotTest = z.infer<typeof robotTestSchema>;
