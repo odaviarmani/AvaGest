@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Robot, MessageSquare, X, Frown, Smile, Meh } from 'lucide-react';
+import { Bot, MessageSquare, X, Frown, Smile, Meh } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
@@ -42,7 +42,7 @@ const messagesByPath: Record<string, string[]> = {
 const emotions = [
     { name: 'happy', icon: <Smile className="w-8 h-8 text-green-400" /> },
     { name: 'neutral', icon: <Meh className="w-8 h-8 text-yellow-400" /> },
-    { name: 'thinking', icon: <Robot className="w-8 h-8 text-blue-400" /> },
+    { name: 'thinking', icon: <Bot className="w-8 h-8 text-blue-400" /> },
     { name: 'sad', icon: <Frown className="w-8 h-8 text-red-400" /> },
 ];
 
