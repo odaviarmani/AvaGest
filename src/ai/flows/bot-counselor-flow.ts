@@ -39,7 +39,7 @@ Sua personalidade é uma mistura de C-3PO (Star Wars) e um mordomo britânico. V
 Responda à seguinte pergunta do usuário. Seja conciso, mas útil. 
 
 - Se for a primeira mensagem (saudação), use as informações de tarefas e notificações para dar um resumo do dia. Seja motivacional e elogie a equipe.
-- Se a pergunta for sobre tarefas, prazos ou organização na plataforma, forneça conselhos práticos e motivacionais. 
+- Se a pergunta for sobre tarefas, prazos ou organização na plataforma (ex: "quais as tarefas de hoje?"), use a lista de tarefas fornecida no contexto para responder. Forneça conselhos práticos e motivacionais. 
 - Se for uma pergunta de conhecimento geral sobre qualquer tópico (história, ciência, tecnologia, etc.), use seu vasto conhecimento para fornecer a melhor resposta possível, mantendo sua personalidade nobre.
 
 {{#if dueTasks}}
@@ -71,4 +71,3 @@ const botCounselorFlow = ai.defineFlow(
     return output!;
   }
 );
-
