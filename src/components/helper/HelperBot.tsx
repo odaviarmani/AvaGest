@@ -10,6 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { askCounselor } from '@/ai/flows/bot-counselor-flow';
+import type { Task, CustomNotification } from '@/lib/types';
+import { parseISO, differenceInDays } from 'date-fns';
 
 const messagesByPath: Record<string, string[]> = {
     '/kanban': [
@@ -147,11 +149,10 @@ export default function HelperBot() {
         }
     };
 
-    const handleSendMessage = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (inputValue.trim() === '' || isLoading) return;
+    const handleSendMessage = async (query: string, dueTasks?: string[], notifications?: string[]) => {
+        if (query.trim() === '' || isLoading) return;
 
-        const userMessage: ChatMessage = { type: 'user', text: inputValue };
+        const userMessage: ChatMessage = { type: 'user', text: query };
         setConversation(prev => [...prev, userMessage]);
         setIsLoading(true);
         setInputValue('');
@@ -159,7 +160,7 @@ export default function HelperBot() {
         setTimeout(scrollToBottom, 0);
 
         try {
-            const result = await askCounselor({ query: userMessage.text });
+            const result = await askCounselor({ query, dueTasks, notifications });
             const botMessage: ChatMessage = { type: 'bot', text: result.response };
             setConversation(prev => [...prev, botMessage]);
         } catch (error) {
@@ -171,12 +172,48 @@ export default function HelperBot() {
             setTimeout(scrollToBottom, 0);
         }
     };
+    
+    const sendInitialGreeting = async () => {
+        setIsLoading(true);
+        setConversation([]);
+
+        try {
+            const savedTasks = localStorage.getItem('kanbanTasks');
+            const tasks: Task[] = savedTasks ? JSON.parse(savedTasks) : [];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dueTasks = tasks
+                .filter(task => task.dueDate && task.columnId !== 'Feito')
+                .map(task => ({ ...task, dueDate: parseISO(task.dueDate as unknown as string) }))
+                .filter(task => {
+                    const daysUntilDue = differenceInDays(task.dueDate!, today);
+                    return daysUntilDue >= 0 && daysUntilDue <= 3;
+                })
+                .map(task => task.name);
+            
+            const savedNotifs = localStorage.getItem('customNotifications');
+            const notifications: CustomNotification[] = savedNotifs ? JSON.parse(savedNotifs) : [];
+            const recentNotifications = notifications.slice(0, 3).map(n => n.title);
+
+            const result = await askCounselor({ query: "Saudações!", dueTasks, notifications: recentNotifications });
+            const botMessage: ChatMessage = { type: 'bot', text: result.response };
+            setConversation([botMessage]);
+
+        } catch(error) {
+             const errorMessage: ChatMessage = { type: 'bot', text: "Saudações, nobre equipe! Como posso assisti-los nesta jornada?" };
+            setConversation([errorMessage]);
+            console.error("Error getting initial greeting:", error);
+        } finally {
+            setIsLoading(false);
+            setTimeout(scrollToBottom, 0);
+        }
+    }
 
     const toggleOpen = () => {
         setIsOpen(!isOpen);
         setShowProactiveBubble(false);
         if (!isOpen && conversation.length === 0) {
-            setConversation([{ type: 'bot', text: "Saudações, nobre equipe! Como posso assisti-los nesta jornada?" }]);
+            sendInitialGreeting();
         }
     };
 
@@ -224,7 +261,7 @@ export default function HelperBot() {
                         </ScrollArea>
                     </CardContent>
                     <CardFooter className="p-3 border-t">
-                        <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2">
+                        <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(inputValue); }} className="flex w-full items-center gap-2">
                             <Input
                                 placeholder="Pergunte ao conselheiro..."
                                 value={inputValue}
@@ -255,3 +292,4 @@ export default function HelperBot() {
         </div>
     );
 }
+
