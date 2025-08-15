@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import Image from 'next/image';
 import StrategySteps from './StrategySteps';
 import type { Instruction } from './StrategySteps';
+import { useToast } from '@/hooks/use-toast';
+
 
 const COLORS = [
     { value: "#ef4444", label: "Vermelho" },
@@ -63,18 +65,42 @@ const initialHistory = () => {
 const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
     const [fileInfo, setFileInfo] = useState<{ name: string; url: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
 
     useEffect(() => {
-        const savedFiles = JSON.parse(localStorage.getItem('strategyResources') || '{}');
-        if (savedFiles[saidaKey]) {
-            setFileInfo(savedFiles[saidaKey]);
+        try {
+            const savedFilesRaw = localStorage.getItem('strategyResources');
+            if (savedFilesRaw) {
+                const savedFiles = JSON.parse(savedFilesRaw);
+                if (savedFiles[saidaKey]) {
+                    setFileInfo(savedFiles[saidaKey]);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load resources from localStorage:", error);
         }
     }, [saidaKey]);
 
-    const saveFileToLocalStorage = (info: { name: string; url: string } | null) => {
-        const savedFiles = JSON.parse(localStorage.getItem('strategyResources') || '{}');
-        savedFiles[saidaKey] = info;
-        localStorage.setItem('strategyResources', JSON.stringify(savedFiles));
+    const saveFileToLocalStorage = (key: string, info: { name: string; url: string } | null) => {
+        try {
+            const savedFilesRaw = localStorage.getItem('strategyResources');
+            const savedFiles = savedFilesRaw ? JSON.parse(savedFilesRaw) : {};
+            
+            if (info) {
+                savedFiles[key] = info;
+            } else {
+                delete savedFiles[key];
+            }
+
+            localStorage.setItem('strategyResources', JSON.stringify(savedFiles));
+        } catch (error) {
+            console.error("Failed to save resource to localStorage:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao Salvar Anexo',
+                description: 'Não foi possível salvar o arquivo. O armazenamento pode estar cheio.',
+            });
+        }
     };
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +111,7 @@ const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
                 const url = reader.result as string;
                 const newFileInfo = { name: file.name, url };
                 setFileInfo(newFileInfo);
-                saveFileToLocalStorage(newFileInfo);
+                saveFileToLocalStorage(saidaKey, newFileInfo);
             };
             reader.readAsDataURL(file);
         }
@@ -93,8 +119,7 @@ const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
 
     const handleRemoveFile = () => {
         setFileInfo(null);
-        saveFileToLocalStorage(null);
-        // Also clear the file input
+        saveFileToLocalStorage(saidaKey, null);
         if(fileInputRef.current) {
             fileInputRef.current.value = "";
         }
