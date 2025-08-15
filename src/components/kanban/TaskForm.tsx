@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -20,6 +21,24 @@ interface TaskFormProps {
   task: Task | null;
   onSave: (data: Task) => void;
   onCancel: () => void;
+}
+
+const dateToTimeInputValue = (date: Date | null | undefined): string => {
+    if (!date) return "";
+    const hasTime = date.getHours() !== 0 || date.getMinutes() !== 0;
+    return hasTime ? format(date, "HH:mm") : "";
+}
+
+const combineDateAndTime = (date: Date | null | undefined, time: string): Date | null => {
+    if (!date) return null;
+    const newDate = new Date(date);
+    if (time) {
+        const [hours, minutes] = time.split(':').map(Number);
+        newDate.setHours(hours, minutes, 0, 0);
+    } else {
+        newDate.setHours(0, 0, 0, 0);
+    }
+    return newDate;
 }
 
 export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
@@ -141,42 +160,50 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
             </FormItem>
           )}
         />
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
             control={form.control}
             name="startDate"
             render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem>
                     <FormLabel>Data de Início</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                )}
-                                >
-                                {field.value ? (
-                                    format(field.value, "PPP", { locale: ptBR })
-                                ) : (
-                                    <span>Escolha uma data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value ?? undefined}
-                                onSelect={field.onChange}
-                                locale={ptBR}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
+                    <div className="flex gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                    )}
+                                    >
+                                    {field.value ? (
+                                        format(field.value, "PPP", { locale: ptBR })
+                                    ) : (
+                                        <span>Escolha uma data</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value ?? undefined}
+                                    onSelect={(date) => field.onChange(combineDateAndTime(date, dateToTimeInputValue(field.value)))}
+                                    locale={ptBR}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        <Input
+                            type="time"
+                            className="w-[120px]"
+                            defaultValue={dateToTimeInputValue(field.value)}
+                            onChange={(e) => field.onChange(combineDateAndTime(field.value, e.target.value))}
+                        />
+                    </div>
                     <FormMessage />
                 </FormItem>
             )}
@@ -185,37 +212,45 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
             control={form.control}
             name="dueDate"
             render={({ field }) => (
-                <FormItem className="flex flex-col">
+                <FormItem>
                     <FormLabel>Data de Entrega</FormLabel>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <FormControl>
-                                <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                )}
-                                >
-                                {field.value ? (
-                                    format(field.value, "PPP", { locale: ptBR })
-                                ) : (
-                                    <span>Escolha uma data</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                            </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                                mode="single"
-                                selected={field.value ?? undefined}
-                                onSelect={field.onChange}
-                                locale={ptBR}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
+                     <div className="flex gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                    <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                    )}
+                                    >
+                                    {field.value ? (
+                                        format(field.value, "PPP", { locale: ptBR })
+                                    ) : (
+                                        <span>Escolha uma data</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value ?? undefined}
+                                    onSelect={(date) => field.onChange(combineDateAndTime(date, dateToTimeInputValue(field.value)))}
+                                    locale={ptBR}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        <Input
+                            type="time"
+                            className="w-[120px]"
+                            defaultValue={dateToTimeInputValue(field.value)}
+                            onChange={(e) => field.onChange(combineDateAndTime(field.value, e.target.value))}
+                        />
+                    </div>
                     <FormMessage />
                 </FormItem>
             )}

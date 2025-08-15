@@ -33,6 +33,11 @@ const areaColorMap: Record<string, string> = {
     "default": "bg-gray-500/80",
 };
 
+const formatDateTime = (date: Date) => {
+    const hasTime = date.getHours() !== 0 || date.getMinutes() !== 0;
+    return format(date, hasTime ? "dd/MM/yy 'às' HH:mm" : "dd/MM/yyyy", { locale: ptBR });
+};
+
 export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCardProps) {
   const priorityBadgeColor: Record<Priority, string> = {
     'Baixa': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-300 dark:border-green-600',
@@ -87,13 +92,13 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCar
                 {task.startDate && (
                     <div className="flex items-center">
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        <span>Início: {format(task.startDate, "dd/MM/yyyy", { locale: ptBR })}</span>
+                        <span>Início: {formatDateTime(task.startDate)}</span>
                     </div>
                 )}
                 {task.dueDate && (
                     <div className="flex items-center">
                         <CalendarIcon className="mr-2 h-4 w-4" />
-                        <span>Entrega: {format(task.dueDate, "dd/MM/yyyy", { locale: ptBR })}</span>
+                        <span>Entrega: {formatDateTime(task.dueDate)}</span>
                     </div>
                 )}
             </div>
