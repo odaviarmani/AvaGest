@@ -10,7 +10,6 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { LogOut, Bell, History, DatabaseBackup, Archive } from 'lucide-react';
-import HelperBot from '@/components/helper/HelperBot';
 
 const userThemes: Record<string, { primary: string, primaryForeground: string, ring: string }> = {
     'Davi':      { primary: '221 44% 40%', primaryForeground: '210 20% 98%', ring: '221 44% 40%' }, // Navy Blue
@@ -124,7 +123,6 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                   </div>
               </header>
               <main className="flex-1 flex flex-col">{children}</main>
-               <HelperBot />
               <footer className="p-4 border-t shrink-0 flex items-center justify-center">
               <iframe
                   style={{ borderRadius: '12px' }}
