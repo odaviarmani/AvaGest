@@ -1,11 +1,16 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Bot, MessageSquare, X, Frown, Smile, Meh } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Bot, MessageSquare, X, Send, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
+import { askCounselor } from '@/ai/flows/bot-counselor-flow';
 
 const messagesByPath: Record<string, string[]> = {
     '/kanban': [
@@ -29,108 +34,178 @@ const messagesByPath: Record<string, string[]> = {
         "Compare os tempos das etapas para ver onde podemos otimizar."
     ],
     'default': [
-        "Olá! Tudo bem por aqui?",
-        "Precisando de ajuda com alguma coisa?",
-        "Vamos lá, equipe! Foco total!",
-        "Lembre-se: Gracious Professionalism sempre!",
-        "Que tal ouvir nossa playlist para se concentrar?",
-        "Já deu uma olhada nas notificações hoje?",
-        "O sucesso é a soma de pequenos esforços repetidos dia após dia.",
+        "Olá, nobre equipe! Em que posso ser útil hoje?",
+        "Precisando de um conselho real?",
+        "Vamos lá, equipe! Rumo à glória!",
+        "Lembre-se: Gracious Professionalism sempre nos guia!",
+        "Que tal ouvir nossa playlist real para inspirar a jornada?",
+        "Já conferiu as notificações do reino hoje?",
+        "O sucesso é a soma de pequenos esforços, repetidos com majestade dia após dia.",
     ]
 };
 
-const emotions = [
-    { name: 'happy', icon: <Smile className="w-8 h-8 text-green-400" /> },
-    { name: 'neutral', icon: <Meh className="w-8 h-8 text-yellow-400" /> },
-    { name: 'thinking', icon: <Bot className="w-8 h-8 text-blue-400" /> },
-    { name: 'sad', icon: <Frown className="w-8 h-8 text-red-400" /> },
-];
-
+interface ChatMessage {
+    type: 'user' | 'bot';
+    text: string;
+}
 
 export default function HelperBot() {
-    const [isVisible, setIsVisible] = useState(false);
-    const [isChatting, setIsChatting] = useState(false);
-    const [currentMessage, setCurrentMessage] = useState('');
-    const [currentEmotion, setCurrentEmotion] = useState(emotions[0]);
+    const [isOpen, setIsOpen] = useState(false);
+    const [conversation, setConversation] = useState<ChatMessage[]>([]);
+    const [inputValue, setInputValue] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [proactiveMessage, setProactiveMessage] = useState('');
+    const [showProactiveBubble, setShowProactiveBubble] = useState(false);
     const pathname = usePathname();
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+    // Show proactive message bubble periodically
     useEffect(() => {
-        // Show the bot after a delay when the component mounts
-        const timer = setTimeout(() => {
-            setIsVisible(true);
-        }, 3000);
-        return () => clearTimeout(timer);
-    }, []);
-
-    useEffect(() => {
-        if (!isVisible) return;
-
-        // Change message and emotion every 15 seconds
         const interval = setInterval(() => {
-            const possibleMessages = messagesByPath[pathname] || messagesByPath.default;
-            const randomMessage = possibleMessages[Math.floor(Math.random() * possibleMessages.length)];
-            const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
-            
-            setCurrentMessage(randomMessage);
-            setCurrentEmotion(randomEmotion);
-            setIsChatting(true);
-        }, 15000);
+            if (!isOpen) {
+                const possibleMessages = messagesByPath[pathname] || messagesByPath.default;
+                const randomMessage = possibleMessages[Math.floor(Math.random() * possibleMessages.length)];
+                setProactiveMessage(randomMessage);
+                setShowProactiveBubble(true);
+            }
+        }, 20000); // Every 20 seconds
 
         return () => clearInterval(interval);
-    }, [isVisible, pathname]);
+    }, [isOpen, pathname]);
 
+    // Hide proactive bubble after some time
     useEffect(() => {
-        // Hide message bubble after 8 seconds
-        if (isChatting) {
+        if (showProactiveBubble) {
             const timer = setTimeout(() => {
-                setIsChatting(false);
-            }, 8000);
+                setShowProactiveBubble(false);
+            }, 8000); // Hide after 8 seconds
             return () => clearTimeout(timer);
         }
-    }, [isChatting]);
+    }, [showProactiveBubble]);
 
-    const handleBotClick = () => {
-        if (isChatting) {
-            setIsChatting(false);
-        } else {
-             const possibleMessages = messagesByPath[pathname] || messagesByPath.default;
-            const randomMessage = possibleMessages[Math.floor(Math.random() * possibleMessages.length)];
-            setCurrentMessage(randomMessage);
-            setIsChatting(true);
+    const scrollToBottom = () => {
+        if (scrollAreaRef.current) {
+            const scrollViewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
+            if (scrollViewport) {
+                setTimeout(() => scrollViewport.scrollTo({ top: scrollViewport.scrollHeight, behavior: 'smooth' }), 100);
+            }
         }
     };
-    
-    if (!isVisible) {
-        return null;
-    }
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (inputValue.trim() === '' || isLoading) return;
+
+        const userMessage: ChatMessage = { type: 'user', text: inputValue };
+        setConversation(prev => [...prev, userMessage]);
+        setIsLoading(true);
+        setInputValue('');
+        
+        // Scroll after user message is added
+        setTimeout(scrollToBottom, 0);
+
+        try {
+            const result = await askCounselor({ query: userMessage.text });
+            const botMessage: ChatMessage = { type: 'bot', text: result.response };
+            setConversation(prev => [...prev, botMessage]);
+        } catch (error) {
+            const errorMessage: ChatMessage = { type: 'bot', text: "Oh, céus! Parece que meus circuitos reais estão um pouco confusos. Poderia tentar novamente?" };
+            setConversation(prev => [...prev, errorMessage]);
+            console.error("Error asking counselor:", error);
+        } finally {
+            setIsLoading(false);
+            // Scroll after bot message is added
+            setTimeout(scrollToBottom, 0);
+        }
+    };
+
+    const toggleOpen = () => {
+        setIsOpen(!isOpen);
+        setShowProactiveBubble(false); // Hide bubble when chat is opened
+        if (!isOpen && conversation.length === 0) {
+            setConversation([{ type: 'bot', text: "Saudações, nobre equipe! Como posso assisti-los nesta jornada?" }]);
+        }
+    };
 
     return (
         <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2">
-            {isChatting && (
-                <div className={cn(
-                    "relative max-w-xs bg-card border rounded-lg p-4 shadow-lg animate-in fade-in-50 slide-in-from-bottom-5"
-                )}>
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute top-1 right-1 h-6 w-6"
-                        onClick={() => setIsChatting(false)}
-                    >
-                        <X className="w-4 h-4" />
-                    </Button>
-                    <p className="text-sm text-card-foreground">{currentMessage}</p>
+            {isOpen && (
+                <Card className="w-80 h-[500px] flex flex-col shadow-2xl animate-in fade-in-50 slide-in-from-bottom-5">
+                    <CardHeader className="flex-row items-center justify-between border-b p-3">
+                        <div className="flex items-center gap-2">
+                            <Bot className="h-6 w-6 text-primary" />
+                            <CardTitle className="text-lg">Conselheiro Real</CardTitle>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={toggleOpen}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="flex-1 p-0 overflow-hidden">
+                        <ScrollArea className="h-full p-3" ref={scrollAreaRef}>
+                            <div className="space-y-4">
+                                {conversation.map((msg, index) => (
+                                    <div
+                                        key={index}
+                                        className={cn(
+                                            "flex items-start gap-2 text-sm",
+                                            msg.type === 'user' ? "justify-end" : "justify-start"
+                                        )}
+                                    >
+                                        <div className={cn(
+                                            "rounded-lg px-3 py-2 max-w-[85%]",
+                                            msg.type === 'user' ? "bg-primary text-primary-foreground" : "bg-secondary"
+                                        )}>
+                                            {msg.text}
+                                        </div>
+                                    </div>
+                                ))}
+                                {isLoading && (
+                                    <div className="flex justify-start">
+                                        <div className="rounded-lg px-3 py-2 bg-secondary flex items-center gap-2">
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            <span>Pensando...</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </ScrollArea>
+                    </CardContent>
+                    <CardFooter className="p-3 border-t">
+                        <form onSubmit={handleSendMessage} className="flex w-full items-center gap-2">
+                            <Input
+                                placeholder="Pergunte ao conselheiro..."
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                disabled={isLoading}
+                            />
+                            <Button type="submit" size="icon" disabled={isLoading || inputValue.trim() === ''}>
+                                <Send className="h-4 w-4" />
+                            </Button>
+                        </form>
+                    </CardFooter>
+                </Card>
+            )}
+
+            {!isOpen && showProactiveBubble && (
+                <div className="bg-card border rounded-lg p-3 shadow-lg max-w-xs animate-in fade-in-20 slide-in-from-bottom-2">
+                    <p className="text-sm text-card-foreground">{proactiveMessage}</p>
                 </div>
             )}
+            
             <Button
                 size="icon"
-                className={cn(
-                    "rounded-full w-16 h-16 shadow-2xl relative transition-transform duration-300 hover:scale-110",
-                    isChatting ? 'animate-none' : 'animate-bounce'
-                )}
-                style={{ animationIterationCount: isChatting ? 0 : 3 }}
-                onClick={handleBotClick}
+                className="rounded-full w-16 h-16 shadow-2xl relative transition-transform duration-300 hover:scale-110 animate-bounce"
+                style={{ animationIterationCount: isOpen ? 0 : 5 }}
+                onClick={toggleOpen}
             >
-                {currentEmotion.icon}
+                <Image
+                    src="https://placehold.co/64x64.png"
+                    alt="Conselheiro Real"
+                    width={64}
+                    height={64}
+                    className="rounded-full"
+                    data-ai-hint="cute robot king"
+                />
             </Button>
         </div>
     );
