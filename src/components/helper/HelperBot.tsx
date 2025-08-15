@@ -51,32 +51,42 @@ interface ChatMessage {
 
 const AnimatedBotIcon = ({ isTalking, isBlinking }: { isTalking: boolean, isBlinking: boolean }) => (
     <svg viewBox="0 0 100 100" className="w-full h-full">
+        {/* Headset Earpiece Right */}
+        <path d="M 88,45 a 12,12 0 1,1 0,20 a 10,10 0 0,0 0,-20" fill="#3b82f6" />
+
         {/* Head */}
-        <path d="M 20 90 C 5 90, 5 70, 5 50 C 5 15, 15 5, 50 5 C 85 5, 95 15, 95 50 C 95 70, 95 90, 80 90 Z" fill="#D1D5DB" stroke="#4B5563" strokeWidth="2" />
-        {/* Crown */}
-        <path d="M 30 15 L 35 5 L 50 12 L 65 5 L 70 15 Z" fill="#FBBF24" stroke="#F59E0B" strokeWidth="1.5" />
+        <path d="M 15 75 Q 10 50, 15 25 L 85 25 Q 90 50, 85 75 Z" fill="#f3f4f6" stroke="#9ca3af" strokeWidth="2" />
+        
+        {/* Headset Band */}
+        <path d="M 30 25 C 30 10, 70 10, 70 25" stroke="#3b82f6" strokeWidth="6" fill="none" strokeLinecap="round" />
+
+        {/* Headset Earpiece Left */}
+        <path d="M 12,45 a 12,12 0 1,0 0,20 a 10,10 0 0,1 0,-20" fill="#3b82f6" />
+        
+        {/* Face Screen */}
+        <rect x="20" y="30" width="60" height="50" rx="10" fill="#000000" />
         
         {/* Eyes */}
-        <circle cx="35" cy="45" r="8" fill="white" stroke="black" strokeWidth="1"/>
-        <circle cx="65" cy="45" r="8" fill="white" stroke="black" strokeWidth="1"/>
+        {!isBlinking && (
+            <>
+                <circle cx="38" cy="48" r="6" fill="#22d3ee" className="animate-pulse" />
+                <circle cx="62" cy="48" r="6" fill="#22d3ee" className="animate-pulse" />
+            </>
+        )}
         
-        {/* Pupils */}
-        <circle cx="35" cy="45" r="3" fill="black"/>
-        <circle cx="65" cy="45" r="3" fill="black"/>
-
-        {/* Blinking lids */}
+        {/* Blinking Lids */}
         {isBlinking && (
             <>
-                <path d="M 27 45 A 8 8 0 0 1 43 45" fill="#D1D5DB" />
-                <path d="M 57 45 A 8 8 0 0 1 73 45" fill="#D1D5DB" />
+                <path d="M 32 50 C 38 46, 44 46, 50 50" stroke="#22d3ee" strokeWidth="2.5" fill="none" strokeLinecap="round" transform="translate(-6, -2)"/>
+                <path d="M 56 50 C 62 46, 68 46, 74 50" stroke="#22d3ee" strokeWidth="2.5" fill="none" strokeLinecap="round" transform="translate(-2, -2)"/>
             </>
         )}
 
         {/* Mouth */}
         {isTalking ? (
-            <ellipse cx="50" cy="70" rx="10" ry="5" fill="#374151" className="transition-all" />
+            <ellipse cx="50" cy="68" rx="8" ry="4" fill="#22d3ee" />
         ) : (
-            <path d="M 40 70 Q 50 75, 60 70" stroke="black" strokeWidth="2" fill="none" />
+            <path d="M 42 68 Q 50 73, 58 68" stroke="#22d3ee" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
         )}
     </svg>
 );
@@ -92,11 +102,6 @@ export default function HelperBot() {
     
     // Animation state
     const [isBlinking, setIsBlinking] = useState(false);
-
-    // Drag and Drop state
-    const [position, setPosition] = useState({ x: 20, y: 20 });
-    const [isDragging, setIsDragging] = useState(false);
-    const dragStartRef = useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 });
 
     const pathname = usePathname();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -168,7 +173,6 @@ export default function HelperBot() {
     };
 
     const toggleOpen = () => {
-        if(isDragging) return;
         setIsOpen(!isOpen);
         setShowProactiveBubble(false);
         if (!isOpen && conversation.length === 0) {
@@ -176,56 +180,8 @@ export default function HelperBot() {
         }
     };
 
-    // Drag and Drop handlers
-    const handleDragStart = (e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
-        e.preventDefault();
-        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-        
-        const buttonRect = e.currentTarget.getBoundingClientRect();
-        
-        dragStartRef.current = {
-            x: clientX,
-            y: clientY,
-            offsetX: clientX - buttonRect.left,
-            offsetY: clientY - buttonRect.top,
-        };
-
-        const handleMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
-            setIsDragging(true); // Set dragging only on move
-            const moveClientX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
-            const moveClientY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
-            
-            let newX = moveClientX - dragStartRef.current.offsetX;
-            let newY = moveClientY - dragStartRef.current.offsetY;
-
-            // Constrain to viewport
-            newX = Math.max(0, Math.min(newX, window.innerWidth - buttonRect.width));
-            newY = Math.max(0, Math.min(newY, window.innerHeight - buttonRect.height));
-
-            setPosition({ x: newX, y: newY });
-        };
-        
-        const handleMouseUp = () => {
-            setTimeout(() => setIsDragging(false), 0); // Allow click event if no drag occurred
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-            window.removeEventListener('touchmove', handleMouseMove);
-            window.removeEventListener('touchend', handleMouseUp);
-        };
-        
-        window.addEventListener('mousemove', handleMouseMove);
-        window.addEventListener('mouseup', handleMouseUp);
-        window.addEventListener('touchmove', handleMouseMove);
-        window.addEventListener('touchend', handleMouseUp);
-    };
-
-
     return (
-        <div 
-            className="fixed z-50 flex flex-col items-end gap-2"
-            style={{ right: `${position.x}px`, bottom: `${position.y}px` }}
-        >
+        <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2">
             {isOpen && (
                 <Card className="w-80 h-[500px] flex flex-col shadow-2xl animate-in fade-in-50 slide-in-from-bottom-5">
                     <CardHeader className="flex-row items-center justify-between border-b p-3">
@@ -290,9 +246,7 @@ export default function HelperBot() {
             )}
             
             <button
-                className="rounded-full w-20 h-20 shadow-2xl relative transition-transform duration-300 hover:scale-110 cursor-grab active:cursor-grabbing"
-                onMouseDown={handleDragStart}
-                onTouchStart={handleDragStart}
+                className="rounded-full w-20 h-20 bg-background/80 backdrop-blur-sm border shadow-2xl relative transition-transform duration-300 hover:scale-110 cursor-pointer"
                 onClick={toggleOpen}
                 aria-label="Abrir Conselheiro Real"
             >
