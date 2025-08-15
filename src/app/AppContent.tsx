@@ -10,6 +10,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { LogOut, Bell, History, DatabaseBackup, Archive } from 'lucide-react';
+import FriendlyBot from '@/components/helper/FriendlyBot';
 
 const userThemes: Record<string, { primary: string, primaryForeground: string, ring: string }> = {
     'Davi':      { primary: '221 44% 40%', primaryForeground: '210 20% 98%', ring: '221 44% 40%' }, // Navy Blue
@@ -136,6 +137,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
               </footer>
             </ProtectedRoute>
           )}
+          <FriendlyBot />
         </div>
     </ThemeProvider>
   );
