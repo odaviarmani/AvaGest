@@ -2,8 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bot, MessageSquare, X, Send, Loader2 } from 'lucide-react';
-import Image from 'next/image';
+import { Bot, X, Send, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -49,6 +48,40 @@ interface ChatMessage {
     text: string;
 }
 
+
+const AnimatedBotIcon = ({ isTalking, isBlinking }: { isTalking: boolean, isBlinking: boolean }) => (
+    <svg viewBox="0 0 100 100" className="w-full h-full">
+        {/* Head */}
+        <path d="M 20 90 C 5 90, 5 70, 5 50 C 5 15, 15 5, 50 5 C 85 5, 95 15, 95 50 C 95 70, 95 90, 80 90 Z" fill="#D1D5DB" stroke="#4B5563" strokeWidth="2" />
+        {/* Crown */}
+        <path d="M 30 15 L 35 5 L 50 12 L 65 5 L 70 15 Z" fill="#FBBF24" stroke="#F59E0B" strokeWidth="1.5" />
+        
+        {/* Eyes */}
+        <circle cx="35" cy="45" r="8" fill="white" stroke="black" strokeWidth="1"/>
+        <circle cx="65" cy="45" r="8" fill="white" stroke="black" strokeWidth="1"/>
+        
+        {/* Pupils */}
+        <circle cx="35" cy="45" r="3" fill="black"/>
+        <circle cx="65" cy="45" r="3" fill="black"/>
+
+        {/* Blinking lids */}
+        {isBlinking && (
+            <>
+                <path d="M 27 45 A 8 8 0 0 1 43 45" fill="#D1D5DB" />
+                <path d="M 57 45 A 8 8 0 0 1 73 45" fill="#D1D5DB" />
+            </>
+        )}
+
+        {/* Mouth */}
+        {isTalking ? (
+            <ellipse cx="50" cy="70" rx="10" ry="5" fill="#374151" className="transition-all" />
+        ) : (
+            <path d="M 40 70 Q 50 75, 60 70" stroke="black" strokeWidth="2" fill="none" />
+        )}
+    </svg>
+);
+
+
 export default function HelperBot() {
     const [isOpen, setIsOpen] = useState(false);
     const [conversation, setConversation] = useState<ChatMessage[]>([]);
@@ -56,10 +89,28 @@ export default function HelperBot() {
     const [isLoading, setIsLoading] = useState(false);
     const [proactiveMessage, setProactiveMessage] = useState('');
     const [showProactiveBubble, setShowProactiveBubble] = useState(false);
+    
+    // Animation state
+    const [isBlinking, setIsBlinking] = useState(false);
+
+    // Drag and Drop state
+    const [position, setPosition] = useState({ x: 20, y: 20 });
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartRef = useRef({ x: 0, y: 0, offsetX: 0, offsetY: 0 });
+
     const pathname = usePathname();
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    // Show proactive message bubble periodically
+    // Blinking effect
+    useEffect(() => {
+        const blinkInterval = setInterval(() => {
+            setIsBlinking(true);
+            setTimeout(() => setIsBlinking(false), 200);
+        }, 4000);
+        return () => clearInterval(blinkInterval);
+    }, []);
+
+    // Proactive message bubble
     useEffect(() => {
         const interval = setInterval(() => {
             if (!isOpen) {
@@ -68,8 +119,7 @@ export default function HelperBot() {
                 setProactiveMessage(randomMessage);
                 setShowProactiveBubble(true);
             }
-        }, 20000); // Every 20 seconds
-
+        }, 20000);
         return () => clearInterval(interval);
     }, [isOpen, pathname]);
 
@@ -78,7 +128,7 @@ export default function HelperBot() {
         if (showProactiveBubble) {
             const timer = setTimeout(() => {
                 setShowProactiveBubble(false);
-            }, 8000); // Hide after 8 seconds
+            }, 8000);
             return () => clearTimeout(timer);
         }
     }, [showProactiveBubble]);
@@ -101,7 +151,6 @@ export default function HelperBot() {
         setIsLoading(true);
         setInputValue('');
         
-        // Scroll after user message is added
         setTimeout(scrollToBottom, 0);
 
         try {
@@ -114,21 +163,69 @@ export default function HelperBot() {
             console.error("Error asking counselor:", error);
         } finally {
             setIsLoading(false);
-            // Scroll after bot message is added
             setTimeout(scrollToBottom, 0);
         }
     };
 
     const toggleOpen = () => {
+        if(isDragging) return;
         setIsOpen(!isOpen);
-        setShowProactiveBubble(false); // Hide bubble when chat is opened
+        setShowProactiveBubble(false);
         if (!isOpen && conversation.length === 0) {
             setConversation([{ type: 'bot', text: "Saudações, nobre equipe! Como posso assisti-los nesta jornada?" }]);
         }
     };
 
+    // Drag and Drop handlers
+    const handleDragStart = (e: React.MouseEvent<HTMLButtonElement> | React.TouchEvent<HTMLButtonElement>) => {
+        e.preventDefault();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+        
+        const buttonRect = e.currentTarget.getBoundingClientRect();
+        
+        dragStartRef.current = {
+            x: clientX,
+            y: clientY,
+            offsetX: clientX - buttonRect.left,
+            offsetY: clientY - buttonRect.top,
+        };
+
+        const handleMouseMove = (moveEvent: MouseEvent | TouchEvent) => {
+            setIsDragging(true); // Set dragging only on move
+            const moveClientX = 'touches' in moveEvent ? moveEvent.touches[0].clientX : moveEvent.clientX;
+            const moveClientY = 'touches' in moveEvent ? moveEvent.touches[0].clientY : moveEvent.clientY;
+            
+            let newX = moveClientX - dragStartRef.current.offsetX;
+            let newY = moveClientY - dragStartRef.current.offsetY;
+
+            // Constrain to viewport
+            newX = Math.max(0, Math.min(newX, window.innerWidth - buttonRect.width));
+            newY = Math.max(0, Math.min(newY, window.innerHeight - buttonRect.height));
+
+            setPosition({ x: newX, y: newY });
+        };
+        
+        const handleMouseUp = () => {
+            setTimeout(() => setIsDragging(false), 0); // Allow click event if no drag occurred
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('touchmove', handleMouseMove);
+            window.removeEventListener('touchend', handleMouseUp);
+        };
+        
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('touchmove', handleMouseMove);
+        window.addEventListener('touchend', handleMouseUp);
+    };
+
+
     return (
-        <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2">
+        <div 
+            className="fixed z-50 flex flex-col items-end gap-2"
+            style={{ right: `${position.x}px`, bottom: `${position.y}px` }}
+        >
             {isOpen && (
                 <Card className="w-80 h-[500px] flex flex-col shadow-2xl animate-in fade-in-50 slide-in-from-bottom-5">
                     <CardHeader className="flex-row items-center justify-between border-b p-3">
@@ -192,21 +289,15 @@ export default function HelperBot() {
                 </div>
             )}
             
-            <Button
-                size="icon"
-                className="rounded-full w-16 h-16 shadow-2xl relative transition-transform duration-300 hover:scale-110 animate-bounce"
-                style={{ animationIterationCount: isOpen ? 0 : 5 }}
+            <button
+                className="rounded-full w-20 h-20 shadow-2xl relative transition-transform duration-300 hover:scale-110 cursor-grab active:cursor-grabbing"
+                onMouseDown={handleDragStart}
+                onTouchStart={handleDragStart}
                 onClick={toggleOpen}
+                aria-label="Abrir Conselheiro Real"
             >
-                <Image
-                    src="https://placehold.co/64x64.png"
-                    alt="Conselheiro Real"
-                    width={64}
-                    height={64}
-                    className="rounded-full"
-                    data-ai-hint="cute robot king"
-                />
-            </Button>
+               <AnimatedBotIcon isTalking={isLoading} isBlinking={isBlinking}/>
+            </button>
         </div>
     );
 }
