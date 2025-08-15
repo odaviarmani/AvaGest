@@ -22,6 +22,13 @@ const BlinkingRobot = ({ isBlinking }: { isBlinking: boolean }) => (
         <path d="M40 80C62.0914 80 80 62.0914 80 40C80 17.9086 62.0914 0 40 0C17.9086 0 0 17.9086 0 40C0 62.0914 17.9086 80 40 80Z" fill="url(#paint0_linear_1_2)"/>
         <circle cx="40" cy="40" r="32" fill="#E0E0E0"/>
         <rect x="18" y="32" width="44" height={isBlinking ? 0 : 16} rx="8" fill="#212121"/>
+        {/* Eyes */}
+        {!isBlinking && (
+            <>
+                <circle cx="30" cy="40" r="3" fill="white"/>
+                <circle cx="50" cy="40" r="3" fill="white"/>
+            </>
+        )}
         <defs>
             <linearGradient id="paint0_linear_1_2" x1="40" y1="0" x2="40" y2="80" gradientUnits="userSpaceOnUse">
                 <stop stopColor="#BDBDBD"/>
