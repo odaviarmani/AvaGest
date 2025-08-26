@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth, ADMIN_USERS } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -28,10 +28,16 @@ const userThemes: Record<string, { primary: string, primaryForeground: string, r
 export default function AppContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isAuthenticated, username, logout } = useAuth();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const isAuthPage = pathname === '/login';
   const isAdmin = username && ADMIN_USERS.includes(username);
   
-  const theme = username ? userThemes[username] : null;
+  const theme = username && isClient ? userThemes[username] : null;
 
   const themeStyle = theme ? {
       '--primary': theme.primary,
