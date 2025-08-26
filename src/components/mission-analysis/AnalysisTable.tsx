@@ -157,10 +157,10 @@ export default function AnalysisTable() {
     );
 
     const HeaderCell = ({ children, tooltip }: { children: React.ReactNode, tooltip: string }) => (
-        <TableHead className="text-center p-1 whitespace-nowrap">
+        <TableHead className="text-center p-1 align-bottom">
             <TooltipProvider>
                 <Tooltip>
-                    <TooltipTrigger asChild><span className="cursor-help">{children}</span></TooltipTrigger>
+                    <TooltipTrigger asChild><span className="cursor-help font-semibold">{children}</span></TooltipTrigger>
                     <TooltipContent><p>{tooltip}</p></TooltipContent>
                 </Tooltip>
             </TooltipProvider>
@@ -173,19 +173,19 @@ export default function AnalysisTable() {
                 <Table className="bg-card table-fixed w-full">
                     <TableHeader className="bg-muted/50">
                         <TableRow>
-                            <TableHead className="whitespace-nowrap w-[250px]">Missão</TableHead>
-                            <HeaderCell tooltip="Área do tapete">Área</HeaderCell>
-                            <HeaderCell tooltip="Complexidade Locomoção">Complexidade Locomoção</HeaderCell>
-                            <HeaderCell tooltip="Acionador Necessário">Acionador</HeaderCell>
-                            <HeaderCell tooltip="Complexidade Acionador">Complexidade Acionador</HeaderCell>
-                            <HeaderCell tooltip="Esforço (Locomoção * Acionador)">Esforço</HeaderCell>
-                            <HeaderCell tooltip="Pontos da Missão">Pontos</HeaderCell>
-                            <HeaderCell tooltip="Impacto na Pontuação">Impacto</HeaderCell>
-                            <HeaderCell tooltip="Bônus Proximidade">Bônus Proximidade</HeaderCell>
-                            <HeaderCell tooltip="Missões Próximas">Missões Próximas</HeaderCell>
-                            <HeaderCell tooltip="Bônus Similaridade">Bônus Similaridade</HeaderCell>
-                            <HeaderCell tooltip="Missão Parecida">Missão Parecida</HeaderCell>
-                            <TableHead className="text-center p-1 whitespace-nowrap">Priorização</TableHead>
+                            <TableHead className="p-1 w-[250px]">Missão</TableHead>
+                            <HeaderCell tooltip="Área do tapete onde a missão é realizada">Área</HeaderCell>
+                            <HeaderCell tooltip="Complexidade da locomoção do robô até a missão">Complexidade<br/>Locomoção</HeaderCell>
+                            <HeaderCell tooltip="Tipo de acionador mecânico necessário">Acionador</HeaderCell>
+                            <HeaderCell tooltip="Complexidade para construir o acionador">Complexidade<br/>Acionador</HeaderCell>
+                            <HeaderCell tooltip="Esforço total (Locomoção x Acionador)">Esforço</HeaderCell>
+                            <HeaderCell tooltip="Pontuação base da missão">Pontos</HeaderCell>
+                            <HeaderCell tooltip="Impacto da missão na pontuação geral">Impacto</HeaderCell>
+                            <HeaderCell tooltip="Bônus por proximidade com outras missões">Bônus<br/>Proximidade</HeaderCell>
+                            <HeaderCell tooltip="Quais missões estão próximas no tapete">Missões<br/>Próximas</HeaderCell>
+                            <HeaderCell tooltip="Bônus por similaridade com missões de anos anteriores">Bônus<br/>Similaridade</HeaderCell>
+                            <HeaderCell tooltip="Com qual missão de temporada passada se parece">Missão<br/>Parecida</HeaderCell>
+                            <TableHead className="text-center p-1 align-bottom font-semibold">Priorização</TableHead>
                             <TableHead className="p-1"></TableHead>
                         </TableRow>
                     </TableHeader>
