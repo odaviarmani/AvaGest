@@ -114,3 +114,24 @@ export const robotTestSchema = z.object({
 });
 
 export type RobotTest = z.infer<typeof robotTestSchema>;
+
+export interface MissionAnalysisData {
+  id: string;
+  name: string;
+  imageUrl: string;
+  area: string;
+  driveTrainComplexity: number;
+  actuatorComplexity: number;
+  actuator: string;
+  impact: number;
+  proximityBonus: number;
+  similarityBonus: number;
+  similarMission: string;
+  nearbyMissions: string;
+}
+
+export interface InteractiveMissionData extends MissionAnalysisData {
+    effort: number;
+    priority: number;
+    priorityPercentage: number;
+}
