@@ -123,11 +123,8 @@ export default function AnalysisTable() {
             return { ...mission, driveTrainComplexity, actuatorComplexity, effort, impact, priority };
         });
 
-        const totalPriority = calculatedMissions.reduce((sum, m) => sum + m.priority, 0);
-
         return calculatedMissions.map(mission => ({
             ...mission,
-            priorityPercentage: totalPriority > 0 ? (mission.priority / totalPriority) * 100 : 0
         }));
     }, [missions, calculateDriveTrainComplexity, calculateActuatorComplexity, calculateImpact]);
     
@@ -173,21 +170,21 @@ export default function AnalysisTable() {
     return (
         <div className="w-full rounded-lg border">
             <div className="overflow-x-auto">
-                <Table className="bg-card table-auto">
+                <Table className="bg-card table-fixed w-full">
                     <TableHeader className="bg-muted/50">
                         <TableRow>
-                            <TableHead className="whitespace-nowrap">Missão</TableHead>
+                            <TableHead className="whitespace-nowrap w-[250px]">Missão</TableHead>
                             <HeaderCell tooltip="Área do tapete">Área</HeaderCell>
-                            <HeaderCell tooltip="Complexidade Locomoção">C.Loc</HeaderCell>
+                            <HeaderCell tooltip="Complexidade Locomoção">Complexidade Locomoção</HeaderCell>
                             <HeaderCell tooltip="Acionador Necessário">Acionador</HeaderCell>
-                            <HeaderCell tooltip="Complexidade Acionador">C.Aci</HeaderCell>
-                            <HeaderCell tooltip="Esforço (Locomoção * Acionador)">Esf</HeaderCell>
-                            <HeaderCell tooltip="Pontos da Missão">Pts</HeaderCell>
-                            <HeaderCell tooltip="Impacto na Pontuação">Imp</HeaderCell>
-                            <HeaderCell tooltip="Bônus Proximidade">B.Prox</HeaderCell>
-                            <HeaderCell tooltip="Missões Próximas">Próximas</HeaderCell>
-                            <HeaderCell tooltip="Bônus Similaridade">B.Sim</HeaderCell>
-                            <HeaderCell tooltip="Missão Parecida">Parecida</HeaderCell>
+                            <HeaderCell tooltip="Complexidade Acionador">Complexidade Acionador</HeaderCell>
+                            <HeaderCell tooltip="Esforço (Locomoção * Acionador)">Esforço</HeaderCell>
+                            <HeaderCell tooltip="Pontos da Missão">Pontos</HeaderCell>
+                            <HeaderCell tooltip="Impacto na Pontuação">Impacto</HeaderCell>
+                            <HeaderCell tooltip="Bônus Proximidade">Bônus Proximidade</HeaderCell>
+                            <HeaderCell tooltip="Missões Próximas">Missões Próximas</HeaderCell>
+                            <HeaderCell tooltip="Bônus Similaridade">Bônus Similaridade</HeaderCell>
+                            <HeaderCell tooltip="Missão Parecida">Missão Parecida</HeaderCell>
                             <TableHead className="text-center p-1 whitespace-nowrap">Priorização</TableHead>
                             <TableHead className="p-1"></TableHead>
                         </TableRow>
@@ -212,10 +209,6 @@ export default function AnalysisTable() {
                                 <TableCell className="p-1">
                                     <div className="flex flex-col items-center space-y-1">
                                         <Badge className="text-md">{mission.priority.toFixed(2)}</Badge>
-                                        <div className="w-full flex items-center gap-1">
-                                            <Progress value={mission.priorityPercentage} className="w-full h-2" />
-                                            <span className="text-xs font-mono">{mission.priorityPercentage.toFixed(0)}%</span>
-                                        </div>
                                     </div>
                                 </TableCell>
                                 <TableCell className="p-1">
