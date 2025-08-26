@@ -176,7 +176,7 @@ export default function AnalysisTable() {
                 <Table className="bg-card">
                     <TableHeader className="bg-muted/50">
                         <TableRow>
-                            <TableHead className="min-w-[200px]">Missão</TableHead>
+                            <TableHead className="min-w-[250px]">Missão</TableHead>
                             <HeaderCell tooltip="Área do tapete">Área</HeaderCell>
                             <HeaderCell tooltip="Complexidade Locomoção">C.Loc</HeaderCell>
                             <HeaderCell tooltip="Acionador Necessário">Acionador</HeaderCell>
@@ -198,17 +198,17 @@ export default function AnalysisTable() {
                                 <TableCell className="font-medium p-1 break-words">
                                     <EditableCell id={mission.id} field="name" value={mission.name} />
                                 </TableCell>
-                                <TableCell className="p-1"><EditableCell id={mission.id} field="area" value={mission.area} /></TableCell>
+                                <TableCell className="p-1 min-w-[100px]"><EditableCell id={mission.id} field="area" value={mission.area} /></TableCell>
                                 <TableCell className="font-bold text-center text-lg p-1">{mission.driveTrainComplexity}</TableCell>
-                                <TableCell className="p-1 break-words"><EditableCell id={mission.id} field="actuator" value={mission.actuator} /></TableCell>
+                                <TableCell className="p-1 break-words min-w-[200px]"><EditableCell id={mission.id} field="actuator" value={mission.actuator} /></TableCell>
                                 <TableCell className="font-bold text-center text-lg p-1">{mission.actuatorComplexity}</TableCell>
                                 <TableCell className="font-bold text-center text-lg p-1">{mission.effort}</TableCell>
                                 <TableCell className="p-1"><EditableCell id={mission.id} field="missionPoints" value={mission.missionPoints} /></TableCell>
                                 <TableCell className="font-bold text-center text-lg p-1">{mission.impact}</TableCell>
                                 <TableCell className="p-1"><EditableCell id={mission.id} field="proximityBonus" value={mission.proximityBonus} /></TableCell>
-                                <TableCell className="p-1 break-words"><EditableCell id={mission.id} field="nearbyMissions" value={mission.nearbyMissions} /></TableCell>
+                                <TableCell className="p-1 break-words min-w-[200px]"><EditableCell id={mission.id} field="nearbyMissions" value={mission.nearbyMissions} /></TableCell>
                                 <TableCell className="p-1"><EditableCell id={mission.id} field="similarityBonus" value={mission.similarityBonus} /></TableCell>
-                                <TableCell className="p-1 break-words"><EditableCell id={mission.id} field="similarMission" value={mission.similarMission} /></TableCell>
+                                <TableCell className="p-1 break-words min-w-[200px]"><EditableCell id={mission.id} field="similarMission" value={mission.similarMission} /></TableCell>
                                 <TableCell className="p-1">
                                     <div className="flex flex-col items-center space-y-1">
                                         <Badge className="text-md">{mission.priority.toFixed(2)}</Badge>
