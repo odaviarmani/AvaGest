@@ -19,6 +19,9 @@ const friendlyMessages = [
 
 const BlinkingRobot = ({ isBlinking }: { isBlinking: boolean }) => (
     <svg width="64" height="64" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-lg">
+        {/* Crown */}
+        <path d="M20 28 L 22 18 L 30 22 L 40 14 L 50 22 L 58 18 L 60 28 Z" fill="#FFD700" stroke="#FDB813" strokeWidth="2" strokeLinejoin="round"/>
+        {/* Robot Body */}
         <path d="M40 80C62.0914 80 80 62.0914 80 40C80 17.9086 62.0914 0 40 0C17.9086 0 0 17.9086 0 40C0 62.0914 17.9086 80 40 80Z" fill="url(#paint0_linear_1_2)"/>
         <circle cx="40" cy="40" r="32" fill="#E0E0E0"/>
         <rect x="18" y="32" width="44" height={isBlinking ? 0 : 16} rx="8" fill="#212121"/>
