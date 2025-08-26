@@ -160,7 +160,7 @@ export default function AnalysisTable() {
     );
 
     const HeaderCell = ({ children, tooltip }: { children: React.ReactNode, tooltip: string }) => (
-        <TableHead className="text-center p-1">
+        <TableHead className="text-center p-1 whitespace-nowrap">
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild><span className="cursor-help">{children}</span></TooltipTrigger>
@@ -172,60 +172,62 @@ export default function AnalysisTable() {
 
     return (
         <div className="w-full rounded-lg border">
-            <Table className="table-fixed w-full bg-card">
-                <TableHeader className="bg-muted/50">
-                    <TableRow>
-                        <TableHead className="p-1 w-[15%]">Missão</TableHead>
-                        <HeaderCell tooltip="Área do tapete">Área</HeaderCell>
-                        <HeaderCell tooltip="Complexidade Locomoção">C.Loc</HeaderCell>
-                        <HeaderCell tooltip="Acionador Necessário">Acionador</HeaderCell>
-                        <HeaderCell tooltip="Complexidade Acionador">C.Aci</HeaderCell>
-                        <HeaderCell tooltip="Esforço (Locomoção * Acionador)">Esf</HeaderCell>
-                        <HeaderCell tooltip="Pontos da Missão">Pts</HeaderCell>
-                        <HeaderCell tooltip="Impacto na Pontuação">Imp</HeaderCell>
-                        <HeaderCell tooltip="Bônus Proximidade">B.Prox</HeaderCell>
-                        <HeaderCell tooltip="Missões Próximas">Próximas</HeaderCell>
-                        <HeaderCell tooltip="Bônus Similaridade">B.Sim</HeaderCell>
-                        <HeaderCell tooltip="Missão Parecida">Parecida</HeaderCell>
-                        <TableHead className="text-center p-1 w-[12%]">Priorização</TableHead>
-                        <TableHead className="p-1 w-[40px]"></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {isClient && processedMissions.map(mission => (
-                        <TableRow key={mission.id} className={cn("transition-colors", getRowClass(mission.priority))}>
-                            <TableCell className="font-medium p-1 w-auto break-words">
-                                <EditableCell id={mission.id} field="name" value={mission.name} />
-                            </TableCell>
-                            <TableCell className="p-1"><EditableCell id={mission.id} field="area" value={mission.area} /></TableCell>
-                            <TableCell className="font-bold text-center text-lg p-1">{mission.driveTrainComplexity}</TableCell>
-                            <TableCell className="p-1 break-words"><EditableCell id={mission.id} field="actuator" value={mission.actuator} /></TableCell>
-                            <TableCell className="font-bold text-center text-lg p-1">{mission.actuatorComplexity}</TableCell>
-                            <TableCell className="font-bold text-center text-lg p-1">{mission.effort}</TableCell>
-                            <TableCell className="p-1"><EditableCell id={mission.id} field="missionPoints" value={mission.missionPoints} /></TableCell>
-                            <TableCell className="font-bold text-center text-lg p-1">{mission.impact}</TableCell>
-                            <TableCell className="p-1"><EditableCell id={mission.id} field="proximityBonus" value={mission.proximityBonus} /></TableCell>
-                            <TableCell className="p-1 break-words"><EditableCell id={mission.id} field="nearbyMissions" value={mission.nearbyMissions} /></TableCell>
-                            <TableCell className="p-1"><EditableCell id={mission.id} field="similarityBonus" value={mission.similarityBonus} /></TableCell>
-                            <TableCell className="p-1 break-words"><EditableCell id={mission.id} field="similarMission" value={mission.similarMission} /></TableCell>
-                            <TableCell className="p-1">
-                                <div className="flex flex-col items-center space-y-1">
-                                    <Badge className="text-md">{mission.priority.toFixed(2)}</Badge>
-                                    <div className="w-full flex items-center gap-1">
-                                        <Progress value={mission.priorityPercentage} className="w-full h-2" />
-                                        <span className="text-xs font-mono">{mission.priorityPercentage.toFixed(0)}%</span>
-                                    </div>
-                                </div>
-                            </TableCell>
-                            <TableCell className="p-1">
-                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteMission(mission.id)}>
-                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
-                            </TableCell>
+            <div className="overflow-x-auto">
+                <Table className="bg-card">
+                    <TableHeader className="bg-muted/50">
+                        <TableRow>
+                            <TableHead className="min-w-[200px]">Missão</TableHead>
+                            <HeaderCell tooltip="Área do tapete">Área</HeaderCell>
+                            <HeaderCell tooltip="Complexidade Locomoção">C.Loc</HeaderCell>
+                            <HeaderCell tooltip="Acionador Necessário">Acionador</HeaderCell>
+                            <HeaderCell tooltip="Complexidade Acionador">C.Aci</HeaderCell>
+                            <HeaderCell tooltip="Esforço (Locomoção * Acionador)">Esf</HeaderCell>
+                            <HeaderCell tooltip="Pontos da Missão">Pts</HeaderCell>
+                            <HeaderCell tooltip="Impacto na Pontuação">Imp</HeaderCell>
+                            <HeaderCell tooltip="Bônus Proximidade">B.Prox</HeaderCell>
+                            <HeaderCell tooltip="Missões Próximas">Próximas</HeaderCell>
+                            <HeaderCell tooltip="Bônus Similaridade">B.Sim</HeaderCell>
+                            <HeaderCell tooltip="Missão Parecida">Parecida</HeaderCell>
+                            <TableHead className="text-center p-1 min-w-[150px]">Priorização</TableHead>
+                            <TableHead className="p-1"></TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                    </TableHeader>
+                    <TableBody>
+                        {isClient && processedMissions.map(mission => (
+                            <TableRow key={mission.id} className={cn("transition-colors", getRowClass(mission.priority))}>
+                                <TableCell className="font-medium p-1 break-words">
+                                    <EditableCell id={mission.id} field="name" value={mission.name} />
+                                </TableCell>
+                                <TableCell className="p-1"><EditableCell id={mission.id} field="area" value={mission.area} /></TableCell>
+                                <TableCell className="font-bold text-center text-lg p-1">{mission.driveTrainComplexity}</TableCell>
+                                <TableCell className="p-1 break-words"><EditableCell id={mission.id} field="actuator" value={mission.actuator} /></TableCell>
+                                <TableCell className="font-bold text-center text-lg p-1">{mission.actuatorComplexity}</TableCell>
+                                <TableCell className="font-bold text-center text-lg p-1">{mission.effort}</TableCell>
+                                <TableCell className="p-1"><EditableCell id={mission.id} field="missionPoints" value={mission.missionPoints} /></TableCell>
+                                <TableCell className="font-bold text-center text-lg p-1">{mission.impact}</TableCell>
+                                <TableCell className="p-1"><EditableCell id={mission.id} field="proximityBonus" value={mission.proximityBonus} /></TableCell>
+                                <TableCell className="p-1 break-words"><EditableCell id={mission.id} field="nearbyMissions" value={mission.nearbyMissions} /></TableCell>
+                                <TableCell className="p-1"><EditableCell id={mission.id} field="similarityBonus" value={mission.similarityBonus} /></TableCell>
+                                <TableCell className="p-1 break-words"><EditableCell id={mission.id} field="similarMission" value={mission.similarMission} /></TableCell>
+                                <TableCell className="p-1">
+                                    <div className="flex flex-col items-center space-y-1">
+                                        <Badge className="text-md">{mission.priority.toFixed(2)}</Badge>
+                                        <div className="w-full flex items-center gap-1">
+                                            <Progress value={mission.priorityPercentage} className="w-full h-2" />
+                                            <span className="text-xs font-mono">{mission.priorityPercentage.toFixed(0)}%</span>
+                                        </div>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="p-1">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteMission(mission.id)}>
+                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
              <div className="p-4 bg-card border-t">
                 <Button onClick={handleAddMission}>
                     <PlusCircle className="mr-2" />
