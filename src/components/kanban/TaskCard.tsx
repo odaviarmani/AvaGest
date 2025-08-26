@@ -17,6 +17,7 @@ interface TaskCardProps {
   isDragging: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  isCompact?: boolean;
 }
 
 const priorityIcons: Record<Priority, React.ReactNode> = {
@@ -38,7 +39,7 @@ const formatDateTime = (date: Date) => {
     return format(date, hasTime ? "dd/MM/yy 'às' HH:mm" : "dd/MM/yyyy", { locale: ptBR });
 };
 
-export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCardProps) {
+export default function TaskCard({ task, isDragging, onEdit, onDelete, isCompact = false }: TaskCardProps) {
   const priorityBadgeColor: Record<Priority, string> = {
     'Baixa': 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300 border-green-300 dark:border-green-600',
     'Média': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300 border-yellow-300 dark:border-yellow-600',
@@ -46,6 +47,47 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete }: TaskCar
   }
 
   const taskAreas = Array.isArray(task.area) ? task.area : [task.area];
+  
+  if (isCompact) {
+    return (
+       <Card 
+        className={cn(
+          "shadow-md hover:shadow-lg transition-all relative overflow-hidden h-full", 
+          isDragging && "shadow-xl ring-2 ring-primary",
+          "bg-card/80 text-card-foreground flex flex-col"
+        )}
+      >
+        <div className="absolute left-0 top-0 bottom-0 w-1 flex flex-col">
+            {taskAreas.map(area => (
+                <div key={area} className={cn("flex-1", areaColorMap[area] || areaColorMap.default)}></div>
+            ))}
+        </div>
+         <div className="pl-3 flex-1 flex flex-col">
+          <CardHeader className="p-2 flex flex-row items-start justify-between">
+              <CardTitle className="text-sm font-semibold leading-tight pr-2">{task.name}</CardTitle>
+              <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 hover:bg-black/10">
+                  <MoreVertical className="h-3 w-3" />
+                  </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
+                  <DropdownMenuItem onClick={onDelete} className="text-red-500 focus:text-red-500 focus:bg-red-50">
+                      <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                  </DropdownMenuItem>
+              </DropdownMenuContent>
+              </DropdownMenu>
+          </CardHeader>
+          <CardContent className="p-2 pt-0 flex-1 flex flex-col justify-end">
+              <div className="flex flex-wrap gap-1">
+                  {taskAreas.map(a => <Badge key={a} variant="outline" className="text-xs px-1 py-0 bg-card/80">{a}</Badge>)}
+              </div>
+          </CardContent>
+        </div>
+       </Card>
+    )
+  }
 
   return (
     <Card 

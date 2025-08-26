@@ -19,6 +19,8 @@ interface KanbanColumnProps {
 }
 
 export default function KanbanColumn({ column, onEditTask, onDeleteTask }: KanbanColumnProps) {
+  const isDoneColumn = column.id === 'Feito';
+
   return (
     <div className="w-[300px] shrink-0 flex flex-col h-full">
       <div className="flex items-center justify-between p-2 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
@@ -37,7 +39,10 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask }: Kanba
               snapshot.isDraggingOver ? 'bg-primary/10' : 'bg-secondary/50'
             )}
           >
-            <div className="space-y-4 min-h-[400px]">
+            <div className={cn(
+              "min-h-[400px]",
+              isDoneColumn ? "grid grid-cols-2 gap-2" : "space-y-4"
+            )}>
               {column.tasks.map((task, index) => (
                 <Draggable key={task.id} draggableId={task.id} index={index}>
                   {(provided, snapshot) => (
@@ -48,12 +53,14 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask }: Kanba
                       style={{
                         ...provided.draggableProps.style,
                       }}
+                      className={cn(isDoneColumn && "w-full")}
                     >
                       <TaskCard
                         task={task}
                         isDragging={snapshot.isDragging}
                         onEdit={() => onEditTask(task)}
                         onDelete={() => onDeleteTask(task.id)}
+                        isCompact={isDoneColumn}
                       />
                     </div>
                   )}
