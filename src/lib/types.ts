@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 export const priorities = ['Baixa', 'Média', 'Alta'] as const;
-export const columnNames = ['Planejamento', 'Fazer', 'Fazendo', 'Feito', 'Análise', 'Aprimoramento'] as const;
+export const statuses = ['Planejamento', 'Fazer', 'Fazendo', 'Feito', 'Análise', 'Aprimoramento'] as const;
 export const areaNames = ['Projeto de Inovação', 'Construção', 'Programação', 'Core Values'] as const;
 
 
@@ -13,12 +13,12 @@ export const taskSchema = z.object({
   area: z.array(z.string()).min(1, { message: "Selecione ao menos uma área." }),
   startDate: z.date().nullable(),
   dueDate: z.date().nullable(),
-  columnId: z.enum(columnNames),
+  columnId: z.string(),
 });
 
 export type Task = z.infer<typeof taskSchema>;
 export type Priority = Task['priority'];
-export type ColumnId = Task['columnId'];
+export type Status = typeof statuses[number];
 
 export const attachmentSchema = z.object({
     id: z.string(),

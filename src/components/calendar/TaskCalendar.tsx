@@ -1,8 +1,9 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
-import { Task, columnNames, priorities, areaNames } from '@/lib/types';
+import { Task, priorities, areaNames, statuses } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -17,6 +18,8 @@ const areaColorMap: Record<string, string> = {
   "Core Values": "bg-yellow-500/80",
   "default": "bg-gray-500/80",
 };
+
+const getStatusFromColumnId = (columnId: string) => columnId.split('-')[0];
 
 export default function TaskCalendar() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -125,7 +128,7 @@ export default function TaskCalendar() {
                         <Badge variant="outline" className="bg-accent/20 text-accent-foreground border-accent">Entrega</Badge>
                     )}
                      <Badge variant="secondary">{task.priority}</Badge>
-                     <Badge variant="secondary">{task.columnId}</Badge>
+                     <Badge variant="secondary">{getStatusFromColumnId(task.columnId)}</Badge>
                      {task.area.map(a => <Badge key={a} variant="outline">{a}</Badge>)}
                   </div>
                 </div>

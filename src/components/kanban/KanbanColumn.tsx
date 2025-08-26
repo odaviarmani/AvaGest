@@ -4,13 +4,13 @@
 import React from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import TaskCard from './TaskCard';
-import { Task, ColumnId } from '@/lib/types';
+import { Task } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface KanbanColumnProps {
   column: {
-    id: ColumnId;
+    id: string;
     title: string;
     tasks: Task[];
   };
@@ -19,7 +19,9 @@ interface KanbanColumnProps {
 }
 
 export default function KanbanColumn({ column, onEditTask, onDeleteTask }: KanbanColumnProps) {
-  const isDoneColumn = column.id === 'Feito';
+  const isDoneColumn = column.id.startsWith('Feito');
+
+  const tasksWithDropIndexes = column.tasks.map((task, index) => ({...task, originalIndex: index}));
 
   return (
     <div className="w-[300px] shrink-0 flex flex-col h-full">
@@ -43,7 +45,7 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask }: Kanba
               "min-h-[400px]",
               isDoneColumn ? "grid grid-cols-2 gap-2" : "space-y-4"
             )}>
-              {column.tasks.map((task, index) => (
+              {tasksWithDropIndexes.map((task, index) => (
                 <Draggable key={task.id} draggableId={task.id} index={index}>
                   {(provided, snapshot) => (
                     <div

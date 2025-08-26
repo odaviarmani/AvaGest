@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { taskSchema, Task, priorities, columnNames, areaNames } from '@/lib/types';
+import { taskSchema, Task, priorities, statuses, areaNames } from '@/lib/types';
 import { CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -41,6 +41,8 @@ const combineDateAndTime = (date: Date | null | undefined, time: string): Date |
     return newDate;
 }
 
+const getStatusFromColumnId = (columnId: string) => columnId.split('-')[0];
+
 export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
   const form = useForm<Task>({
     resolver: zodResolver(taskSchema),
@@ -51,13 +53,15 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
       area: [],
       startDate: null,
       dueDate: null,
-      columnId: 'Planejamento',
+      columnId: 'Planejamento-1',
     },
   });
 
   const onSubmit = (data: Task) => {
     onSave(data);
   };
+
+  const currentStatus = getStatusFromColumnId(form.watch('columnId'));
 
   return (
     <Form {...form}>
@@ -146,14 +150,14 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Coluna</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={(value) => field.onChange(`${value}-1`)} defaultValue={currentStatus}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a coluna" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {columnNames.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {statuses.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
               <FormMessage />
