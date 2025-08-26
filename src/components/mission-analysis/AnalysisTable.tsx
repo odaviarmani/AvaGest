@@ -170,7 +170,7 @@ export default function AnalysisTable() {
                         <TableHead>Missões Próximas</TableHead>
                         <TableHead>Bônus Similaridade</TableHead>
                         <TableHead>Missão Parecida</TableHead>
-                        <TableHead className="sticky right-0 bg-muted/50 z-10 w-[250px] text-center">Priorização</TableHead>
+                        <TableHead className="sticky right-[50px] bg-muted/50 z-10 w-[250px] text-center">Priorização</TableHead>
                         <TableHead className="sticky right-0 bg-muted/50 z-10 w-[50px]"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -217,5 +217,7 @@ export default function AnalysisTable() {
             </div>
         </div>
     );
+
+    
 
     
