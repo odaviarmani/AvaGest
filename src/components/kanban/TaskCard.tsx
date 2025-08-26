@@ -54,10 +54,10 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete, isCompact
         className={cn(
           "shadow-md hover:shadow-lg transition-all relative overflow-hidden h-full", 
           isDragging && "shadow-xl ring-2 ring-primary",
-          "bg-card/80 text-card-foreground flex flex-col"
+          "bg-card text-card-foreground flex flex-col"
         )}
       >
-        <div className="absolute left-0 top-0 bottom-0 w-1 flex flex-col">
+        <div className="absolute left-0 top-0 bottom-0 w-1.5 flex flex-col">
             {taskAreas.map(area => (
                 <div key={area} className={cn("flex-1", areaColorMap[area] || areaColorMap.default)}></div>
             ))}
@@ -67,13 +67,13 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete, isCompact
               <CardTitle className="text-sm font-semibold leading-tight pr-2">{task.name}</CardTitle>
               <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 hover:bg-black/10">
-                  <MoreVertical className="h-3 w-3" />
+                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 hover:bg-black/10 dark:hover:bg-white/10">
+                  <MoreVertical className="h-4 w-4" />
                   </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
-                  <DropdownMenuItem onClick={onDelete} className="text-red-500 focus:text-red-500 focus:bg-red-50">
+                  <DropdownMenuItem onClick={onDelete} className="text-red-500 focus:text-red-500">
                       <Trash2 className="mr-2 h-4 w-4" /> Excluir
                   </DropdownMenuItem>
               </DropdownMenuContent>
@@ -81,7 +81,7 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete, isCompact
           </CardHeader>
           <CardContent className="p-2 pt-0 flex-1 flex flex-col justify-end">
               <div className="flex flex-wrap gap-1">
-                  {taskAreas.map(a => <Badge key={a} variant="outline" className="text-xs px-1 py-0 bg-card/80">{a}</Badge>)}
+                  {taskAreas.map(a => <Badge key={a} variant="outline" className="text-xs px-1.5 py-0 bg-card/80">{a}</Badge>)}
               </div>
           </CardContent>
         </div>
