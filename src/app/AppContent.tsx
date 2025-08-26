@@ -37,9 +37,9 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
   const isAuthPage = pathname === '/login';
   const isAdmin = username && ADMIN_USERS.includes(username);
   
-  const theme = username && isClient ? userThemes[username] : null;
+  const theme = username && userThemes[username] ? userThemes[username] : null;
 
-  const themeStyle = theme ? {
+  const themeStyle = isClient && theme ? {
       '--primary': theme.primary,
       '--primary-foreground': theme.primaryForeground,
       '--ring': theme.ring,
