@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 export const priorities = ['Baixa', 'Média', 'Alta'] as const;
-export const statuses = ['Planejamento', 'Fazer', 'Fazendo', 'Feito', 'Análise', 'Aprimoramento'] as const;
+export const statuses = ['Planejamento', 'Fazer', 'Fazendo', 'Feito'] as const;
 export const areaNames = ['Projeto de Inovação', 'Construção', 'Programação', 'Core Values'] as const;
 
 
@@ -118,12 +118,9 @@ export type RobotTest = z.infer<typeof robotTestSchema>;
 export interface MissionAnalysisData {
   id: string;
   name: string;
-  imageUrl: string;
   area: string;
-  driveTrainComplexity: number;
-  actuatorComplexity: number;
   actuator: string;
-  impact: number;
+  missionPoints: number;
   proximityBonus: number;
   similarityBonus: number;
   similarMission: string;
@@ -131,7 +128,10 @@ export interface MissionAnalysisData {
 }
 
 export interface InteractiveMissionData extends MissionAnalysisData {
+    driveTrainComplexity: number;
+    actuatorComplexity: number;
     effort: number;
+    impact: number;
     priority: number;
     priorityPercentage: number;
 }
