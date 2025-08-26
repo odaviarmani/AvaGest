@@ -9,6 +9,7 @@ import { MissionAnalysisData, InteractiveMissionData } from '@/lib/types';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { PlusCircle, Trash2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const initialMissions: MissionAnalysisData[] = [
     { id: 'm01', name: 'M01 - Surface Brushing', area: '1A', actuator: 'Empurrar e Pegar', missionPoints: 30, proximityBonus: 1, similarityBonus: 1, similarMission: 'Submerged - M14 (Trident)', nearbyMissions: 'Missão 02' },
@@ -16,7 +17,7 @@ const initialMissions: MissionAnalysisData[] = [
     { id: 'm03', name: 'M03 - Mineshaft Explorer', area: '3', actuator: 'Levantar', missionPoints: 40, proximityBonus: 3, similarityBonus: 3, similarMission: 'Submerged - M10', nearbyMissions: 'Missões 02, 04 e 13' },
     { id: 'm04', name: 'M04 - Careful Recovery', area: '3', actuator: 'Pegar', missionPoints: 40, proximityBonus: 3, similarityBonus: 3, similarMission: 'Submerged - M14 (Seabed Sample)', nearbyMissions: 'Missões 02, 03 e 13' },
     { id: 'm05', name: 'M05 - Who Lived Here?', area: '2B', actuator: 'Empurrar', missionPoints: 30, proximityBonus: 1, similarityBonus: 2, similarMission: 'Master Piece - M05', nearbyMissions: 'Missões 06 e 07' },
-    { id: 'm06', name: 'M06 - Forge', area: '2B', actuator: 'Abaixar', missionPoints: 30, proximityBonus: 1, similarityBonus: 3, similarMission: 'Master Piece - M12', nearbyMissions: 'Missões 05, 07 e 08' },
+    { id: 'm06', name: 'M06 - Forge', area: '2B', actuator: 'Abaixar', missionPoints: 30, proximityBonus: 1, similarityBonus: 3, similarMission: 'Master Piece - M12', nearbyMissions: 'Missões 05, 06 e 08' },
     { id: 'm07', name: 'M07 - Heavy Lifting', area: '2B', actuator: 'Pegar', missionPoints: 30, proximityBonus: 1, similarityBonus: 3, similarMission: 'Submerged - M14 (Seabed Sample)', nearbyMissions: 'Missões 05, 06 e 08' },
     { id: 'm08', name: 'M08 - Silo', area: '1B', actuator: 'Abaixar', missionPoints: 30, proximityBonus: 1, similarityBonus: 2, similarMission: 'Super Powered - M10', nearbyMissions: 'Missões 06 e 07' },
     { id: 'm09', name: "M09 - What's On Sale?", area: '1B', actuator: 'Empurrar e Abaixar', missionPoints: 30, proximityBonus: 1, similarityBonus: 1, similarMission: 'Super Powered - M08', nearbyMissions: 'Missão 10' },
@@ -120,24 +121,43 @@ export default function AnalysisTable() {
         return calculatedMissions.map(mission => ({
             ...mission,
             priorityPercentage: totalPriority > 0 ? (mission.priority / totalPriority) * 100 : 0
-        })).sort((a, b) => b.priority - a.priority);
+        }));
     }, [missions, calculateDriveTrainComplexity, calculateActuatorComplexity, calculateImpact]);
+    
+    const priorityStats = useMemo(() => {
+        if (processedMissions.length === 0) return { mean: 0, stdDev: 0 };
+        const priorities = processedMissions.map(m => m.priority);
+        const mean = priorities.reduce((sum, p) => sum + p, 0) / priorities.length;
+        const stdDev = Math.sqrt(priorities.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / priorities.length);
+        return { mean, stdDev };
+    }, [processedMissions]);
+
+    const getRowClass = (priority: number) => {
+        const { mean, stdDev } = priorityStats;
+        const highThreshold = mean + stdDev * 0.5;
+        const lowThreshold = mean - stdDev * 0.5;
+
+        if (priority > highThreshold) return 'bg-green-100/50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30';
+        if (priority < lowThreshold) return 'bg-red-100/50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30';
+        return 'bg-yellow-100/50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30';
+    };
+
 
     const EditableCell = ({ id, field, value }: { id: string, field: keyof MissionAnalysisData, value: string | number }) => (
         <Input
             value={value}
             onChange={(e) => handleFieldChange(id, field, (typeof value === 'number' && e.target.value !== '') ? parseFloat(e.target.value) : e.target.value)}
             type={typeof value === 'number' ? 'number' : 'text'}
-            className="w-full min-w-[100px] text-center bg-secondary/30 focus:bg-background"
+            className="w-full min-w-[100px] text-center bg-transparent focus:bg-background/50 border-0 focus-visible:ring-1"
         />
     );
 
     return (
-        <div className="w-full overflow-x-auto">
+        <div className="w-full overflow-x-auto rounded-lg border">
             <Table className="min-w-max bg-card">
-                <TableHeader>
+                <TableHeader className="bg-muted/50">
                     <TableRow>
-                        <TableHead className="sticky left-0 bg-card z-10 w-[200px]">Missão</TableHead>
+                        <TableHead className="sticky left-0 bg-muted/50 z-10 w-[200px]">Missão</TableHead>
                         <TableHead>Área</TableHead>
                         <TableHead>C. Locomoção</TableHead>
                         <TableHead>Acionamento</TableHead>
@@ -149,14 +169,14 @@ export default function AnalysisTable() {
                         <TableHead>Missões Próximas</TableHead>
                         <TableHead>Bônus Similaridade</TableHead>
                         <TableHead>Missão Parecida</TableHead>
-                        <TableHead className="sticky right-0 bg-card z-20 w-[200px] text-center">Priorização</TableHead>
-                        <TableHead className="sticky right-0 bg-card z-10 w-[50px]"></TableHead>
+                        <TableHead className="sticky right-0 bg-muted/50 z-20 w-[200px] text-center">Priorização</TableHead>
+                        <TableHead className="sticky right-0 bg-muted/50 z-10 w-[50px]"></TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {isClient && processedMissions.map(mission => (
-                        <TableRow key={mission.id}>
-                            <TableCell className="font-medium sticky left-0 bg-card z-10 w-[200px]">
+                        <TableRow key={mission.id} className={cn("transition-colors", getRowClass(mission.priority))}>
+                            <TableCell className="font-medium sticky left-0 bg-inherit z-10 w-[200px]">
                                 <EditableCell id={mission.id} field="name" value={mission.name} />
                             </TableCell>
                             <TableCell><EditableCell id={mission.id} field="area" value={mission.area} /></TableCell>
@@ -170,7 +190,7 @@ export default function AnalysisTable() {
                             <TableCell><EditableCell id={mission.id} field="nearbyMissions" value={mission.nearbyMissions} /></TableCell>
                             <TableCell><EditableCell id={mission.id} field="similarityBonus" value={mission.similarityBonus} /></TableCell>
                             <TableCell><EditableCell id={mission.id} field="similarMission" value={mission.similarMission} /></TableCell>
-                            <TableCell className="sticky right-[50px] bg-card z-10 w-[200px]">
+                            <TableCell className="sticky right-[50px] bg-inherit z-10 w-[200px]">
                                 <div className="flex flex-col items-center space-y-2">
                                     <Badge className="text-lg">{mission.priority.toFixed(2)}</Badge>
                                     <div className="w-full flex items-center gap-2">
@@ -179,7 +199,7 @@ export default function AnalysisTable() {
                                     </div>
                                 </div>
                             </TableCell>
-                            <TableCell className="sticky right-0 bg-card z-10 w-[50px]">
+                            <TableCell className="sticky right-0 bg-inherit z-10 w-[50px]">
                                  <Button variant="ghost" size="icon" onClick={() => handleDeleteMission(mission.id)}>
                                     <Trash2 className="w-4 h-4 text-destructive" />
                                 </Button>
@@ -188,7 +208,7 @@ export default function AnalysisTable() {
                     ))}
                 </TableBody>
             </Table>
-             <div className="p-4">
+             <div className="p-4 bg-card border-t">
                 <Button onClick={handleAddMission}>
                     <PlusCircle className="mr-2" />
                     Adicionar Missão
