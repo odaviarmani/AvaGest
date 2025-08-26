@@ -47,20 +47,28 @@ export default function FriendlyBot() {
     const [currentMessage, setCurrentMessage] = useState(friendlyMessages[0]);
     const [isDismissed, setIsDismissed] = useState(false);
     const [isBlinking, setIsBlinking] = useState(false);
+    const [isClient, setIsClient] = useState(false);
+
+    // Ensure component only renders on client to avoid hydration errors
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
 
     // Initial delay before showing the bot
     useEffect(() => {
+        if (!isClient) return;
+
         const timer = setTimeout(() => {
             if (!isDismissed) {
                 setIsVisible(true);
             }
         }, 3000);
         return () => clearTimeout(timer);
-    }, [isDismissed]);
+    }, [isDismissed, isClient]);
 
     // Message cycling
     useEffect(() => {
-        if (!isVisible) return;
+        if (!isVisible || !isClient) return;
 
         const messageInterval = setInterval(() => {
             const randomIndex = Math.floor(Math.random() * friendlyMessages.length);
@@ -68,11 +76,11 @@ export default function FriendlyBot() {
         }, 15000); // Change message every 15 seconds
 
         return () => clearInterval(messageInterval);
-    }, [isVisible]);
+    }, [isVisible, isClient]);
     
     // Blinking animation
     useEffect(() => {
-        if (!isVisible) return;
+        if (!isVisible || !isClient) return;
         
         const blinkInterval = setInterval(() => {
             setIsBlinking(true);
@@ -80,14 +88,14 @@ export default function FriendlyBot() {
         }, 4000); // Blink every 4 seconds
 
         return () => clearInterval(blinkInterval);
-    }, [isVisible]);
+    }, [isVisible, isClient]);
 
     const handleDismiss = () => {
         setIsVisible(false);
         setIsDismissed(true);
     };
 
-    if (isDismissed) return null;
+    if (!isClient || isDismissed) return null;
 
     return (
         <div className={cn(
