@@ -16,18 +16,13 @@ import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const DEFAULT_TASKS: Task[] = [
-    { id: 'task-1', name: 'Configurar ambiente de desenvolvimento', area: ['Programação'], priority: 'Alta', startDate: new Date(), dueDate: null, columnId: 'Fazer-1' },
-    { id: 'task-2', name: 'Criar wireframes da UI', area: ['Core Values'], priority: 'Média', startDate: new Date(), dueDate: null, columnId: 'Planejamento-1' },
-    { id: 'task-3', name: 'Testar endpoint de login', area: ['Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Fazendo-1' },
-    { id: 'task-4', name: 'Publicar landing page', area: ['Construção'], priority: 'Baixa', startDate: null, dueDate: null, columnId: 'Feito-1' },
-    { id: 'task-5', name: 'Revisar copy do site', area: ['Construção'], priority: 'Média', startDate: null, dueDate: null, columnId: 'Fazer-1' },
-    { id: 'task-6', name: 'Implementar autenticação', area: ['Projeto de Inovação', 'Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Planejamento-1' },
+    { id: 'task-1', name: 'Configurar ambiente de desenvolvimento', area: ['Programação'], priority: 'Alta', startDate: new Date(), dueDate: null, columnId: 'Fazer' },
+    { id: 'task-2', name: 'Criar wireframes da UI', area: ['Core Values'], priority: 'Média', startDate: new Date(), dueDate: null, columnId: 'Planejamento' },
+    { id: 'task-3', name: 'Testar endpoint de login', area: ['Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Fazendo' },
+    { id: 'task-4', name: 'Publicar landing page', area: ['Construção'], priority: 'Baixa', startDate: null, dueDate: null, columnId: 'Feito' },
+    { id: 'task-5', name: 'Revisar copy do site', area: ['Construção'], priority: 'Média', startDate: null, dueDate: null, columnId: 'Fazer' },
+    { id: 'task-6', name: 'Implementar autenticação', area: ['Projeto de Inovação', 'Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Planejamento' },
 ];
-
-const COLUMN_LIMIT = 6;
-
-// Helper function to extract status from a columnId like "Fazer-1" -> "Fazer"
-const getStatusFromColumnId = (columnId: string) => columnId.split('-')[0];
 
 export default function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -50,10 +45,9 @@ export default function KanbanBoard() {
         }
         return value;
       });
-      // Ensure old tasks have valid columnId format
       const validatedTasks = parsedTasks.map((task: Task) => ({
           ...task,
-          columnId: task.columnId.includes('-') ? task.columnId : `${task.columnId}-1`
+          columnId: task.columnId.split('-')[0] // Ensure columnId is just the status name
       }));
       setTasks(validatedTasks);
     } else {
@@ -74,108 +68,67 @@ export default function KanbanBoard() {
         return matchesSearch && matchesArea;
     });
   }, [tasks, searchQuery, selectedAreas]);
-
+  
   const columns = useMemo(() => {
-    const dynamicColumns: { id: string; title: string; tasks: Task[] }[] = [];
-    
-    statuses.forEach(status => {
-      const tasksInStatus = filteredTasks.filter(task => getStatusFromColumnId(task.columnId) === status);
-      
-      if (tasksInStatus.length === 0) {
-        dynamicColumns.push({ id: `${status}-1`, title: status, tasks: [] });
-      } else {
-        const numColumns = Math.ceil(tasksInStatus.length / COLUMN_LIMIT);
-        for (let i = 1; i <= Math.max(1, numColumns); i++) {
-          const columnId = `${status}-${i}`;
-          const columnTasks = tasksInStatus.filter(task => task.columnId === columnId);
-          const title = numColumns > 1 ? `${status} ${i}` : status;
-          dynamicColumns.push({ id: columnId, title, tasks: columnTasks });
-        }
-      }
-    });
-
-    return dynamicColumns;
-  }, [filteredTasks]);
+    return statuses.map(status => ({
+        id: status,
+        title: status,
+        tasks: filteredTasks
+            .filter(task => task.columnId === status)
+            // Sort tasks to maintain a stable order within columns
+            .sort((a, b) => tasks.findIndex(t => t.id === a.id) - tasks.findIndex(t => t.id === b.id)),
+    }));
+  }, [filteredTasks, tasks]);
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result;
 
     if (!destination) return;
 
-    const sourceColumnId = source.droppableId;
-    const destColumnId = destination.droppableId;
-    
     setTasks(prevTasks => {
-        let newTasks = [...prevTasks];
-        const movedTaskIndex = newTasks.findIndex(t => t.id === draggableId);
-        if (movedTaskIndex === -1) return prevTasks; // Should not happen
+        const newTasks = [...prevTasks];
+        const movedTask = newTasks.find(t => t.id === draggableId);
         
-        const [movedTask] = newTasks.splice(movedTaskIndex, 1);
-        
-        // Find tasks in the destination column to calculate insert position
-        const destTasks = newTasks.filter(t => t.columnId === destColumnId);
-        
-        // Find the index of the task at the destination drop position
-        let insertAtIndex = -1;
-        if(destTasks[destination.index]) {
-            insertAtIndex = newTasks.findIndex(t => t.id === destTasks[destination.index].id);
-        }
+        if (!movedTask) return prevTasks;
 
-        // Insert the task
-        if (insertAtIndex !== -1) {
-            newTasks.splice(insertAtIndex, 0, movedTask);
+        // Update column
+        movedTask.columnId = destination.droppableId;
+
+        // Reorder within the array
+        const [reorderedItem] = newTasks.splice(newTasks.indexOf(movedTask), 1);
+        const destinationTasks = newTasks.filter(t => t.columnId === destination.droppableId);
+        
+        let insertAtIndex;
+        if(destination.index < destinationTasks.length) {
+            const taskAtDestination = destinationTasks[destination.index];
+            insertAtIndex = newTasks.indexOf(taskAtDestination);
         } else {
-            newTasks.push(movedTask);
+            // Find last task in the destination column to insert after
+            if (destinationTasks.length > 0) {
+                 const lastTask = destinationTasks[destinationTasks.length - 1];
+                 insertAtIndex = newTasks.indexOf(lastTask) + 1;
+            } else {
+                // If column is empty, we need to decide where to put it.
+                // A simple approach is to find the column index and place it after the last task of the previous column.
+                const columnIndex = statuses.indexOf(destination.droppableId);
+                if (columnIndex > 0) {
+                    const prevColumnId = statuses[columnIndex - 1];
+                    const lastIndexOfPrevColumn = newTasks.map(t => t.columnId).lastIndexOf(prevColumnId);
+                    insertAtIndex = lastIndexOfPrevColumn + 1;
+                } else {
+                    insertAtIndex = 0; // First column
+                }
+            }
         }
-
-        movedTask.columnId = destColumnId;
-
-        // Re-balance columns
-        const sourceStatus = getStatusFromColumnId(sourceColumnId);
-        const destStatus = getStatusFromColumnId(destColumnId);
-
-        const rebalancedTasks = rebalanceColumns(newTasks, [sourceStatus, destStatus]);
-
-        return rebalancedTasks;
+        newTasks.splice(insertAtIndex, 0, reorderedItem);
+        return newTasks;
     });
   };
-
-  const rebalanceColumns = (currentTasks: Task[], statusesToRebalance: string[]): Task[] => {
-      let rebalancedTasks = [...currentTasks];
-      const uniqueStatuses = [...new Set(statusesToRebalance)];
-
-      uniqueStatuses.forEach(status => {
-          const allTasksInStatus = rebalancedTasks
-              .filter(t => getStatusFromColumnId(t.columnId) === status)
-              .sort((a,b) => rebalancedTasks.indexOf(a) - rebalancedTasks.indexOf(b)); // Keep dnd order
-
-          let taskIndex = 0;
-          let columnIndex = 1;
-
-          while(taskIndex < allTasksInStatus.length) {
-              const task = allTasksInStatus[taskIndex];
-              task.columnId = `${status}-${columnIndex}`;
-              if((taskIndex + 1) % COLUMN_LIMIT === 0) {
-                  columnIndex++;
-              }
-              taskIndex++;
-          }
-      });
-      
-      return rebalancedTasks;
-  };
-
 
   const handleOpenDialog = (task: Task | null, columnId?: string) => {
     if (task) {
       setEditingTask(task);
     } else {
-       const targetColumnId = columnId || 'Planejamento-1';
-       const status = getStatusFromColumnId(targetColumnId);
-       const tasksInStatus = tasks.filter(t => getStatusFromColumnId(t.columnId) === status);
-       const numColumns = Math.ceil(tasksInStatus.length / COLUMN_LIMIT);
-       const targetColIndex = Math.max(1, numColumns);
-
       setEditingTask({
         id: crypto.randomUUID(),
         name: '',
@@ -183,7 +136,7 @@ export default function KanbanBoard() {
         area: [],
         startDate: null,
         dueDate: null,
-        columnId: `${status}-${targetColIndex}`,
+        columnId: columnId || 'Planejamento',
       });
     }
     setIsDialogOpen(true);
@@ -195,19 +148,15 @@ export default function KanbanBoard() {
   };
 
   const handleSaveTask = (data: Task) => {
-    let newTasks;
     const isEditing = tasks.some(t => t.id === data.id);
     
     if (isEditing) {
-      newTasks = tasks.map(t => (t.id === data.id ? data : t));
+      setTasks(tasks.map(t => (t.id === data.id ? data : t)));
       toast({ title: "Tarefa atualizada!", description: `A tarefa "${data.name}" foi atualizada com sucesso.` });
     } else {
-      newTasks = [...tasks, data];
+      setTasks([...tasks, data]);
       toast({ title: "Tarefa criada!", description: `A tarefa "${data.name}" foi adicionada.` });
     }
-    
-    const status = getStatusFromColumnId(data.columnId);
-    setTasks(rebalanceColumns(newTasks, [status]));
     handleCloseDialog();
   };
   
@@ -220,13 +169,8 @@ export default function KanbanBoard() {
     if (taskToDelete) {
       const taskToDeleteData = tasks.find(t => t.id === taskToDelete);
       const newTasks = tasks.filter(t => t.id !== taskToDelete);
-      
-      if(taskToDeleteData){
-        const status = getStatusFromColumnId(taskToDeleteData.columnId);
-        setTasks(rebalanceColumns(newTasks, [status]));
-        toast({ title: "Tarefa removida!", description: `A tarefa "${taskToDeleteData.name}" foi removida.`, variant: 'destructive' });
-      }
-
+      setTasks(newTasks);
+      toast({ title: "Tarefa removida!", description: `A tarefa "${taskToDeleteData?.name}" foi removida.`, variant: 'destructive' });
       setTaskToDelete(null);
       setIsDeleteDialogOpen(false);
     }
@@ -254,7 +198,7 @@ export default function KanbanBoard() {
     <div className="p-4 flex-1 flex flex-col overflow-x-auto">
         <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
             <div className="flex gap-2">
-                <Button onClick={() => handleOpenDialog(null, 'Planejamento-1')}>
+                <Button onClick={() => handleOpenDialog(null, 'Planejamento')}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Nova Tarefa
                 </Button>

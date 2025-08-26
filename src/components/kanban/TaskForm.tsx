@@ -41,8 +41,6 @@ const combineDateAndTime = (date: Date | null | undefined, time: string): Date |
     return newDate;
 }
 
-const getStatusFromColumnId = (columnId: string) => columnId.split('-')[0];
-
 export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
   const form = useForm<Task>({
     resolver: zodResolver(taskSchema),
@@ -53,15 +51,13 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
       area: [],
       startDate: null,
       dueDate: null,
-      columnId: 'Planejamento-1',
+      columnId: 'Planejamento',
     },
   });
 
   const onSubmit = (data: Task) => {
     onSave(data);
   };
-
-  const currentStatus = getStatusFromColumnId(form.watch('columnId'));
 
   return (
     <Form {...form}>
@@ -150,7 +146,7 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Coluna</FormLabel>
-              <Select onValueChange={(value) => field.onChange(`${value}-1`)} defaultValue={currentStatus}>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a coluna" />

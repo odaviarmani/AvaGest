@@ -19,10 +19,7 @@ interface KanbanColumnProps {
 }
 
 export default function KanbanColumn({ column, onEditTask, onDeleteTask }: KanbanColumnProps) {
-  const isDoneColumn = column.id.startsWith('Feito');
-
-  // We don't use originalIndex for DnD, but mapping helps ensure each task has a unique key for React rendering if needed.
-  const tasksWithDropIndexes = column.tasks.map((task, index) => ({...task, originalIndex: index}));
+  const isDoneColumn = column.id === 'Feito';
 
   return (
     <div className="w-[300px] shrink-0 flex flex-col h-full">
@@ -46,7 +43,7 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask }: Kanba
               "min-h-[400px]",
               isDoneColumn ? "grid grid-cols-2 gap-2" : "space-y-4"
             )}>
-              {tasksWithDropIndexes.map((task, index) => (
+              {column.tasks.map((task, index) => (
                 <Draggable key={task.id} draggableId={task.id} index={index}>
                   {(provided, snapshot) => (
                     <div
