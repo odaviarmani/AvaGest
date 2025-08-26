@@ -116,6 +116,7 @@ export default function AnalysisTable() {
             return { ...mission, driveTrainComplexity, actuatorComplexity, effort, impact, priority };
         });
 
+        // The sort is removed to keep the original order
         const totalPriority = calculatedMissions.reduce((sum, m) => sum + m.priority, 0);
 
         return calculatedMissions.map(mission => ({
@@ -169,7 +170,7 @@ export default function AnalysisTable() {
                         <TableHead>Missões Próximas</TableHead>
                         <TableHead>Bônus Similaridade</TableHead>
                         <TableHead>Missão Parecida</TableHead>
-                        <TableHead className="sticky right-0 bg-muted/50 z-20 w-[200px] text-center">Priorização</TableHead>
+                        <TableHead className="sticky right-0 bg-muted/50 z-10 w-[250px] text-center">Priorização</TableHead>
                         <TableHead className="sticky right-0 bg-muted/50 z-10 w-[50px]"></TableHead>
                     </TableRow>
                 </TableHeader>
@@ -190,7 +191,7 @@ export default function AnalysisTable() {
                             <TableCell><EditableCell id={mission.id} field="nearbyMissions" value={mission.nearbyMissions} /></TableCell>
                             <TableCell><EditableCell id={mission.id} field="similarityBonus" value={mission.similarityBonus} /></TableCell>
                             <TableCell><EditableCell id={mission.id} field="similarMission" value={mission.similarMission} /></TableCell>
-                            <TableCell className="sticky right-[50px] bg-inherit z-10 w-[200px]">
+                            <TableCell className="sticky right-[50px] bg-inherit z-10 w-[250px]">
                                 <div className="flex flex-col items-center space-y-2">
                                     <Badge className="text-lg">{mission.priority.toFixed(2)}</Badge>
                                     <div className="w-full flex items-center gap-2">
@@ -216,4 +217,5 @@ export default function AnalysisTable() {
             </div>
         </div>
     );
-}
+
+    
