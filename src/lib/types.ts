@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 export const priorities = ['Baixa', 'Média', 'Alta'] as const;
-export const statuses = ['Planejamento', 'Fazer', 'Fazendo', 'Feito'] as const;
+export const statuses = ['Planejamento', 'Fazer', 'Fazendo', 'Análise', 'Aprimoramento', 'Feito'] as const;
 export const areaNames = ['Projeto de Inovação', 'Construção', 'Programação', 'Core Values'] as const;
 
 
@@ -133,5 +133,4 @@ export interface InteractiveMissionData extends MissionAnalysisData {
     effort: number;
     impact: number;
     priority: number;
-    priorityPercentage: number;
 }
