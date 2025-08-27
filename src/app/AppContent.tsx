@@ -70,7 +70,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                           <Link href="/missions">Missões</Link>
                       </Button>
                        <Button variant="ghost" asChild>
-                          <Link href="/mission-analysis">Área de Análise e Aprimoramento</Link>
+                          <Link href="/mission-analysis">Análise e Aprimoramento</Link>
                       </Button>
                        <Button variant="ghost" asChild>
                           <Link href="/tests">Testes</Link>
@@ -136,7 +136,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
               <footer className="p-4 border-t shrink-0 flex items-center justify-center">
               <iframe
                   style={{ borderRadius: '12px' }}
-                  src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
+                  src="https://open.spotify.com/embed/playlist/6WtYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
                   width="80%"
                   height="80"
                   allowFullScreen={false}
