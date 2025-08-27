@@ -70,7 +70,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                           <Link href="/missions">Missões</Link>
                       </Button>
                        <Button variant="ghost" asChild>
-                          <Link href="/mission-analysis">Visão Geral</Link>
+                          <Link href="/mission-analysis">Área de Análise e Aprimoramento</Link>
                       </Button>
                        <Button variant="ghost" asChild>
                           <Link href="/tests">Testes</Link>
