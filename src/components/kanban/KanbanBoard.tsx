@@ -11,9 +11,10 @@ import { statuses, Task, areaNames } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, ListFilter } from 'lucide-react';
+import { PlusCircle, Search, ListFilter, Download } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { format } from 'date-fns';
 
 const DEFAULT_TASKS: Task[] = [
     { id: 'task-1', name: 'Configurar ambiente de desenvolvimento', area: ['Programação'], priority: 'Alta', startDate: new Date(), dueDate: null, columnId: 'Fazer' },
@@ -176,6 +177,51 @@ export default function KanbanBoard() {
     }
   };
 
+  const handleDownloadDoneTasks = () => {
+    const doneTasks = tasks.filter(task => task.columnId === 'Feito');
+
+    if (doneTasks.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Nenhuma tarefa concluída',
+        description: 'Não há tarefas na coluna "Feito" para exportar.',
+      });
+      return;
+    }
+
+    const headers = ["Nome da Tarefa", "Área(s)", "Prioridade", "Data de Início", "Data de Entrega"];
+    const csvRows = [headers.join(',')];
+
+    doneTasks.forEach(task => {
+      const row = [
+        `"${task.name.replace(/"/g, '""')}"`, // Escape double quotes
+        `"${task.area.join(', ')}"`,
+        task.priority,
+        task.startDate ? format(task.startDate, 'yyyy-MM-dd HH:mm') : '',
+        task.dueDate ? format(task.dueDate, 'yyyy-MM-dd HH:mm') : ''
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvContent = "\uFEFF" + csvRows.join("\n"); // Add BOM for Excel compatibility
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `tarefas_concluidas_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: 'Download iniciado!',
+      description: 'Seu arquivo CSV com as tarefas concluídas está sendo baixado.',
+    });
+  };
+
+  const hasDoneTasks = useMemo(() => tasks.some(task => task.columnId === 'Feito'), [tasks]);
+
   if (!isClient) {
     return (
         <div className="flex-1 p-4 overflow-x-auto">
@@ -202,6 +248,12 @@ export default function KanbanBoard() {
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Nova Tarefa
                 </Button>
+                {hasDoneTasks && (
+                  <Button variant="outline" onClick={handleDownloadDoneTasks}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download Tarefas Feitas
+                  </Button>
+                )}
             </div>
             <div className="flex items-center gap-2 flex-1 min-w-[250px] max-w-md">
                 <div className="relative w-full">
