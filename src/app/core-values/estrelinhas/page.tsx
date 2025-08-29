@@ -3,22 +3,25 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import html2camera from 'html2canvas';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, MessageSquare, TrendingUp, TrendingDown, ChevronsUp, ChevronsDown, Download } from 'lucide-react';
-import { USERS } from '@/contexts/AuthContext';
+import { Star, TrendingUp, TrendingDown, ChevronsUp, ChevronsDown, Download, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StarRating, StarRatingJustification } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const STORAGE_KEY_RATINGS = 'starRatings';
 const STORAGE_KEY_JUSTIFICATIONS = 'starRatingJustifications';
+
+const TEAM_MEMBERS = ["Davi", "Carol", "Lorenzo", "Thiago", "Miguel", "Italo"];
 
 const legoAvatars: Record<string, string> = {
   "Davi": "https://fll-wro.github.io/assets/images/lego_avatars/davi.png",
@@ -38,9 +41,17 @@ export default function EstrelinhasPage() {
   const [ratings, setRatings] = useState<StarRating>({});
   const [justifications, setJustifications] = useState<StarRatingJustification>({});
   const [isClient, setIsClient] = useState(false);
+  
   const [isJustificationDialogOpen, setIsJustificationDialogOpen] = useState(false);
   const [currentJustification, setCurrentJustification] = useState({ member: '', newRating: 0 });
   const [justificationText, setJustificationText] = useState('');
+  
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingJustification, setEditingJustification] = useState<{ member: string, id: string, reason: string } | null>(null);
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [justificationToDelete, setJustificationToDelete] = useState<{member: string, id: string} | null>(null);
+
   const printRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -114,8 +125,49 @@ export default function EstrelinhasPage() {
     setIsJustificationDialogOpen(false);
   };
 
+  const handleEditRequest = (member: string, id: string, reason: string) => {
+    setEditingJustification({ member, id, reason });
+    setJustificationText(reason);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = () => {
+      if (!editingJustification) return;
+
+      const { member, id } = editingJustification;
+
+      setJustifications(prev => ({
+          ...prev,
+          [member]: prev[member].map(j => j.id === id ? { ...j, reason: justificationText } : j)
+      }));
+
+      toast({ title: 'Justificativa atualizada!'});
+      setJustificationText('');
+      setIsEditDialogOpen(false);
+      setEditingJustification(null);
+  };
+
+  const handleDeleteRequest = (member: string, id: string) => {
+      setJustificationToDelete({ member, id });
+      setIsDeleteDialogOpen(true);
+  }
+
+  const handleDeleteConfirm = () => {
+      if (!justificationToDelete) return;
+      const { member, id } = justificationToDelete;
+
+      setJustifications(prev => ({
+          ...prev,
+          [member]: prev[member].filter(j => j.id !== id)
+      }));
+
+      toast({ title: 'Justificativa removida!', variant: 'destructive' });
+      setJustificationToDelete(null);
+      setIsDeleteDialogOpen(false);
+  };
+
   const analysis = useMemo(() => {
-    const sortedMembers = USERS.map(user => ({ name: user, score: ratings[user] || 0 }))
+    const sortedMembers = TEAM_MEMBERS.map(user => ({ name: user, score: ratings[user] || 0 }))
       .sort((a, b) => b.score - a.score);
 
     if (sortedMembers.length === 0) return [];
@@ -131,8 +183,7 @@ export default function EstrelinhasPage() {
       observations.push({ icon: <ChevronsDown className="text-red-500"/>, text: `${last.name} está mais atrás com ${last.score} estrelas.` });
     }
 
-    // Progression/Regression analysis
-    USERS.forEach(user => {
+    TEAM_MEMBERS.forEach(user => {
       const userJustifications = justifications[user] || [];
       if (userJustifications.length >= 2) {
         const lastTwo = userJustifications.slice(-2);
@@ -172,7 +223,7 @@ export default function EstrelinhasPage() {
 
       <div ref={printRef} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-6">
-          {USERS.map(member => (
+          {TEAM_MEMBERS.map(member => (
             <Card key={member}>
               <CardHeader className="flex-row items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -234,9 +285,9 @@ export default function EstrelinhasPage() {
                         {Object.entries(justifications)
                             .flatMap(([member, justs]) => justs.map(j => ({...j, member})))
                             .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                            .slice(0, 10)
+                            .slice(0, 15)
                             .map(just => (
-                                <div key={just.id} className="text-sm p-2 bg-secondary/50 rounded-md">
+                                <div key={just.id} className="text-sm p-2 bg-secondary/50 rounded-lg relative group">
                                     <p>
                                         <span className="font-semibold">{just.member}</span> recebeu <span className="font-semibold">{just.rating}</span> estrelas.
                                     </p>
@@ -244,6 +295,21 @@ export default function EstrelinhasPage() {
                                     <p className="text-xs text-right text-muted-foreground mt-1">
                                         {format(new Date(just.date), "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
                                     </p>
+                                     <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleEditRequest(just.member, just.id, just.reason)}>
+                                                <Pencil className="mr-2 h-4 w-4" /> Editar
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDeleteRequest(just.member, just.id)} className="text-red-500 focus:text-red-500">
+                                                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                         ))}
                     </div>
@@ -253,7 +319,7 @@ export default function EstrelinhasPage() {
         </div>
       </div>
 
-       <Dialog open={isJustificationDialogOpen} onOpenChange={setIsJustificationDialogOpen}>
+       <Dialog open={isJustificationDialogOpen} onOpenChange={(open) => { if (!open) setJustificationText(''); setIsJustificationDialogOpen(open); }}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Justificar Alteração de Estrelas</DialogTitle>
@@ -275,6 +341,45 @@ export default function EstrelinhasPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => { if (!open) { setJustificationText(''); setEditingJustification(null); } setIsEditDialogOpen(open); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Editar Justificativa</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+                 <p>
+                    Editando a justificativa para a avaliação de <span className="font-bold">{editingJustification?.member}</span>.
+                </p>
+                <Textarea 
+                    placeholder="Digite o novo motivo aqui..." 
+                    value={justificationText}
+                    onChange={e => setJustificationText(e.target.value)}
+                    rows={4}
+                />
+            </div>
+            <DialogFooter>
+                <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={handleEditSubmit}>Salvar Alterações</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir justificativa?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. A justificativa será removida permanentemente.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteConfirm}>Excluir</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
     </div>
   );
 }
