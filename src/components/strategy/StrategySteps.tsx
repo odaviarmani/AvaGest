@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -19,9 +20,9 @@ export default function StrategySteps({ instructions }: StrategyStepsProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Pseudocódigo</CardTitle>
+        <CardTitle>Passos da Estratégia</CardTitle>
         <CardDescription>
-            Pseudocódigo gerado a partir do desenho para o robô.
+            Tabela com os passos gerados a partir do desenho no mapa.
         </CardDescription>
       </CardHeader>
       <CardContent>

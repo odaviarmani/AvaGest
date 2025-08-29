@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle, File } from 'lucide-react';
+import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle, File, Code, Share2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import Image from 'next/image';
 import StrategySteps from './StrategySteps';
 import type { Instruction } from './StrategySteps';
 import { useToast } from '@/hooks/use-toast';
+import StrategyFlowchart from './StrategyFlowchart';
 
 
 const COLORS = [
@@ -626,7 +627,7 @@ export default function StrategyBoard() {
   return (
     <div className="w-full">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-             <div className="lg:col-span-2 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+             <div className="lg:col-span-3 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
                 {isClient && mapImage ? (
                     <>
                         <Image
@@ -739,7 +740,7 @@ export default function StrategyBoard() {
 
                                 <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
                                     <Download className="mr-2 h-4 w-4" />
-                                    Baixar Desenho
+                                    Baixar Desenho e Código
                                 </Button>
 
                                 {mapImage && (
@@ -765,11 +766,23 @@ export default function StrategyBoard() {
                     </CardContent>
                 </Card>
             </div>
-            
-            <div className="lg:col-span-1">
-                <StrategySteps instructions={instructions} />
-            </div>
         </div>
+        
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Tabs defaultValue="pseudocode" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="pseudocode"><Code className="mr-2"/>Pseudocódigo</TabsTrigger>
+                    <TabsTrigger value="flowchart"><Share2 className="mr-2"/>Fluxograma</TabsTrigger>
+                </TabsList>
+                <TabsContent value="pseudocode">
+                    <StrategySteps instructions={instructions} />
+                </TabsContent>
+                <TabsContent value="flowchart">
+                    <StrategyFlowchart instructions={instructions} />
+                </TabsContent>
+            </Tabs>
+        </div>
+
 
         {isClient && mapImage && (
             <div className="mt-12 w-full">
