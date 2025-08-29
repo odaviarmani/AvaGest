@@ -11,10 +11,11 @@ import { statuses, Task, areaNames } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, ListFilter, Download } from 'lucide-react';
+import { PlusCircle, Search, ListFilter, Download, CheckCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
+import { Separator } from '../ui/separator';
 
 const DEFAULT_TASKS: Task[] = [
     { id: 'task-1', name: 'Configurar ambiente de desenvolvimento', area: ['Programação'], priority: 'Alta', startDate: new Date(), dueDate: null, columnId: 'Fazer' },
@@ -24,6 +25,10 @@ const DEFAULT_TASKS: Task[] = [
     { id: 'task-5', name: 'Revisar copy do site', area: ['Construção'], priority: 'Média', startDate: null, dueDate: null, columnId: 'Fazer' },
     { id: 'task-6', name: 'Implementar autenticação', area: ['Projeto de Inovação', 'Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Planejamento' },
 ];
+
+const progressStatuses = statuses.filter(s => s !== 'Feito');
+const doneStatus = 'Feito';
+
 
 export default function KanbanBoard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -70,8 +75,8 @@ export default function KanbanBoard() {
     });
   }, [tasks, searchQuery, selectedAreas]);
   
-  const columns = useMemo(() => {
-    return statuses.map(status => ({
+  const progressColumns = useMemo(() => {
+    return progressStatuses.map(status => ({
         id: status,
         title: status,
         tasks: filteredTasks
@@ -80,6 +85,12 @@ export default function KanbanBoard() {
             .sort((a, b) => tasks.findIndex(t => t.id === a.id) - tasks.findIndex(t => t.id === b.id)),
     }));
   }, [filteredTasks, tasks]);
+  
+  const doneColumn = useMemo(() => ({
+    id: doneStatus,
+    title: doneStatus,
+    tasks: filteredTasks.filter(task => task.columnId === doneStatus)
+  }), [filteredTasks]);
 
   const onDragEnd = (result: DropResult) => {
     const { source, destination, draggableId } = result;
@@ -178,9 +189,7 @@ export default function KanbanBoard() {
   };
 
   const handleDownloadDoneTasks = () => {
-    const doneTasks = tasks.filter(task => task.columnId === 'Feito');
-
-    if (doneTasks.length === 0) {
+    if (doneColumn.tasks.length === 0) {
       toast({
         variant: 'destructive',
         title: 'Nenhuma tarefa concluída',
@@ -192,7 +201,7 @@ export default function KanbanBoard() {
     const headers = ["Nome da Tarefa", "Área(s)", "Prioridade", "Data de Início", "Data de Entrega"];
     const csvRows = [headers.join(',')];
 
-    doneTasks.forEach(task => {
+    doneColumn.tasks.forEach(task => {
       const row = [
         `"${task.name.replace(/"/g, '""')}"`, // Escape double quotes
         `"${task.area.join(', ')}"`,
@@ -220,13 +229,11 @@ export default function KanbanBoard() {
     });
   };
 
-  const hasDoneTasks = useMemo(() => tasks.some(task => task.columnId === 'Feito'), [tasks]);
-
   if (!isClient) {
     return (
-        <div className="flex-1 p-4 overflow-x-auto">
-            <div className="flex gap-6">
-                {statuses.map(name => (
+        <div className="p-4 flex-1 flex flex-col">
+             <div className="flex gap-6 overflow-x-auto pb-4">
+                {progressStatuses.map(name => (
                     <div key={name} className="w-[300px] shrink-0">
                         <Skeleton className="h-8 w-1/2 mb-4" />
                         <div className="space-y-4">
@@ -236,24 +243,27 @@ export default function KanbanBoard() {
                     </div>
                 ))}
             </div>
+             <Separator className="my-8"/>
+             <div className="flex-1">
+                <Skeleton className="h-8 w-1/4 mb-4" />
+                <Skeleton className="h-40 w-full" />
+             </div>
         </div>
     );
   }
 
   return (
-    <div className="p-4 flex-1 flex flex-col overflow-x-auto">
+    <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
             <div className="flex gap-2">
                 <Button onClick={() => handleOpenDialog(null, 'Planejamento')}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Nova Tarefa
                 </Button>
-                {hasDoneTasks && (
-                  <Button variant="outline" onClick={handleDownloadDoneTasks}>
+                 <Button variant="outline" onClick={handleDownloadDoneTasks} disabled={doneColumn.tasks.length === 0}>
                     <Download className="mr-2 h-4 w-4" />
                     Download Tarefas Feitas
                   </Button>
-                )}
             </div>
             <div className="flex items-center gap-2 flex-1 min-w-[250px] max-w-md">
                 <div className="relative w-full">
@@ -297,17 +307,26 @@ export default function KanbanBoard() {
             </div>
         </div>
         <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex gap-6 items-start flex-1 overflow-x-auto pb-4">
-            {columns.map((column) => {
-                return (
-                    <KanbanColumn
-                        key={column.id}
-                        column={column}
-                        onEditTask={handleOpenDialog}
-                        onDeleteTask={handleDeleteRequest}
-                    />
-                )
-            })}
+            <div className="flex gap-6 items-start overflow-x-auto pb-4">
+            {progressColumns.map((column) => (
+                <KanbanColumn
+                    key={column.id}
+                    column={column}
+                    onEditTask={handleOpenDialog}
+                    onDeleteTask={handleDeleteRequest}
+                />
+            ))}
+            </div>
+            
+             <Separator className="my-6 md:my-8" />
+             
+             <div className="flex-1">
+                 <KanbanColumn
+                    column={doneColumn}
+                    onEditTask={handleOpenDialog}
+                    onDeleteTask={handleDeleteRequest}
+                    isDoneColumn={true}
+                />
             </div>
         </DragDropContext>
 

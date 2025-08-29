@@ -16,32 +16,41 @@ interface KanbanColumnProps {
   };
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  isDoneColumn?: boolean;
 }
 
-export default function KanbanColumn({ column, onEditTask, onDeleteTask }: KanbanColumnProps) {
-  const isDoneColumn = column.id === 'Feito';
+export default function KanbanColumn({ column, onEditTask, onDeleteTask, isDoneColumn = false }: KanbanColumnProps) {
+
+  const ContainerComponent = isDoneColumn ? 'div' : ScrollArea;
+  const containerProps = isDoneColumn ? {} : { className: "flex-1 p-2 rounded-lg transition-colors" };
 
   return (
-    <div className="w-[300px] shrink-0 flex flex-col h-full">
+    <div className={cn(
+        "flex flex-col h-full",
+        isDoneColumn ? "w-full" : "w-[300px] shrink-0"
+    )}>
       <div className="flex items-center justify-between p-2 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
         <h2 className="text-lg font-semibold text-foreground">{column.title}</h2>
         <span className="text-sm font-medium bg-secondary text-secondary-foreground rounded-full px-2 py-1">
           {column.tasks.length}
         </span>
       </div>
-      <Droppable droppableId={column.id} key={column.id}>
+      <Droppable droppableId={column.id} key={column.id} direction={isDoneColumn ? 'horizontal' : 'vertical'}>
         {(provided, snapshot) => (
-          <ScrollArea
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={cn(
-              "flex-1 p-2 rounded-lg transition-colors",
-              snapshot.isDraggingOver ? 'bg-primary/10' : 'bg-secondary/50'
-            )}
+           <ContainerComponent
+             {...containerProps}
+             ref={provided.innerRef}
+             {...provided.droppableProps}
+             className={cn(
+                "transition-colors",
+                snapshot.isDraggingOver ? 'bg-primary/10' : 'bg-secondary/50',
+                isDoneColumn ? 'p-2 rounded-lg' : 'flex-1'
+             )}
           >
             <div className={cn(
-              "min-h-[400px]",
-              isDoneColumn ? "grid grid-cols-2 gap-2" : "space-y-4"
+              isDoneColumn 
+                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" 
+                : "space-y-4 min-h-[400px]"
             )}>
               {column.tasks.map((task, index) => (
                 <Draggable key={task.id} draggableId={task.id} index={index}>
@@ -50,10 +59,7 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask }: Kanba
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      style={{
-                        ...provided.draggableProps.style,
-                      }}
-                      className={cn(isDoneColumn && "w-full")}
+                      style={{ ...provided.draggableProps.style }}
                     >
                       <TaskCard
                         task={task}
@@ -68,7 +74,7 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask }: Kanba
               ))}
               {provided.placeholder}
             </div>
-          </ScrollArea>
+          </ContainerComponent>
         )}
       </Droppable>
     </div>
