@@ -7,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion } from 'lucide-react';
+import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import Image from 'next/image';
 
 // Helper to shuffle arrays
 const shuffle = <T,>(array: T[]): T[] => {
@@ -26,6 +27,7 @@ interface QuizQuestion {
     question: string;
     options: string[];
     correctAnswer: string;
+    imageUrl: string | null;
 }
 
 const TOTAL_QUESTIONS = 50;
@@ -156,7 +158,8 @@ export default function MissionsQuizPage() {
                         id: `${mission.id}-${template.type}-${generatedQuestions.length}`,
                         question,
                         options,
-                        correctAnswer
+                        correctAnswer,
+                        imageUrl: mission.imageUrl || null,
                     });
                     usedQuestions.add(question);
                 }
@@ -413,8 +416,15 @@ export default function MissionsQuizPage() {
                         </div>
                          <Progress value={progress} />
                     </CardHeader>
-                    <CardContent>
-                        <p className="text-center font-semibold text-xl md:text-2xl min-h-[6rem] flex items-center justify-center">
+                    <CardContent className="flex flex-col md:flex-row gap-6 items-center">
+                        <div className="w-full md:w-1/3 aspect-video rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                            {currentQuestion.imageUrl ? (
+                                <Image src={currentQuestion.imageUrl} alt="Imagem da Missão" width={300} height={169} className="object-cover w-full h-full" />
+                            ) : (
+                                <Star className="w-16 h-16 text-muted-foreground" />
+                            )}
+                        </div>
+                        <p className="text-center font-semibold text-xl md:text-2xl min-h-[6rem] flex items-center justify-center flex-1">
                             {currentQuestion.question}
                         </p>
                     </CardContent>
