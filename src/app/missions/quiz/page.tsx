@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star, Shuffle } from 'lucide-react';
+import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star, Shuffle, HelpCircle, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -28,6 +28,7 @@ interface QuizQuestion {
     options: string[];
     correctAnswer: string;
     imageUrl: string | null;
+    questionType: string;
 }
 
 const TOTAL_QUESTIONS = 50;
@@ -38,22 +39,27 @@ const questionTemplates = [
     { type: 'points', generator: (m: Mission) => ({
         question: `Qual é a pontuação da missão "${m.name}"?`,
         correctAnswer: m.points.toString(),
+        questionType: 'points'
     })},
     { type: 'location', generator: (m: Mission) => ({
         question: `Onde a missão "${m.name}" está localizada?`,
         correctAnswer: m.location,
+        questionType: 'location'
     })},
     { type: 'priority', generator: (m: Mission) => ({
         question: `Qual a prioridade da missão "${m.name}"?`,
         correctAnswer: m.priority,
+        questionType: 'priority'
     })},
     { type: 'objective', generator: (m: Mission) => ({
         question: `Qual missão tem o objetivo: "${m.description.substring(0, 50)}..."?`,
         correctAnswer: m.name,
+        questionType: 'objective'
     })},
     { type: 'name_by_location', generator: (m: Mission) => ({
         question: `Qual é o nome da missão localizada em "${m.location}"?`,
         correctAnswer: m.name,
+        questionType: 'name_by_location'
     })},
 ];
 
@@ -74,7 +80,7 @@ const generateOptions = (correctAnswer: string, allMissions: Mission[], field: k
     return shuffle(Array.from(options));
 };
 
-type GameState = 'loading' | 'team-selection' | 'pre-game' | 'spinning-roulette' | 'playing' | 'pass-or-repass' | 'finished';
+type GameState = 'loading' | 'team-selection' | 'pre-game' | 'spinning-roulette' | 'playing' | 'pass-or-repass' | 'repass-answer' | 'finished';
 type Team = 'azul' | 'amarelo';
 
 const teamConfig = {
@@ -152,7 +158,7 @@ export default function MissionsQuizPage() {
             const mission = loadedMissions[Math.floor(Math.random() * loadedMissions.length)];
             const template = questionTemplates[Math.floor(Math.random() * questionTemplates.length)];
             
-            const { question, correctAnswer } = template.generator(mission);
+            const { question, correctAnswer, questionType } = template.generator(mission);
             
             if (!usedQuestions.has(question)) {
                 const options = getOptionsForTemplate(mission, template.type);
@@ -163,6 +169,7 @@ export default function MissionsQuizPage() {
                         options,
                         correctAnswer,
                         imageUrl: mission.imageUrl || null,
+                        questionType,
                     });
                     usedQuestions.add(question);
                 }
@@ -212,7 +219,9 @@ export default function MissionsQuizPage() {
             // Team accepted, now they must answer
             setIsAnswered(false);
             setSelectedAnswer(null);
-            setCurrentTurn(prev => prev === 'azul' ? 'amarelo' : 'azul');
+            const otherTeam = currentTurn === 'azul' ? 'amarelo' : 'azul';
+            setCurrentTurn(otherTeam);
+            setGameState('repass-answer');
         } else {
             // Team passed, move to next question for the other team
             handleNextQuestion();
@@ -243,7 +252,10 @@ export default function MissionsQuizPage() {
             setCurrentQuestionIndex(nextQuestionIndex);
             setSelectedAnswer(null);
             setIsAnswered(false);
-            setCurrentTurn(prev => prev === 'azul' ? 'amarelo' : 'azul');
+            // After a repass, the turn already switched. On a normal turn, we switch it.
+            if (gameState !== 'repass-answer') {
+                 setCurrentTurn(prev => prev === 'azul' ? 'amarelo' : 'azul');
+            }
             setGameState('playing');
         } else {
             // Game over
@@ -320,15 +332,20 @@ export default function MissionsQuizPage() {
                     </CardHeader>
                     <CardContent className="flex flex-col items-center justify-center gap-8">
                         {!teams ? (
-                            <>
+                             <div className="space-y-4 w-full">
                                 <div className="p-4 border rounded-lg bg-secondary/50">
                                     <h3 className="font-semibold text-lg mb-2">Participantes</h3>
                                     <p className="text-muted-foreground">{MEMBERS.join(', ')}</p>
                                 </div>
-                                <Button onClick={handleTeamShuffle} size="lg">
-                                    <Shuffle className="mr-2" /> Sortear Times
-                                </Button>
-                            </>
+                                <div className="flex flex-col sm:flex-row gap-4 w-full">
+                                    <Button onClick={handleTeamShuffle} size="lg" className="w-full">
+                                        <Shuffle className="mr-2" /> Sortear Times
+                                    </Button>
+                                    <Button size="lg" className="w-full" variant="outline" disabled>
+                                        <FileText className="mr-2" /> Regras do Jogo (Em breve)
+                                    </Button>
+                                </div>
+                            </div>
                         ) : (
                             <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in-50">
                                 <Card className="p-4 bg-blue-100 dark:bg-blue-900/50">
@@ -446,17 +463,17 @@ export default function MissionsQuizPage() {
     }
     
     const progress = ((currentQuestionIndex + 1) / TOTAL_QUESTIONS) * 100;
-    const teamAnswering = gameState === 'pass-or-repass' ? (currentTurn === 'azul' ? 'amarelo' : 'azul') : currentTurn;
+    const isRepassQuestion = currentQuestion.questionType === 'objective' || currentQuestion.questionType === 'name_by_location';
 
     return (
         <div className="flex-1 p-4 md:p-8 flex flex-col items-center">
             {/* Scoreboard */}
             <div className="grid grid-cols-2 gap-4 w-full max-w-6xl mb-8">
-                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'azul' && teamConfig.azul.ring)}>
+                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'azul' && gameState !== 'repass-answer' && teamConfig.azul.ring)}>
                      <CardTitle>{teamConfig.azul.name}</CardTitle>
                      <ScoreDisplay score={scores.azul} lastChange={lastScoreChanges.azul}/>
                  </Card>
-                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'amarelo' && teamConfig.amarelo.ring)}>
+                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'amarelo' && gameState !== 'repass-answer' && teamConfig.amarelo.ring)}>
                      <CardTitle>{teamConfig.amarelo.name}</CardTitle>
                      <ScoreDisplay score={scores.amarelo} lastChange={lastScoreChanges.amarelo}/>
                  </Card>
@@ -478,10 +495,10 @@ export default function MissionsQuizPage() {
                     </CardHeader>
                     <CardContent className="flex flex-col md:flex-row gap-6 items-center">
                         <div className="w-full md:w-1/3 aspect-video rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
-                            {currentQuestion.imageUrl ? (
+                            {currentQuestion.imageUrl && !isRepassQuestion ? (
                                 <Image src={currentQuestion.imageUrl} alt="Imagem da Missão" width={300} height={169} className="object-cover w-full h-full" />
                             ) : (
-                                <Star className="w-16 h-16 text-muted-foreground" />
+                                isRepassQuestion ? <HelpCircle className="w-24 h-24 text-muted-foreground" /> : <Star className="w-16 h-16 text-muted-foreground" />
                             )}
                         </div>
                         <p className="text-center font-semibold text-xl md:text-2xl min-h-[6rem] flex items-center justify-center flex-1">
@@ -490,13 +507,13 @@ export default function MissionsQuizPage() {
                     </CardContent>
                 </Card>
                 
-                 {gameState === 'pass-or-repass' ? (
+                 {gameState === 'pass-or-repass' && (
                      <Card className="p-6 text-center animate-in fade-in-50">
                         <CardHeader>
                              <CardTitle className="flex items-center justify-center gap-2">
                                 <ShieldQuestion className="w-8 h-8"/> 
-                                <span className={cn(teamConfig[teamAnswering!].colors, "px-2 py-1 rounded-lg")}>
-                                    {teamConfig[teamAnswering!].name}
+                                <span className={cn(teamConfig[currentTurn === 'azul' ? 'amarelo' : 'azul'].colors, "px-2 py-1 rounded-lg")}>
+                                    {teamConfig[currentTurn === 'azul' ? 'amarelo' : 'azul'].name}
                                 </span>
                                 , e agora?
                              </CardTitle>
@@ -510,13 +527,13 @@ export default function MissionsQuizPage() {
                             Lembre-se: se aceitar e errar, vocês perdem 1 ponto. Se acertar, ganham 1 ponto.
                         </CardFooter>
                      </Card>
-                 ) : (
+                 )}
+                
+                 {(gameState === 'playing' || gameState === 'repass-answer') && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {currentQuestion.options.map((option, index) => {
                             const isCorrect = option === currentQuestion.correctAnswer;
                             const isSelected = option === selectedAnswer;
-                            const isRepassTurn = gameState === 'playing' && teamAnswering !== currentTurn;
-                             const isDisabled = isAnswered || isRepassTurn;
 
                             return (
                                 <Button
@@ -527,15 +544,15 @@ export default function MissionsQuizPage() {
                                         isAnswered && isCorrect && "bg-green-100 border-green-500 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700",
                                         isAnswered && isSelected && !isCorrect && "bg-red-100 border-red-500 text-red-800 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700"
                                     )}
-                                    onClick={() => gameState === 'pass-or-repass' ? handleRepassAnswer(option) : handleAnswerSelect(option)}
-                                    disabled={isDisabled}
+                                    onClick={() => gameState === 'repass-answer' ? handleRepassAnswer(option) : handleAnswerSelect(option)}
+                                    disabled={isAnswered}
                                 >
                                     <span className={cn(
                                         "mr-4 h-8 w-8 rounded-md border flex items-center justify-center shrink-0",
                                         isAnswered && isCorrect && "bg-green-500 text-white border-green-500",
                                         isAnswered && isSelected && !isCorrect && "bg-red-500 text-white border-red-500"
                                     )}>
-                                        {isAnswered ? (isCorrect ? <Check /> : <IconX />) : index + 1}
+                                        {isAnswered ? (isCorrect ? <Check /> : <IconX />) : String.fromCharCode(65 + index)}
                                     </span>
                                     {option}
                                 </Button>
@@ -547,3 +564,5 @@ export default function MissionsQuizPage() {
         </div>
     )
 }
+
+    
