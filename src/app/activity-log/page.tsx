@@ -1,12 +1,13 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import html2camera from 'html2canvas';
 import { useAuth, ADMIN_USERS } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { LogIn, LogOut, History, Trash2, ShieldX } from 'lucide-react';
+import { LogIn, LogOut, History, Trash2, ShieldX, Download } from 'lucide-react';
 import { ActivityLog } from '@/lib/types';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -22,6 +23,7 @@ export default function ActivityLogPage() {
     const [logToDelete, setLogToDelete] = useState<string | null>(null);
     const [isClearAllDialogOpen, setIsClearAllDialogOpen] = useState(false);
     const { toast } = useToast();
+    const printRef = useRef<HTMLDivElement>(null);
 
     const isAdmin = username && ADMIN_USERS.includes(username);
 
@@ -46,6 +48,21 @@ export default function ActivityLogPage() {
             });
         }
     }, [isAdmin, router, toast]);
+
+    const handleDownloadCroqui = () => {
+        if (printRef.current) {
+            html2camera(printRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+                scale: 2,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `croqui_log_atividade_${new Date().toISOString()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    };
 
     const updateLog = (newLog: ActivityLog[]) => {
         setLog(newLog);
@@ -87,7 +104,7 @@ export default function ActivityLogPage() {
     
     return (
         <div className="flex-1 p-4 md:p-8">
-            <Card>
+            <Card ref={printRef}>
                 <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>
@@ -99,12 +116,18 @@ export default function ActivityLogPage() {
                                 Registros de login e logout da equipe.
                             </CardDescription>
                         </div>
-                         {log.length > 0 && (
-                            <Button variant="destructive" onClick={() => setIsClearAllDialogOpen(true)}>
-                                <Trash2 className="mr-2" />
-                                Limpar Histórico
+                        <div className="flex items-center gap-2">
+                             {log.length > 0 && (
+                                <Button variant="destructive" onClick={() => setIsClearAllDialogOpen(true)}>
+                                    <Trash2 className="mr-2" />
+                                    Limpar Histórico
+                                </Button>
+                            )}
+                            <Button onClick={handleDownloadCroqui} variant="outline">
+                                <Download className="mr-2" />
+                                Download Croqui
                             </Button>
-                        )}
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>

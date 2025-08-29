@@ -1,9 +1,10 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import html2camera from 'html2canvas';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FlaskConical, Trash2 } from 'lucide-react';
+import { PlusCircle, FlaskConical, Trash2, Download } from 'lucide-react';
 import { RobotTest } from '@/lib/types';
 import TestForm from '@/components/tests/TestForm';
 import TestLog from '@/components/tests/TestLog';
@@ -16,6 +17,7 @@ export default function TestsPage() {
     const [isClient, setIsClient] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const { toast } = useToast();
+    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsClient(true);
@@ -39,6 +41,21 @@ export default function TestsPage() {
             }
         }
     }, [tests, isClient]);
+
+    const handleDownloadCroqui = () => {
+        if (printRef.current) {
+            html2camera(printRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+                scale: 2,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `croqui_testes_${new Date().toISOString()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    };
 
     const handleSaveTest = (data: Omit<RobotTest, 'id' | 'date'>) => {
         const newTest: RobotTest = {
@@ -73,18 +90,26 @@ export default function TestsPage() {
                         </p>
                     </div>
                 </div>
-                <Button onClick={() => setIsDialogOpen(true)}>
-                    <PlusCircle className="mr-2" />
-                    Registrar Teste
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button onClick={() => setIsDialogOpen(true)}>
+                        <PlusCircle className="mr-2" />
+                        Registrar Teste
+                    </Button>
+                    <Button onClick={handleDownloadCroqui} variant="outline">
+                        <Download className="mr-2" />
+                        Download Croqui
+                    </Button>
+                </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                <div className="lg:col-span-2">
-                    <TestCharts tests={tests} />
-                </div>
-                <div className="lg:col-span-1">
-                    <TestLog tests={tests} onDelete={handleDeleteTest} onClearAll={handleClearAll} />
+            <div ref={printRef}>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    <div className="lg:col-span-2">
+                        <TestCharts tests={tests} />
+                    </div>
+                    <div className="lg:col-span-1">
+                        <TestLog tests={tests} onDelete={handleDeleteTest} onClearAll={handleClearAll} />
+                    </div>
                 </div>
             </div>
 

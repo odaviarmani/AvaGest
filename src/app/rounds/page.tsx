@@ -1,24 +1,39 @@
+
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
+import html2camera from 'html2canvas';
 import RoundsTimer, { StageTime, STAGE_NAMES } from "@/components/rounds/RoundsTimer";
 import ScoreCalculator, { MissionState, initialMissionState } from "@/components/rounds/ScoreCalculator";
 import RoundLog, { RoundData } from "@/components/rounds/RoundLog";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BarChart } from "lucide-react";
+import { BarChart, Download } from "lucide-react";
 
 const TOTAL_SECONDS = 150; // 2 minutes and 30 seconds
 
 export default function RoundsPage() {
-  // State from RoundsTimer
   const [timerSeconds, setTimerSeconds] = useState(TOTAL_SECONDS);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [stageTimings, setStageTimings] = useState<StageTime[]>([]);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
-
-  // State from ScoreCalculator
   const [missions, setMissions] = useState<MissionState>(initialMissionState);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handleDownloadCroqui = () => {
+    if (printRef.current) {
+      html2camera(printRef.current, {
+        useCORS: true,
+        backgroundColor: null,
+        scale: 2,
+      }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `croqui_rounds_${new Date().toISOString()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  };
 
   const calculateScore = (state: MissionState): number => {
     let score = 0;
@@ -57,18 +72,14 @@ export default function RoundsPage() {
   const totalScore = useMemo(() => calculateScore(missions), [missions]);
 
   const handleResetAll = () => {
-    // Reset timer
     setIsTimerActive(false);
     setTimerSeconds(TOTAL_SECONDS);
     setStageTimings([]);
     setCurrentStageIndex(0);
-
-    // Reset score
     setMissions(initialMissionState);
   };
   
   const isRoundFinished = currentStageIndex === STAGE_NAMES.length - 1 && stageTimings[STAGE_NAMES.length - 1]?.duration !== null && !isTimerActive;
-
 
   return (
     <div className="flex-1 p-4 md:p-8">
@@ -79,41 +90,49 @@ export default function RoundsPage() {
             Acompanhe os dados e a evolução dos rounds.
           </p>
         </div>
-        <Button asChild>
-            <Link href="/rounds/stats">
-                <BarChart className="mr-2 h-4 w-4" />
-                Ver Estatísticas
-            </Link>
-        </Button>
+        <div className="flex gap-2">
+            <Button asChild>
+                <Link href="/rounds/stats">
+                    <BarChart className="mr-2 h-4 w-4" />
+                    Ver Estatísticas
+                </Link>
+            </Button>
+            <Button onClick={handleDownloadCroqui} variant="outline">
+                <Download className="mr-2" />
+                Download Croqui
+            </Button>
+        </div>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-        <div className="md:col-span-1">
-          <RoundsTimer 
-            seconds={timerSeconds}
-            setSeconds={setTimerSeconds}
-            isActive={isTimerActive}
-            setIsActive={setIsTimerActive}
-            stageTimings={stageTimings}
-            setStageTimings={setStageTimings}
-            currentStageIndex={currentStageIndex}
-            setCurrentStageIndex={setCurrentStageIndex}
-            totalSeconds={TOTAL_SECONDS}
-          />
-        </div>
-        <div className="md:col-span-1">
-          <ScoreCalculator 
-            missions={missions}
-            setMissions={setMissions}
-            totalScore={totalScore}
-          />
-        </div>
-        <div className="md:col-span-1">
-           <RoundLog 
-             score={totalScore}
-             timings={stageTimings}
-             isRoundFinished={isRoundFinished}
-             onRegisterNewRound={handleResetAll}
-           />
+      <div ref={printRef}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+            <div className="md:col-span-1">
+            <RoundsTimer 
+                seconds={timerSeconds}
+                setSeconds={setTimerSeconds}
+                isActive={isTimerActive}
+                setIsActive={setIsTimerActive}
+                stageTimings={stageTimings}
+                setStageTimings={setStageTimings}
+                currentStageIndex={currentStageIndex}
+                setCurrentStageIndex={setCurrentStageIndex}
+                totalSeconds={TOTAL_SECONDS}
+            />
+            </div>
+            <div className="md:col-span-1">
+            <ScoreCalculator 
+                missions={missions}
+                setMissions={setMissions}
+                totalScore={totalScore}
+            />
+            </div>
+            <div className="md:col-span-1">
+            <RoundLog 
+                score={totalScore}
+                timings={stageTimings}
+                isRoundFinished={isRoundFinished}
+                onRegisterNewRound={handleResetAll}
+            />
+            </div>
         </div>
       </div>
     </div>

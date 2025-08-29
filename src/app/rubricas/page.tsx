@@ -1,6 +1,11 @@
+
 "use client";
 
+import React, { useRef } from 'react';
+import html2camera from 'html2canvas';
 import RubricTable from "@/components/rubricas/RubricTable";
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 
 const innovationProjectData = [
     { id: "ip_identify_1", criterion: "IDENTIFY 1 – A equipe definiu claramente um problema bem pesquisado que é relevante para o tema da temporada?" },
@@ -30,17 +35,42 @@ const robotDesignData = [
 
 
 export default function RubricasPage() {
+    const printRef = useRef<HTMLDivElement>(null);
+
+    const handleDownloadCroqui = () => {
+        if (printRef.current) {
+        html2camera(printRef.current, {
+            useCORS: true,
+            backgroundColor: null,
+            scale: 2,
+        }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `croqui_rubricas_${new Date().toISOString()}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+        }
+    };
+
     return (
         <div className="flex-1 p-4 md:p-8 space-y-8">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold">Rubricas de Avaliação</h1>
-                <p className="text-muted-foreground">
-                    Consulte as rubricas oficiais da temporada para o Projeto de Inovação e o Design do Robô.
-                </p>
+            <header className="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold">Rubricas de Avaliação</h1>
+                    <p className="text-muted-foreground">
+                        Consulte as rubricas oficiais da temporada para o Projeto de Inovação e o Design do Robô.
+                    </p>
+                </div>
+                <Button onClick={handleDownloadCroqui} variant="outline">
+                    <Download className="mr-2" />
+                    Download Croqui
+                </Button>
             </header>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                <RubricTable title="Projeto de Inovação" data={innovationProjectData} storageKey="innovationProjectScores_v2" />
-                <RubricTable title="Design do Robô" data={robotDesignData} storageKey="robotDesignScores_v2" />
+            <div ref={printRef}>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                    <RubricTable title="Projeto de Inovação" data={innovationProjectData} storageKey="innovationProjectScores_v2" />
+                    <RubricTable title="Design do Robô" data={robotDesignData} storageKey="robotDesignScores_v2" />
+                </div>
             </div>
         </div>
     );

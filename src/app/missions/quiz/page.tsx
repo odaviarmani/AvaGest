@@ -2,12 +2,13 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import html2camera from 'html2canvas';
 import { Mission, priorities } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star, Shuffle, HelpCircle, FileText, BookOpen, User, Timer } from 'lucide-react';
+import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star, Shuffle, HelpCircle, FileText, BookOpen, User, Timer, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -139,19 +140,30 @@ export default function MissionsQuizPage() {
     const [isAnswered, setIsAnswered] = useState(false);
     const [showCorrect, setShowCorrect] = useState(false);
     const [isRulesOpen, setIsRulesOpen] = useState(false);
-
-
     const [gameState, setGameState] = useState<GameState>('loading');
     const [teams, setTeams] = useState<{ azul: string[], amarelo: string[] } | null>(null);
     const [scores, setScores] = useState({ azul: 0, amarelo: 0 });
     const [lastScoreChanges, setLastScoreChanges] = useState<{ azul: number | null, amarelo: number | null }>({ azul: null, amarelo: null });
     const [currentTurn, setCurrentTurn] = useState<Team | null>(null);
     const [winner, setWinner] = useState<Team | 'empate' | null>(null);
-    
-    // --- Timer State ---
     const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_LIMIT);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const printRef = useRef<HTMLDivElement>(null);
 
+    const handleDownloadCroqui = () => {
+        if (printRef.current) {
+            html2camera(printRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+                scale: 2,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `croqui_quiz_${new Date().toISOString()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    };
 
     const startTimer = useCallback(() => {
         setTimeLeft(QUESTION_TIME_LIMIT);
@@ -172,8 +184,8 @@ export default function MissionsQuizPage() {
     useEffect(() => {
         if (timeLeft === 0 && (gameState === 'playing' || gameState === 'repass-answer')) {
             stopTimer();
-            setIsAnswered(true); // Disable buttons
-            setShowCorrect(true); // Show correct answer
+            setIsAnswered(true); 
+            setShowCorrect(true);
             
             const teamToPenalize = currentTurn!;
             setScores(prev => ({...prev, [teamToPenalize]: prev[teamToPenalize] -1}));
@@ -370,7 +382,6 @@ export default function MissionsQuizPage() {
         setGameState('team-selection');
     };
     
-    // --- RENDER LOGIC ---
 
     if (gameState === 'loading') {
         return (
@@ -512,7 +523,7 @@ export default function MissionsQuizPage() {
 
     if (gameState === 'finished') {
         return (
-            <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center text-center">
+            <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center text-center" ref={printRef}>
                  <Card className="w-full max-w-2xl">
                     <CardHeader>
                         <div className="mx-auto bg-primary text-primary-foreground rounded-full p-4 w-fit mb-4 animate-pulse">
@@ -547,6 +558,10 @@ export default function MissionsQuizPage() {
                         <Button variant="outline" asChild className="w-full">
                             <Link href="/missions">Voltar para Missões</Link>
                         </Button>
+                         <Button onClick={handleDownloadCroqui} variant="outline" className="w-full">
+                            <Download className="mr-2" />
+                            Download Placar
+                        </Button>
                     </CardFooter>
                  </Card>
             </div>
@@ -574,105 +589,111 @@ export default function MissionsQuizPage() {
 
     return (
         <div className="flex-1 p-4 md:p-8 flex flex-col items-center">
-            {/* Scoreboard */}
-            <div className="grid grid-cols-2 gap-4 w-full max-w-6xl mb-8">
-                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'azul' && teamConfig.azul.ring)}>
-                     <ScoreDisplay score={scores.azul} lastChange={lastScoreChanges.azul} teamName={teamConfig.azul.name} members={teams.azul}/>
-                 </Card>
-                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'amarelo' && teamConfig.amarelo.ring)}>
-                     <ScoreDisplay score={scores.amarelo} lastChange={lastScoreChanges.amarelo} teamName={teamConfig.amarelo.name} members={teams.amarelo}/>
-                 </Card>
+            <div className="w-full max-w-6xl mb-4 flex justify-end">
+                 <Button onClick={handleDownloadCroqui} variant="outline">
+                    <Download className="mr-2" />
+                    Download Croqui
+                </Button>
             </div>
+            <div className="w-full max-w-6xl" ref={printRef}>
+                {/* Scoreboard */}
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                    <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'azul' && teamConfig.azul.ring)}>
+                        <ScoreDisplay score={scores.azul} lastChange={lastScoreChanges.azul} teamName={teamConfig.azul.name} members={teams.azul}/>
+                    </Card>
+                    <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'amarelo' && teamConfig.amarelo.ring)}>
+                        <ScoreDisplay score={scores.amarelo} lastChange={lastScoreChanges.amarelo} teamName={teamConfig.amarelo.name} members={teams.amarelo}/>
+                    </Card>
+                </div>
 
-            {/* Game Area */}
-             <div className="w-full max-w-4xl space-y-6">
-                <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-center mb-2">
-                            <CardTitle className="flex items-center gap-2">
-                                <BrainCircuit className="w-6 h-6"/> Pergunta
-                            </CardTitle>
-                            <div className="text-lg font-bold">
-                                {currentQuestionIndex + 1} / {TOTAL_QUESTIONS}
-                            </div>
-                        </div>
-                         <Progress value={progress} />
-                          <div className="flex items-center gap-2 text-muted-foreground mt-4">
-                            <Timer className="w-5 h-5"/>
-                            <Progress value={timerProgress} className="h-2" />
-                            <span className="font-mono text-sm">{timeLeft}s</span>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex flex-col md:flex-row gap-6 items-center">
-                        <div className="w-full md:w-1/3 aspect-video rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
-                            {currentQuestion.imageUrl && !isRepassQuestion ? (
-                                <Image src={currentQuestion.imageUrl} alt="Imagem da Missão" width={300} height={169} className="object-cover w-full h-full" />
-                            ) : (
-                                isRepassQuestion ? <HelpCircle className="w-24 h-24 text-muted-foreground" /> : <Star className="w-16 h-16 text-muted-foreground" />
-                            )}
-                        </div>
-                        <p className="text-center font-semibold text-xl md:text-2xl min-h-[6rem] flex items-center justify-center flex-1">
-                            {currentQuestion.question}
-                        </p>
-                    </CardContent>
-                </Card>
-                
-                 {gameState === 'pass-or-repass' && (
-                     <Card className="p-6 text-center animate-in fade-in-50">
+                {/* Game Area */}
+                <div className="w-full max-w-4xl mx-auto space-y-6">
+                    <Card>
                         <CardHeader>
-                             <CardTitle className="flex items-center justify-center gap-2">
-                                <ShieldQuestion className="w-8 h-8"/> 
-                                <span className={cn(teamConfig[currentTurn === 'azul' ? 'amarelo' : 'azul'].colors, "px-2 py-1 rounded-lg")}>
-                                    {teamConfig[currentTurn === 'azul' ? 'amarelo' : 'azul'].name}
-                                </span>
-                                , e agora?
-                             </CardTitle>
-                             <CardDescription>O time adversário errou! Vocês aceitam responder valendo pontos?</CardDescription>
+                            <div className="flex justify-between items-center mb-2">
+                                <CardTitle className="flex items-center gap-2">
+                                    <BrainCircuit className="w-6 h-6"/> Pergunta
+                                </CardTitle>
+                                <div className="text-lg font-bold">
+                                    {currentQuestionIndex + 1} / {TOTAL_QUESTIONS}
+                                </div>
+                            </div>
+                            <Progress value={progress} />
+                            <div className="flex items-center gap-2 text-muted-foreground mt-4">
+                                <Timer className="w-5 h-5"/>
+                                <Progress value={timerProgress} className="h-2" />
+                                <span className="font-mono text-sm">{timeLeft}s</span>
+                            </div>
                         </CardHeader>
-                        <CardContent className="flex gap-4 justify-center">
-                             <Button size="lg" onClick={() => handlePassRepass(true)}>Sim, nós respondemos!</Button>
-                             <Button size="lg" variant="destructive" onClick={() => handlePassRepass(false)}>Não, vamos passar.</Button>
+                        <CardContent className="flex flex-col md:flex-row gap-6 items-center">
+                            <div className="w-full md:w-1/3 aspect-video rounded-md overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                                {currentQuestion.imageUrl && !isRepassQuestion ? (
+                                    <Image src={currentQuestion.imageUrl} alt="Imagem da Missão" width={300} height={169} className="object-cover w-full h-full" />
+                                ) : (
+                                    isRepassQuestion ? <HelpCircle className="w-24 h-24 text-muted-foreground" /> : <Star className="w-16 h-16 text-muted-foreground" />
+                                )}
+                            </div>
+                            <p className="text-center font-semibold text-xl md:text-2xl min-h-[6rem] flex items-center justify-center flex-1">
+                                {currentQuestion.question}
+                            </p>
                         </CardContent>
-                        <CardFooter className="text-xs text-muted-foreground pt-4 justify-center">
-                            Se aceitar e errar, ambos perdem 1 ponto. Se acertar, você ganha 1 e o outro time perde 1. Se passar, o outro time perde 1 ponto.
-                        </CardFooter>
-                     </Card>
-                 )}
-                
-                 {(gameState === 'playing' || gameState === 'repass-answer') && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {currentQuestion.options.map((option, index) => {
-                            const isCorrect = option === currentQuestion.correctAnswer;
-                            const isSelected = option === selectedAnswer;
-
-                            return (
-                                <Button
-                                    key={index}
-                                    variant="outline"
-                                    className={cn(
-                                        "h-auto py-4 text-lg whitespace-normal justify-start",
-                                        showCorrect && isCorrect && "bg-green-100 border-green-500 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700",
-                                        showCorrect && isSelected && !isCorrect && "bg-red-100 border-red-500 text-red-800 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700"
-                                    )}
-                                    onClick={() => gameState === 'repass-answer' ? handleRepassAnswer(option) : handleAnswerSelect(option)}
-                                    disabled={isAnswered}
-                                >
-                                    <span className={cn(
-                                        "mr-4 h-8 w-8 rounded-md border flex items-center justify-center shrink-0",
-                                        showCorrect && isCorrect && "bg-green-500 text-white border-green-500",
-                                        showCorrect && isSelected && !isCorrect && "bg-red-500 text-white border-red-500"
-                                    )}>
-                                        {showCorrect ? (isCorrect ? <Check /> : <IconX />) : String.fromCharCode(65 + index)}
+                    </Card>
+                    
+                    {gameState === 'pass-or-repass' && (
+                        <Card className="p-6 text-center animate-in fade-in-50">
+                            <CardHeader>
+                                <CardTitle className="flex items-center justify-center gap-2">
+                                    <ShieldQuestion className="w-8 h-8"/> 
+                                    <span className={cn(teamConfig[currentTurn === 'azul' ? 'amarelo' : 'azul'].colors, "px-2 py-1 rounded-lg")}>
+                                        {teamConfig[currentTurn === 'azul' ? 'amarelo' : 'azul'].name}
                                     </span>
-                                    {option}
-                                </Button>
-                            )
-                        })}
-                    </div>
-                 )}
-             </div>
+                                    , e agora?
+                                </CardTitle>
+                                <CardDescription>O time adversário errou! Vocês aceitam responder valendo pontos?</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex gap-4 justify-center">
+                                <Button size="lg" onClick={() => handlePassRepass(true)}>Sim, nós respondemos!</Button>
+                                <Button size="lg" variant="destructive" onClick={() => handlePassRepass(false)}>Não, vamos passar.</Button>
+                            </CardContent>
+                            <CardFooter className="text-xs text-muted-foreground pt-4 justify-center">
+                                Se aceitar e errar, ambos perdem 1 ponto. Se acertar, você ganha 1 e o outro time perde 1. Se passar, o outro time perde 1 ponto.
+                            </CardFooter>
+                        </Card>
+                    )}
+                    
+                    {(gameState === 'playing' || gameState === 'repass-answer') && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {currentQuestion.options.map((option, index) => {
+                                const isCorrect = option === currentQuestion.correctAnswer;
+                                const isSelected = option === selectedAnswer;
+
+                                return (
+                                    <Button
+                                        key={index}
+                                        variant="outline"
+                                        className={cn(
+                                            "h-auto py-4 text-lg whitespace-normal justify-start",
+                                            showCorrect && isCorrect && "bg-green-100 border-green-500 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700",
+                                            showCorrect && isSelected && !isCorrect && "bg-red-100 border-red-500 text-red-800 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700"
+                                        )}
+                                        onClick={() => gameState === 'repass-answer' ? handleRepassAnswer(option) : handleAnswerSelect(option)}
+                                        disabled={isAnswered}
+                                    >
+                                        <span className={cn(
+                                            "mr-4 h-8 w-8 rounded-md border flex items-center justify-center shrink-0",
+                                            showCorrect && isCorrect && "bg-green-500 text-white border-green-500",
+                                            showCorrect && isSelected && !isCorrect && "bg-red-500 text-white border-red-500"
+                                        )}>
+                                            {showCorrect ? (isCorrect ? <Check /> : <IconX />) : String.fromCharCode(65 + index)}
+                                        </span>
+                                        {option}
+                                    </Button>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
         </div>
     )
 }
-
-    

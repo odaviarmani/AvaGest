@@ -1,8 +1,9 @@
 
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Bell, AlertTriangle, CheckCircle, Info, CalendarClock, MessageSquarePlus, MessageSquare, MoreVertical, Pencil, Trash2, Volume2, VolumeX } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import html2camera from 'html2canvas';
+import { Bell, AlertTriangle, CheckCircle, Info, CalendarClock, MessageSquarePlus, MessageSquare, MoreVertical, Pencil, Trash2, Volume2, VolumeX, Download } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Task, CustomNotification, ChatMessage } from '@/lib/types';
 import { differenceInDays, formatDistanceToNow, parseISO } from 'date-fns';
@@ -93,10 +94,8 @@ const generateChatNotifications = (chatMessages: ChatMessage[], currentUser: str
     return chatMessages.map(msg => {
         const isMention = msg.message.includes(`@${currentUser}`);
         
-        // Don't notify the user about their own messages
         if (msg.username === currentUser) return null;
 
-        // If chat is muted and it's not a mention, don't show notification
         if(isChatMuted && !isMention) return null;
 
         return {
@@ -121,6 +120,7 @@ export default function NotificationsPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [notificationToDelete, setNotificationToDelete] = useState<string | null>(null);
     const [isChatMuted, setIsChatMuted] = useState(false);
+    const printRef = useRef<HTMLDivElement>(null);
 
     const { username } = useAuth();
     const { toast } = useToast();
@@ -172,6 +172,21 @@ export default function NotificationsPage() {
             updateNotifications(customNotifications, isChatMuted);
         }
     }, [customNotifications, isChatMuted, isClient]);
+
+    const handleDownloadCroqui = () => {
+        if (printRef.current) {
+            html2camera(printRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+                scale: 2,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `croqui_notificacoes_${new Date().toISOString()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    };
 
     const handleToggleMute = () => {
         const newMutedState = !isChatMuted;
@@ -250,10 +265,14 @@ export default function NotificationsPage() {
                             Criar Notificação
                         </Button>
                     )}
+                    <Button onClick={handleDownloadCroqui} variant="outline">
+                        <Download className="mr-2" />
+                        Download Croqui
+                    </Button>
                 </div>
             </header>
 
-            <div className="max-w-3xl mx-auto space-y-4">
+            <div className="max-w-3xl mx-auto space-y-4" ref={printRef}>
                 {isClient && notifications.length > 0 ? (
                     notifications.map((notification) => (
                         <Card 

@@ -1,3 +1,8 @@
+
+"use client";
+
+import React, { useRef } from 'react';
+import html2camera from 'html2canvas';
 import {
     BookMarked,
     BotMessageSquare,
@@ -9,10 +14,12 @@ import {
     Sheet,
     Video,
     Youtube,
-    Wrench
+    Wrench,
+    Download
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
 
 const apps = [
     { name: "Canva", href: "https://www.canva.com", icon: <Palette className="w-8 h-8" /> },
@@ -29,16 +36,39 @@ const apps = [
 ];
 
 export default function AppsPage() {
+    const printRef = useRef<HTMLDivElement>(null);
+
+    const handleDownloadCroqui = () => {
+        if (printRef.current) {
+            html2camera(printRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+                scale: 2,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `croqui_apps_${new Date().toISOString()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    };
+
     return (
         <div className="flex-1 p-4 md:p-8">
-            <header className="mb-8">
-                <h1 className="text-3xl font-bold">Aplicativos Externos</h1>
-                <p className="text-muted-foreground">
-                    Acesse rapidamente suas ferramentas e serviços favoritos.
-                </p>
+            <header className="mb-8 flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-bold">Aplicativos Externos</h1>
+                    <p className="text-muted-foreground">
+                        Acesse rapidamente suas ferramentas e serviços favoritos.
+                    </p>
+                </div>
+                <Button onClick={handleDownloadCroqui} variant="outline">
+                    <Download className="mr-2" />
+                    Download Croqui
+                </Button>
             </header>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            <div ref={printRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                 {apps.map((app) => (
                     <Link href={app.href} key={app.name} target="_blank" rel="noopener noreferrer" className="no-underline">
                         <Card className="hover:bg-accent hover:text-accent-foreground transition-colors duration-200 h-full flex flex-col justify-between">

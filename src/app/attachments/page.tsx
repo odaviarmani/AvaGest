@@ -1,8 +1,10 @@
+
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import html2camera from 'html2canvas';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Download } from 'lucide-react';
 import { Attachment } from '@/lib/types';
 import AttachmentCard from '@/components/attachments/AttachmentCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -19,6 +21,7 @@ export default function AttachmentsPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
     const { toast } = useToast();
+    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsClient(true);
@@ -30,10 +33,8 @@ export default function AttachmentsPage() {
 
     useEffect(() => {
         if (isClient) {
-            // Create a version of attachments without the large image data to avoid quota errors.
             const attachmentsToStore = attachments.map(a => {
                 const { imageUrl, ...rest } = a;
-                // Only store imageUrl if it's not a base64 string
                 if (imageUrl && imageUrl.startsWith('data:image')) {
                     return rest;
                 }
@@ -51,6 +52,21 @@ export default function AttachmentsPage() {
             }
         }
     }, [attachments, isClient, toast]);
+
+    const handleDownloadCroqui = () => {
+        if (printRef.current) {
+            html2camera(printRef.current, {
+                useCORS: true,
+                backgroundColor: null,
+                scale: 2,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `croqui_anexos_${new Date().toISOString()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+    };
 
     const handleOpenDialog = (attachment: Attachment | null) => {
         setEditingAttachment(attachment ? attachment : {
@@ -108,12 +124,19 @@ export default function AttachmentsPage() {
                         Gerencie os anexos da equipe da temporada Unearthed.
                     </p>
                 </div>
-                <Button onClick={() => handleOpenDialog(null)}>
-                    <PlusCircle className="mr-2" />
-                    Adicionar Anexo
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button onClick={() => handleOpenDialog(null)}>
+                        <PlusCircle className="mr-2" />
+                        Adicionar Anexo
+                    </Button>
+                    <Button onClick={handleDownloadCroqui} variant="outline">
+                        <Download className="mr-2" />
+                        Download Croqui
+                    </Button>
+                </div>
             </header>
 
+            <div ref={printRef}>
             {isClient && attachments.length > 0 ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {attachments.map(attachment => (
@@ -137,6 +160,7 @@ export default function AttachmentsPage() {
                     </div>
                 </div>
             )}
+            </div>
              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[480px]">
                     <DialogHeader>
