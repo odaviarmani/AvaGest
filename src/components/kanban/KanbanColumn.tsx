@@ -44,13 +44,13 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask, isDoneC
              className={cn(
                 "transition-colors",
                 snapshot.isDraggingOver ? 'bg-primary/10' : 'bg-secondary/50',
-                isDoneColumn ? 'p-2 rounded-lg' : 'flex-1'
+                isDoneColumn ? 'p-2 rounded-lg flex-1' : 'flex-1'
              )}
           >
             <div className={cn(
               isDoneColumn 
                 ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" 
-                : "space-y-4 min-h-[400px]"
+                : "space-y-4"
             )}>
               {column.tasks.map((task, index) => (
                 <Draggable key={task.id} draggableId={task.id} index={index}>
