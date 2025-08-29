@@ -134,3 +134,14 @@ export interface InteractiveMissionData extends MissionAnalysisData {
     impact: number;
     priority: number;
 }
+
+
+export interface SpinResult {
+  id: string;
+  pairs: {
+    pair: [string, string];
+    area: string;
+  }[];
+  date: string;
+  source: 'automatic' | 'manual';
+}
