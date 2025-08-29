@@ -126,6 +126,8 @@ export default function MissionsQuizPage() {
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
+    const [showCorrect, setShowCorrect] = useState(false);
+
 
     const [gameState, setGameState] = useState<GameState>('loading');
     const [teams, setTeams] = useState<{ azul: string[], amarelo: string[] } | null>(null);
@@ -203,28 +205,34 @@ export default function MissionsQuizPage() {
 
         const isCorrect = option === questions[currentQuestionIndex].correctAnswer;
         
-        setTimeout(() => {
-            if (isCorrect) {
+        if (isCorrect) {
+            setShowCorrect(true);
+            setTimeout(() => {
                 setScores(prev => ({ ...prev, [currentTurn!]: prev[currentTurn!] + 1 }));
                 setLastScoreChanges({ azul: null, amarelo: null, [currentTurn!]: 1 });
                 handleNextQuestion();
-            } else {
-                setGameState('pass-or-repass');
-            }
-        }, 1500);
+            }, 1500);
+        } else {
+             // Don't show correct answer, just wait for Pass or Repass
+             setGameState('pass-or-repass');
+        }
     };
 
     const handlePassRepass = (accepted: boolean) => {
+        const otherTeam = currentTurn === 'azul' ? 'amarelo' : 'azul';
         if (accepted) {
             // Team accepted, now they must answer
-            setIsAnswered(false);
+            setIsAnswered(false); // Enable buttons for the other team
             setSelectedAnswer(null);
-            const otherTeam = currentTurn === 'azul' ? 'amarelo' : 'azul';
             setCurrentTurn(otherTeam);
             setGameState('repass-answer');
         } else {
-            // Team passed, move to next question for the other team
-            handleNextQuestion();
+            // Team passed, original team loses a point.
+            const originalTeam = currentTurn!;
+            setScores(prev => ({ ...prev, [originalTeam]: prev[originalTeam] - 1 }));
+            setLastScoreChanges({ azul: null, amarelo: null, [originalTeam]: -1 });
+            setShowCorrect(true); // Now show the correct answer
+            setTimeout(handleNextQuestion, 1500); // Move to next after showing answer
         }
     };
     
@@ -232,15 +240,25 @@ export default function MissionsQuizPage() {
          if (isAnswered) return;
          setSelectedAnswer(option);
          setIsAnswered(true);
+         setShowCorrect(true); // Show correct/incorrect feedback
          const isCorrect = option === questions[currentQuestionIndex].correctAnswer;
-
+         const teamThatRepassed = currentTurn!;
+         const originalTeam = teamThatRepassed === 'azul' ? 'amarelo' : 'azul';
+         
          setTimeout(() => {
             if (isCorrect) {
-                setScores(prev => ({ ...prev, [currentTurn!]: prev[currentTurn!] + 1 }));
-                setLastScoreChanges({ azul: null, amarelo: null, [currentTurn!]: 1 });
+                setScores(prev => ({ 
+                    ...prev, 
+                    [teamThatRepassed]: prev[teamThatRepassed] + 1,
+                    [originalTeam]: prev[originalTeam] - 1
+                }));
+                setLastScoreChanges({ [teamThatRepassed]: 1, [originalTeam]: -1 });
             } else {
-                setScores(prev => ({ ...prev, [currentTurn!]: prev[currentTurn!] - 1 }));
-                setLastScoreChanges({ azul: null, amarelo: null, [currentTurn!]: -1 });
+                setScores(prev => ({ 
+                    ...prev, 
+                    [teamThatRepassed]: prev[teamThatRepassed] - 1 
+                }));
+                 setLastScoreChanges({ azul: null, amarelo: null, [teamThatRepassed]: -1 });
             }
             handleNextQuestion();
          }, 1500);
@@ -252,8 +270,10 @@ export default function MissionsQuizPage() {
             setCurrentQuestionIndex(nextQuestionIndex);
             setSelectedAnswer(null);
             setIsAnswered(false);
-            // After a repass, the turn already switched. On a normal turn, we switch it.
-            if (gameState !== 'repass-answer') {
+            setShowCorrect(false);
+            
+            // Switch turn unless it was a repass (turn already switched)
+            if (gameState !== 'pass-or-repass') {
                  setCurrentTurn(prev => prev === 'azul' ? 'amarelo' : 'azul');
             }
             setGameState('playing');
@@ -299,6 +319,7 @@ export default function MissionsQuizPage() {
         setCurrentQuestionIndex(0);
         setSelectedAnswer(null);
         setIsAnswered(false);
+        setShowCorrect(false);
         setCurrentTurn(null);
         setWinner(null);
         setTeams(null);
@@ -469,11 +490,11 @@ export default function MissionsQuizPage() {
         <div className="flex-1 p-4 md:p-8 flex flex-col items-center">
             {/* Scoreboard */}
             <div className="grid grid-cols-2 gap-4 w-full max-w-6xl mb-8">
-                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'azul' && gameState !== 'repass-answer' && teamConfig.azul.ring)}>
+                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'azul' && teamConfig.azul.ring)}>
                      <CardTitle>{teamConfig.azul.name}</CardTitle>
                      <ScoreDisplay score={scores.azul} lastChange={lastScoreChanges.azul}/>
                  </Card>
-                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'amarelo' && gameState !== 'repass-answer' && teamConfig.amarelo.ring)}>
+                 <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'amarelo' && teamConfig.amarelo.ring)}>
                      <CardTitle>{teamConfig.amarelo.name}</CardTitle>
                      <ScoreDisplay score={scores.amarelo} lastChange={lastScoreChanges.amarelo}/>
                  </Card>
@@ -517,14 +538,14 @@ export default function MissionsQuizPage() {
                                 </span>
                                 , e agora?
                              </CardTitle>
-                             <CardDescription>O time adversário errou! Vocês aceitam responder?</CardDescription>
+                             <CardDescription>O time adversário errou! Vocês aceitam responder valendo pontos?</CardDescription>
                         </CardHeader>
                         <CardContent className="flex gap-4 justify-center">
                              <Button size="lg" onClick={() => handlePassRepass(true)}>Sim, nós respondemos!</Button>
                              <Button size="lg" variant="destructive" onClick={() => handlePassRepass(false)}>Não, vamos passar.</Button>
                         </CardContent>
                         <CardFooter className="text-xs text-muted-foreground pt-4 justify-center">
-                            Lembre-se: se aceitar e errar, vocês perdem 1 ponto. Se acertar, ganham 1 ponto.
+                            Se aceitar e errar, vocês perdem 1 ponto. Se acertar, ganham 1 ponto e o outro time perde 1. Se passar, o outro time perde 1 ponto.
                         </CardFooter>
                      </Card>
                  )}
@@ -541,18 +562,18 @@ export default function MissionsQuizPage() {
                                     variant="outline"
                                     className={cn(
                                         "h-auto py-4 text-lg whitespace-normal justify-start",
-                                        isAnswered && isCorrect && "bg-green-100 border-green-500 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700",
-                                        isAnswered && isSelected && !isCorrect && "bg-red-100 border-red-500 text-red-800 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700"
+                                        showCorrect && isCorrect && "bg-green-100 border-green-500 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700",
+                                        showCorrect && isSelected && !isCorrect && "bg-red-100 border-red-500 text-red-800 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700"
                                     )}
                                     onClick={() => gameState === 'repass-answer' ? handleRepassAnswer(option) : handleAnswerSelect(option)}
                                     disabled={isAnswered}
                                 >
                                     <span className={cn(
                                         "mr-4 h-8 w-8 rounded-md border flex items-center justify-center shrink-0",
-                                        isAnswered && isCorrect && "bg-green-500 text-white border-green-500",
-                                        isAnswered && isSelected && !isCorrect && "bg-red-500 text-white border-red-500"
+                                        showCorrect && isCorrect && "bg-green-500 text-white border-green-500",
+                                        showCorrect && isSelected && !isCorrect && "bg-red-500 text-white border-red-500"
                                     )}>
-                                        {isAnswered ? (isCorrect ? <Check /> : <IconX />) : String.fromCharCode(65 + index)}
+                                        {showCorrect ? (isCorrect ? <Check /> : <IconX />) : String.fromCharCode(65 + index)}
                                     </span>
                                     {option}
                                 </Button>
@@ -564,5 +585,3 @@ export default function MissionsQuizPage() {
         </div>
     )
 }
-
-    
