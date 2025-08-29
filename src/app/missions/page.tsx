@@ -3,13 +3,24 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Target } from 'lucide-react';
+import { PlusCircle, Target, Download } from 'lucide-react';
 import { Mission } from '@/lib/types';
 import MissionCard from '@/components/missions/MissionCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import MissionForm from '@/components/missions/MissionForm';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
+// Helper to shuffle arrays
+const shuffle = <T,>(array: T[]): T[] => {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+};
+
 
 export default function MissionsPage() {
     const [missions, setMissions] = useState<Mission[]>([]);
@@ -78,10 +89,91 @@ export default function MissionsPage() {
             setIsDeleteDialogOpen(false);
         }
     };
+    
+     const generateQuiz = () => {
+        if (missions.length < 2) {
+            toast({
+                variant: 'destructive',
+                title: 'Missões insuficientes',
+                description: 'Cadastre pelo menos 2 missões para gerar um quiz.',
+            });
+            return;
+        }
+
+        let questions: string[] = [];
+        const questionTemplates = [
+            // Pontuação
+            (m: Mission) => `Qual é a pontuação base da missão "${m.name}"?`,
+            // Localização
+            (m: Mission) => `Em qual local do tapete a missão "${m.name}" está?`,
+            // Prioridade
+            (m: Mission) => `A missão "${m.name}" tem qual prioridade de execução?`,
+            // Bônus
+            (m: Mission) => `Verdadeiro ou Falso: A missão "${m.name}" concede pontos de bônus.`,
+            // Deixar Anexo
+            (m: Mission) => `É permitido deixar um anexo para completar a missão "${m.name}"?`,
+            // Descrição/Objetivo
+            (m: Mission) => `Qual o principal objetivo da missão "${m.name}"?`,
+            // Comparação de pontos
+            (m1: Mission, m2: Mission) => `Qual missão vale mais pontos: "${m1.name}" ou "${m2.name}"?`,
+             // Comparação de prioridade
+            (m1: Mission, m2: Mission) => `Considerando a estratégia da equipe, qual missão tem maior prioridade entre "${m1.name}" e "${m2.name}"?`,
+            // Múltipla escolha - Pontos
+            (m: Mission) => {
+                const options = shuffle([m.points, m.points + 10, m.points - 5, m.points + 5].filter(p => p>=0)).slice(0, 4);
+                return `Qual a pontuação correta para a missão "${m.name}"?\n(a) ${options[0]} (b) ${options[1]} (c) ${options[2]} (d) ${options[3]}`;
+            },
+             // Múltipla escolha - Localização
+            (m: Mission) => {
+                const otherMissions = missions.filter(om => om.id !== m.id);
+                const randomLocations = shuffle(otherMissions).slice(0, 3).map(om => om.location);
+                const options = shuffle([m.location, ...randomLocations]);
+                return `Onde fica a missão "${m.name}"?\n(a) ${options[0]} (b) ${options[1]} (c) ${options[2]} (d) ${options[3]}`;
+            },
+            // Cenário
+            (m1: Mission, m2: Mission) => `Se a equipe completar as missões "${m1.name}" e "${m2.name}", quantos pontos seriam obtidos no total?`,
+            // Identificação por descrição
+            (m: Mission) => `Qual é o nome da missão que envolve "${m.description.substring(0, 30)}..."?`
+        ];
+
+        while (questions.length < 50) {
+            const templateIndex = Math.floor(Math.random() * questionTemplates.length);
+            const template = questionTemplates[templateIndex];
+            
+            const shuffledMissions = shuffle(missions);
+            const m1 = shuffledMissions[0];
+            const m2 = shuffledMissions.length > 1 ? shuffledMissions[1] : shuffledMissions[0];
+
+            let newQuestion = '';
+            if (template.length === 1) { // Template de 1 missão
+                newQuestion = template(m1);
+            } else { // Template de 2 missões
+                newQuestion = (template as (m1: Mission, m2: Mission) => string)(m1, m2);
+            }
+
+            if (!questions.includes(newQuestion)) {
+                questions.push(`${questions.length + 1}. ${newQuestion}`);
+            }
+        }
+        
+        const fileContent = `Quiz Dinâmico - Missões da Temporada\n\n${questions.join('\n\n')}`;
+        const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `quiz_missoes_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast({ title: "Quiz gerado!", description: "O arquivo de texto com as perguntas foi baixado."});
+    };
+
 
     return (
         <div className="flex-1 p-4 md:p-8">
-            <header className="mb-8 flex justify-between items-center">
+            <header className="mb-8 flex justify-between items-center gap-4 flex-wrap">
                 <div className="flex items-center gap-4">
                     <Target className="w-8 h-8 text-primary"/>
                     <div>
@@ -91,10 +183,16 @@ export default function MissionsPage() {
                         </p>
                     </div>
                 </div>
-                <Button onClick={() => handleOpenDialog(null)}>
-                    <PlusCircle className="mr-2" />
-                    Adicionar Missão
-                </Button>
+                <div className="flex items-center gap-2">
+                     <Button onClick={() => handleOpenDialog(null)}>
+                        <PlusCircle className="mr-2" />
+                        Adicionar Missão
+                    </Button>
+                    <Button variant="outline" onClick={generateQuiz} disabled={missions.length < 2}>
+                        <Download className="mr-2" />
+                        Gerar Quiz
+                    </Button>
+                </div>
             </header>
 
             {isClient && missions.length > 0 ? (
