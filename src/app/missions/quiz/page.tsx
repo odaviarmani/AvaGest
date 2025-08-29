@@ -3,11 +3,11 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Mission, priorities } from '@/lib/types';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star } from 'lucide-react';
+import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star, Shuffle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -31,6 +31,8 @@ interface QuizQuestion {
 }
 
 const TOTAL_QUESTIONS = 50;
+const MEMBERS = ["Davi", "Carol", "Lorenzo", "Thiago", "Miguel", "Italo"];
+
 
 const questionTemplates = [
     { type: 'points', generator: (m: Mission) => ({
@@ -72,7 +74,7 @@ const generateOptions = (correctAnswer: string, allMissions: Mission[], field: k
     return shuffle(Array.from(options));
 };
 
-type GameState = 'loading' | 'pre-game' | 'spinning-roulette' | 'playing' | 'pass-or-repass' | 'finished';
+type GameState = 'loading' | 'team-selection' | 'pre-game' | 'spinning-roulette' | 'playing' | 'pass-or-repass' | 'finished';
 type Team = 'azul' | 'amarelo';
 
 const teamConfig = {
@@ -120,6 +122,7 @@ export default function MissionsQuizPage() {
     const [isAnswered, setIsAnswered] = useState(false);
 
     const [gameState, setGameState] = useState<GameState>('loading');
+    const [teams, setTeams] = useState<{ azul: string[], amarelo: string[] } | null>(null);
     const [scores, setScores] = useState({ azul: 0, amarelo: 0 });
     const [lastScoreChanges, setLastScoreChanges] = useState<{ azul: number | null, amarelo: number | null }>({ azul: null, amarelo: null });
     const [currentTurn, setCurrentTurn] = useState<Team | null>(null);
@@ -179,7 +182,7 @@ export default function MissionsQuizPage() {
                     return;
                 }
                 setQuestions(generateQuestions(loadedMissions));
-                setGameState('pre-game');
+                setGameState('team-selection');
             }
         } catch (error) {
             console.error("Failed to load missions", error);
@@ -250,6 +253,14 @@ export default function MissionsQuizPage() {
             setGameState('finished');
         }
     };
+    
+    const handleTeamShuffle = () => {
+        const shuffledMembers = shuffle(MEMBERS);
+        setTeams({
+            azul: shuffledMembers.slice(0, 3),
+            amarelo: shuffledMembers.slice(3, 6),
+        });
+    }
 
     const startRoulette = () => {
         setGameState('spinning-roulette');
@@ -278,8 +289,9 @@ export default function MissionsQuizPage() {
         setIsAnswered(false);
         setCurrentTurn(null);
         setWinner(null);
+        setTeams(null);
         setQuestions(generateQuestions(missions));
-        setGameState('pre-game');
+        setGameState('team-selection');
     };
     
     // --- RENDER LOGIC ---
@@ -293,6 +305,54 @@ export default function MissionsQuizPage() {
                         <Skeleton className="h-12 w-full" />
                         <Skeleton className="h-12 w-full" />
                     </CardContent>
+                </Card>
+            </div>
+        );
+    }
+    
+    if (gameState === 'team-selection') {
+        return (
+            <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center text-center">
+                <Card className="w-full max-w-2xl p-8">
+                    <CardHeader>
+                        <CardTitle className="text-3xl">Sorteio de Times</CardTitle>
+                        <CardDescription>Vamos formar as equipes para o Passa ou Repassa!</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center justify-center gap-8">
+                        {!teams ? (
+                            <>
+                                <div className="p-4 border rounded-lg bg-secondary/50">
+                                    <h3 className="font-semibold text-lg mb-2">Participantes</h3>
+                                    <p className="text-muted-foreground">{MEMBERS.join(', ')}</p>
+                                </div>
+                                <Button onClick={handleTeamShuffle} size="lg">
+                                    <Shuffle className="mr-2" /> Sortear Times
+                                </Button>
+                            </>
+                        ) : (
+                            <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in-50">
+                                <Card className="p-4 bg-blue-100 dark:bg-blue-900/50">
+                                    <CardTitle className="text-blue-600 dark:text-blue-400 mb-2">Time Azul</CardTitle>
+                                    <ul className="space-y-1">
+                                        {teams.azul.map(name => <li key={name} className="font-medium">{name}</li>)}
+                                    </ul>
+                                </Card>
+                                 <Card className="p-4 bg-yellow-100 dark:bg-yellow-900/50">
+                                    <CardTitle className="text-yellow-600 dark:text-yellow-400 mb-2">Time Amarelo</CardTitle>
+                                    <ul className="space-y-1">
+                                        {teams.amarelo.map(name => <li key={name} className="font-medium">{name}</li>)}
+                                    </ul>
+                                </Card>
+                            </div>
+                        )}
+                    </CardContent>
+                    {teams && (
+                         <CardFooter>
+                            <Button onClick={() => setGameState('pre-game')} className="w-full" size="lg">
+                                Continuar para o Jogo
+                            </Button>
+                        </CardFooter>
+                    )}
                 </Card>
             </div>
         );
