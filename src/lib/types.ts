@@ -145,3 +145,11 @@ export interface SpinResult {
   date: string;
   source: 'automatic' | 'manual';
 }
+
+export type StarRating = Record<string, number>;
+export type StarRatingJustification = Record<string, {
+    id: string;
+    rating: number;
+    reason: string;
+    date: string;
+}[]>;

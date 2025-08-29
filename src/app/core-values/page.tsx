@@ -4,13 +4,14 @@
 import React, { useRef } from 'react';
 import html2camera from 'html2canvas';
 import CoreValuesTracker from "@/components/core-values/CoreValuesTracker";
-import { Heart, Gamepad2, Download } from "lucide-react";
+import { Heart, Gamepad2, Download, Star } from "lucide-react";
 import DrawingCanvas from "@/components/core-values/DrawingCanvas";
 import TicTacToe from "@/components/core-values/TicTacToe";
 import { useAuth, ADMIN_USERS } from "@/contexts/AuthContext";
 import MemoryGame from "@/components/core-values/MemoryGame";
 import FlappyBirdGame from "@/components/core-values/FlappyBirdGame";
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function CoreValuesPage() {
   const { username } = useAuth();
@@ -72,6 +73,15 @@ export default function CoreValuesPage() {
             </div>
             </div>
         )}
+      </div>
+
+       <div className="mt-8 text-center">
+          <Button asChild size="lg">
+              <Link href="/core-values/estrelinhas">
+                  <Star className="mr-2" />
+                  Acessar Estrelinhas
+              </Link>
+          </Button>
       </div>
     </div>
   );
