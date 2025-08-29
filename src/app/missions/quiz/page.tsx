@@ -7,10 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star, Shuffle, HelpCircle, FileText } from 'lucide-react';
+import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star, Shuffle, HelpCircle, FileText, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Helper to shuffle arrays
 const shuffle = <T,>(array: T[]): T[] => {
@@ -127,6 +128,7 @@ export default function MissionsQuizPage() {
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
     const [showCorrect, setShowCorrect] = useState(false);
+    const [isRulesOpen, setIsRulesOpen] = useState(false);
 
 
     const [gameState, setGameState] = useState<GameState>('loading');
@@ -213,7 +215,7 @@ export default function MissionsQuizPage() {
                 handleNextQuestion();
             }, 1500);
         } else {
-             // Don't show correct answer, just wait for Pass or Repass
+             setShowCorrect(false); 
              setGameState('pass-or-repass');
         }
     };
@@ -221,18 +223,16 @@ export default function MissionsQuizPage() {
     const handlePassRepass = (accepted: boolean) => {
         const otherTeam = currentTurn === 'azul' ? 'amarelo' : 'azul';
         if (accepted) {
-            // Team accepted, now they must answer
-            setIsAnswered(false); // Enable buttons for the other team
+            setIsAnswered(false);
             setSelectedAnswer(null);
             setCurrentTurn(otherTeam);
             setGameState('repass-answer');
         } else {
-            // Team passed, original team loses a point.
             const originalTeam = currentTurn!;
             setScores(prev => ({ ...prev, [originalTeam]: prev[originalTeam] - 1 }));
             setLastScoreChanges({ azul: null, amarelo: null, [originalTeam]: -1 });
-            setShowCorrect(true); // Now show the correct answer
-            setTimeout(handleNextQuestion, 1500); // Move to next after showing answer
+            setShowCorrect(true);
+            setTimeout(handleNextQuestion, 2000);
         }
     };
     
@@ -240,7 +240,7 @@ export default function MissionsQuizPage() {
          if (isAnswered) return;
          setSelectedAnswer(option);
          setIsAnswered(true);
-         setShowCorrect(true); // Show correct/incorrect feedback
+         setShowCorrect(true);
          const isCorrect = option === questions[currentQuestionIndex].correctAnswer;
          const teamThatRepassed = currentTurn!;
          const originalTeam = teamThatRepassed === 'azul' ? 'amarelo' : 'azul';
@@ -256,12 +256,13 @@ export default function MissionsQuizPage() {
             } else {
                 setScores(prev => ({ 
                     ...prev, 
-                    [teamThatRepassed]: prev[teamThatRepassed] - 1 
+                    [teamThatRepassed]: prev[teamThatRepassed] - 1,
+                    [originalTeam]: prev[originalTeam] - 1
                 }));
-                 setLastScoreChanges({ azul: null, amarelo: null, [teamThatRepassed]: -1 });
+                 setLastScoreChanges({ [teamThatRepassed]: -1, [originalTeam]: -1 });
             }
             handleNextQuestion();
-         }, 1500);
+         }, 2000);
     };
 
     const handleNextQuestion = () => {
@@ -272,13 +273,11 @@ export default function MissionsQuizPage() {
             setIsAnswered(false);
             setShowCorrect(false);
             
-            // Switch turn unless it was a repass (turn already switched)
             if (gameState !== 'pass-or-repass') {
                  setCurrentTurn(prev => prev === 'azul' ? 'amarelo' : 'azul');
             }
             setGameState('playing');
         } else {
-            // Game over
             if(scores.azul > scores.amarelo) setWinner('azul');
             else if (scores.amarelo > scores.azul) setWinner('amarelo');
             else setWinner('empate');
@@ -297,11 +296,10 @@ export default function MissionsQuizPage() {
     const startRoulette = () => {
         setGameState('spinning-roulette');
         const spinDuration = 3000;
-        const finalRotation = Math.random() * 360 + 360 * 3; // Spin at least 3 times
+        const finalRotation = Math.random() * 360 + 360 * 3;
         const resultTeam = Math.random() > 0.5 ? 'azul' : 'amarelo';
         
-        // Find the angle for the result
-        const resultAngle = resultTeam === 'azul' ? 0 : 180; // Assuming azul is at 0, amarelo at 180
+        const resultAngle = resultTeam === 'azul' ? 0 : 180;
         const finalAngle = finalRotation - (finalRotation % 360) + resultAngle + (Math.random() * 120 - 60);
 
         setRouletteRotation(finalAngle);
@@ -345,6 +343,7 @@ export default function MissionsQuizPage() {
     
     if (gameState === 'team-selection') {
         return (
+            <>
             <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center text-center">
                 <Card className="w-full max-w-2xl p-8">
                     <CardHeader>
@@ -362,8 +361,8 @@ export default function MissionsQuizPage() {
                                     <Button onClick={handleTeamShuffle} size="lg" className="w-full">
                                         <Shuffle className="mr-2" /> Sortear Times
                                     </Button>
-                                    <Button size="lg" className="w-full" variant="outline" disabled>
-                                        <FileText className="mr-2" /> Regras do Jogo (Em breve)
+                                    <Button size="lg" className="w-full" variant="outline" onClick={() => setIsRulesOpen(true)}>
+                                        <BookOpen className="mr-2" /> Regras do Jogo
                                     </Button>
                                 </div>
                             </div>
@@ -393,6 +392,49 @@ export default function MissionsQuizPage() {
                     )}
                 </Card>
             </div>
+             <Dialog open={isRulesOpen} onOpenChange={setIsRulesOpen}>
+                <DialogContent className="sm:max-w-xl">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl text-center">Regras do Passa ou Repassa</DialogTitle>
+                    </DialogHeader>
+                    <div className="prose dark:prose-invert max-h-[70vh] overflow-y-auto p-4 space-y-4">
+                        <p>Bem-vindos ao Passa ou Repassa das Missões! O objetivo é testar seus conhecimentos sobre o tapete da temporada.</p>
+                        
+                        <h3 className="font-bold">Início do Jogo</h3>
+                        <ul className="list-disc list-outside space-y-1 pl-4">
+                           <li>O jogo começa com um sorteio aleatório para formar os <strong>Times Azul e Amarelo</strong>.</li>
+                           <li>Em seguida, uma roleta define qual time começará a primeira rodada.</li>
+                        </ul>
+
+                         <h3 className="font-bold">Pontuação</h3>
+                        <ul className="list-disc list-outside space-y-1 pl-4">
+                           <li>Cada resposta correta na sua vez vale <strong>+1 ponto</strong>.</li>
+                        </ul>
+
+                        <h3 className="font-bold">Se o seu time errar...</h3>
+                        <p>A pergunta é passada para o time adversário. O time adversário tem duas opções:</p>
+                        <ol className="list-decimal list-outside space-y-2 pl-4">
+                           <li>
+                                <strong>REPASSAR (Não responder)</strong>: 
+                                <ul className="list-disc list-outside space-y-1 pl-6 mt-1">
+                                     <li>Seu time (que errou primeiro) perde <strong>-1 ponto</strong>.</li>
+                                     <li>Ninguém responde e o jogo segue para a próxima pergunta.</li>
+                                </ul>
+                           </li>
+                           <li>
+                                <strong>ACEITAR E RESPONDER</strong>:
+                                <ul className="list-disc list-outside space-y-1 pl-6 mt-1">
+                                    <li>Se o time adversário <strong>acertar</strong>, ele ganha <strong>+1 ponto</strong> e seu time perde <strong>-1 ponto</strong>.</li>
+                                    <li>Se o time adversário <strong>errar</strong>, ambos os times perdem <strong>-1 ponto</strong>.</li>
+                                </ul>
+                           </li>
+                        </ol>
+                        
+                        <p className="font-bold text-center pt-4">Boa sorte e que vença o melhor!</p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+            </>
         );
     }
     
@@ -545,7 +587,7 @@ export default function MissionsQuizPage() {
                              <Button size="lg" variant="destructive" onClick={() => handlePassRepass(false)}>Não, vamos passar.</Button>
                         </CardContent>
                         <CardFooter className="text-xs text-muted-foreground pt-4 justify-center">
-                            Se aceitar e errar, vocês perdem 1 ponto. Se acertar, ganham 1 ponto e o outro time perde 1. Se passar, o outro time perde 1 ponto.
+                            Se aceitar e errar, ambos perdem 1 ponto. Se acertar, você ganha 1 e o outro time perde 1. Se passar, o outro time perde 1 ponto.
                         </CardFooter>
                      </Card>
                  )}
