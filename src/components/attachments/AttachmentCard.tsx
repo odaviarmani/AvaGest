@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -30,7 +31,7 @@ export default function AttachmentCard({ attachment, onEdit, onDelete }: Attachm
     const { name, runExit, missions, points, avgTime, swapTime, precision, imageUrl } = attachment;
 
     return (
-        <Card className="flex flex-col">
+        <Card className="flex flex-col transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
             <CardHeader className="flex-row items-start justify-between">
                  <div className="flex flex-col">
                     <CardTitle>{name}</CardTitle>

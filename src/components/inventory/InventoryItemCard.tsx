@@ -20,7 +20,7 @@ export default function InventoryItemCard({ item, onEdit, onDelete }: InventoryI
     const { name, category, quantity, location } = item;
 
     return (
-        <Card className="flex flex-col justify-between">
+        <Card className="flex flex-col justify-between transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
             <CardHeader className="flex-row items-start justify-between pb-4">
                  <div className="space-y-1">
                     <CardTitle className="text-base leading-tight">{name}</CardTitle>
