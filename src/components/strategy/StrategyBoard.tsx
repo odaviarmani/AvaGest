@@ -2,12 +2,11 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle, File, Code, Share2 } from 'lucide-react';
+import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle, File } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import Image from 'next/image';
 import StrategySteps from './StrategySteps';
@@ -625,7 +624,7 @@ export default function StrategyBoard() {
 
 
   return (
-    <div className="w-full">
+    <div className="w-full flex-1 flex flex-col">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
              <div className="lg:col-span-3 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
                 {isClient && mapImage ? (
@@ -673,114 +672,99 @@ export default function StrategyBoard() {
             <div className="lg:col-span-1">
                  <Card className="w-full shrink-0">
                     <CardContent className="p-4">
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                            <TabsList className="grid w-full grid-cols-3">
-                                {Array.from({ length: NUM_SAIDAS }, (_, i) => (
-                                <TabsTrigger key={i + 1} value={`saida-${i + 1}`}>
+                        <RadioGroup value={activeTab} onValueChange={setActiveTab} className="grid w-full grid-cols-3 gap-2 mb-4">
+                             {Array.from({ length: NUM_SAIDAS }, (_, i) => (
+                                <Label key={i + 1} htmlFor={`saida-${i + 1}`} className="border rounded-md p-2 text-center text-sm font-medium cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                    <RadioGroupItem value={`saida-${i + 1}`} id={`saida-${i + 1}`} className="sr-only"/>
                                     Saída {i + 1}
-                                </TabsTrigger>
-                                ))}
-                            </TabsList>
+                                </Label>
+                            ))}
+                        </RadioGroup>
                             
-                            <div className="p-1 pt-4 space-y-6">
-                                <div>
-                                    <Label className="text-base font-semibold">Ferramenta</Label>
-                                    <RadioGroup value={drawingTool} onValueChange={(v) => setDrawingTool(v as DrawingTool)} className="grid grid-cols-2 gap-2 mt-2">
-                                        <Label htmlFor="tool-line" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
-                                            <RadioGroupItem value="line" id="tool-line" className="sr-only"/>
-                                            <MousePointer className="w-4 h-4"/> Linha
-                                        </Label>
-                                        <Label htmlFor="tool-circle" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
-                                            <RadioGroupItem value="circle" id="tool-circle" className="sr-only"/>
-                                            <Circle className="w-4 h-4"/> Círculo
-                                        </Label>
-                                    </RadioGroup>
-                                </div>
-
-                                <div>
-                                    <Label className="text-base font-semibold">Cor do Pincel</Label>
-                                    <RadioGroup value={color} onValueChange={setColor} className="grid grid-cols-4 gap-2 mt-2">
-                                        {COLORS.map(c => (
-                                            <div key={c.value} className="flex items-center">
-                                                <RadioGroupItem value={c.value} id={c.value} className="sr-only" />
-                                                <Label htmlFor={c.value} className="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer" style={{ backgroundColor: c.value, 'boxShadow': color === c.value ? `0 0 0 3px ${c.value}` : 'none' }}></Label>
-                                            </div>
-                                        ))}
-                                    </RadioGroup>
-                                </div>
-                                
-                                <div>
-                                    <Label htmlFor="lineWidth" className="text-base font-semibold">
-                                        Espessura: {lineWidth}px
+                        <div className="p-1 pt-4 space-y-6">
+                            <div>
+                                <Label className="text-base font-semibold">Ferramenta</Label>
+                                <RadioGroup value={drawingTool} onValueChange={(v) => setDrawingTool(v as DrawingTool)} className="grid grid-cols-2 gap-2 mt-2">
+                                    <Label htmlFor="tool-line" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                        <RadioGroupItem value="line" id="tool-line" className="sr-only"/>
+                                        <MousePointer className="w-4 h-4"/> Linha
                                     </Label>
-                                    <Slider
-                                        id="lineWidth"
-                                        value={[lineWidth]}
-                                        onValueChange={(val) => setLineWidth(val[0])}
-                                        min={1}
-                                        max={20}
-                                        step={1}
-                                        className="mt-2"
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
-                                        <Undo className="mr-2 h-4 w-4"/> Desfazer
-                                    </Button>
-                                    <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length)}>
-                                        <Redo className="mr-2 h-4 w-4"/> Refazer
-                                    </Button>
-                                </div>
-                                
-                                <Button variant="destructive" onClick={clearCanvas} className="w-full" disabled={!mapImage}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Limpar Desenho
-                                </Button>
-
-                                <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
-                                    <Download className="mr-2 h-4 w-4" />
-                                    Baixar Desenho e Código
-                                </Button>
-
-                                {mapImage && (
-                                    <Button variant="secondary" onClick={() => {
-                                        setMapImage(null);
-                                        localStorage.removeItem('strategyMapImage');
-                                        const { history, steps } = initialHistory();
-                                        historyRef.current = history;
-                                        currentStepRef.current = steps;
-                                        saveData();
-                                        drawMainCanvas();
-                                    }} className="w-full mt-2">
-                                        <Upload className="mr-2 h-4 w-4" />
-                                        Trocar Imagem
-                                    </Button>
-                                )}
+                                    <Label htmlFor="tool-circle" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                        <RadioGroupItem value="circle" id="tool-circle" className="sr-only"/>
+                                        <Circle className="w-4 h-4"/> Círculo
+                                    </Label>
+                                </RadioGroup>
                             </div>
 
-                            {Array.from({ length: NUM_SAIDAS }, (_, i) => (
-                                <TabsContent key={i + 1} value={`saida-${i + 1}`} />
-                            ))}
-                        </Tabs>
+                            <div>
+                                <Label className="text-base font-semibold">Cor do Pincel</Label>
+                                <RadioGroup value={color} onValueChange={setColor} className="grid grid-cols-4 gap-2 mt-2">
+                                    {COLORS.map(c => (
+                                        <div key={c.value} className="flex items-center">
+                                            <RadioGroupItem value={c.value} id={c.value} className="sr-only" />
+                                            <Label htmlFor={c.value} className="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer" style={{ backgroundColor: c.value, 'boxShadow': color === c.value ? `0 0 0 3px ${c.value}` : 'none' }}></Label>
+                                        </div>
+                                    ))}
+                                </RadioGroup>
+                            </div>
+                            
+                            <div>
+                                <Label htmlFor="lineWidth" className="text-base font-semibold">
+                                    Espessura: {lineWidth}px
+                                </Label>
+                                <Slider
+                                    id="lineWidth"
+                                    value={[lineWidth]}
+                                    onValueChange={(val) => setLineWidth(val[0])}
+                                    min={1}
+                                    max={20}
+                                    step={1}
+                                    className="mt-2"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
+                                    <Undo className="mr-2 h-4 w-4"/> Desfazer
+                                </Button>
+                                <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length)}>
+                                    <Redo className="mr-2 h-4 w-4"/> Refazer
+                                </Button>
+                            </div>
+                            
+                            <Button variant="destructive" onClick={clearCanvas} className="w-full" disabled={!mapImage}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Limpar Desenho
+                            </Button>
+
+                            <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Baixar Desenho e Código
+                            </Button>
+
+                            {mapImage && (
+                                <Button variant="secondary" onClick={() => {
+                                    setMapImage(null);
+                                    localStorage.removeItem('strategyMapImage');
+                                    const { history, steps } = initialHistory();
+                                    historyRef.current = history;
+                                    currentStepRef.current = steps;
+                                    saveData();
+                                    drawMainCanvas();
+                                }} className="w-full mt-2">
+                                    <Upload className="mr-2 h-4 w-4" />
+                                    Trocar Imagem
+                                </Button>
+                            )}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
         </div>
         
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Tabs defaultValue="pseudocode" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="pseudocode"><Code className="mr-2"/>Pseudocódigo</TabsTrigger>
-                    <TabsTrigger value="flowchart"><Share2 className="mr-2"/>Fluxograma</TabsTrigger>
-                </TabsList>
-                <TabsContent value="pseudocode">
-                    <StrategySteps instructions={instructions} />
-                </TabsContent>
-                <TabsContent value="flowchart">
-                    <StrategyFlowchart instructions={instructions} />
-                </TabsContent>
-            </Tabs>
+        <div className="mt-8 grid grid-cols-1 xl:grid-cols-2 gap-8 flex-1">
+             <StrategySteps instructions={instructions} />
+             <StrategyFlowchart instructions={instructions} />
         </div>
 
 

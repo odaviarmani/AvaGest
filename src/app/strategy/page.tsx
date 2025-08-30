@@ -12,7 +12,7 @@ export default function StrategyPage() {
           Planeje e visualize as estratégias de jogo desenhando sobre o mapa e gerando o pseudocódigo e o fluxograma.
         </p>
       </header>
-      <div className="flex-1 flex">
+      <div className="flex-1 flex flex-col">
         <StrategyBoard />
       </div>
     </div>
