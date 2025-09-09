@@ -11,10 +11,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 const LOCALSTORAGE_KEYS = [
     'kanbanTasks',
+    'missions',
+    'robotTests',
     'customRoulettes',
     'pairingRouletteHistory',
     'decodeEvaluations',
     'coreValuesTeams',
+    'starRatings',
+    'starRatingJustifications',
     'drawingCanvasState',
     'ticTacToeState',
     'memoryGameState',
@@ -32,10 +36,13 @@ const LOCALSTORAGE_KEYS = [
     'attachments',
     'activityLog',
     'inventoryItems',
+    'missionAnalysisData_v2'
 ];
 
 const ARRAY_KEYS_TO_MERGE = [
     'kanbanTasks',
+    'missions',
+    'robotTests',
     'customRoulettes',
     'pairingRouletteHistory',
     'decodeEvaluations',
@@ -46,6 +53,8 @@ const ARRAY_KEYS_TO_MERGE = [
     'attachments',
     'activityLog',
     'inventoryItems',
+    'missionAnalysisData_v2',
+    'starRatingJustifications'
 ];
 
 
@@ -269,3 +278,5 @@ export default function BackupPage() {
         </div>
     );
 }
+
+    

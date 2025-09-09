@@ -25,7 +25,7 @@ const COLORS = [
     { value: "#ec4899", label: "Rosa" },
     { value: "#14b8a6", label: "Ciano" },
 ];
-const NUM_SAIDAS = 6;
+const NUM_SAIDAS = 10;
 const MAT_WIDTH_CM = 240;
 
 type DrawingTool = 'line' | 'circle';
@@ -672,11 +672,11 @@ export default function StrategyBoard() {
             <div className="lg:col-span-1">
                  <Card className="w-full shrink-0">
                     <CardContent className="p-4">
-                        <RadioGroup value={activeTab} onValueChange={setActiveTab} className="grid w-full grid-cols-3 gap-2 mb-4">
+                        <RadioGroup value={activeTab} onValueChange={setActiveTab} className="grid w-full grid-cols-5 gap-2 mb-4">
                              {Array.from({ length: NUM_SAIDAS }, (_, i) => (
                                 <Label key={i + 1} htmlFor={`saida-${i + 1}`} className="border rounded-md p-2 text-center text-sm font-medium cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
                                     <RadioGroupItem value={`saida-${i + 1}`} id={`saida-${i + 1}`} className="sr-only"/>
-                                    Saída {i + 1}
+                                    S{i + 1}
                                 </Label>
                             ))}
                         </RadioGroup>
@@ -771,7 +771,7 @@ export default function StrategyBoard() {
         {isClient && mapImage && (
             <div className="mt-12 w-full">
                 <h2 className="text-2xl font-bold mb-4 text-center">Recursos das Saídas</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                     {Array.from({ length: NUM_SAIDAS }, (_, i) => {
                         const saidaKey = `saida-${i + 1}`;
                         return (
@@ -784,3 +784,5 @@ export default function StrategyBoard() {
     </div>
   );
 }
+
+    
