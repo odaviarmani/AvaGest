@@ -13,6 +13,7 @@ import { Label } from '../ui/label';
 import { SpinResult } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 
 const NAMES = ["Davi", "Carol", "Lorenzo", "Thiago", "Miguel", "Italo"];
@@ -37,7 +38,15 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
         { p1: '', p2: '', area: '' },
         { p1: '', p2: '', area: '' },
     ]);
+    const [customDateTime, setCustomDateTime] = useState('');
     const { toast } = useToast();
+
+    useEffect(() => {
+        // Set default value to current date and time in local timezone
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        setCustomDateTime(now.toISOString().slice(0, 16));
+    }, []);
 
     const handleSave = () => {
         const assignedNames = new Set(pairs.flatMap(p => [p.p1, p.p2]).filter(Boolean));
@@ -50,13 +59,24 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
             return;
         }
 
+         if (!customDateTime) {
+            toast({
+                variant: 'destructive',
+                title: 'Data e Hora Inválidas',
+                description: 'Por favor, selecione uma data e hora para o sorteio.',
+            });
+            return;
+        }
+
+        const formattedDate = format(new Date(customDateTime), "dd/MM/yyyy HH:mm");
+
         const newResult: SpinResult = {
             id: crypto.randomUUID(),
             pairs: pairs.map(p => ({
                 pair: [p.p1, p.p2] as [string, string],
                 area: p.area,
             })),
-            date: new Date().toLocaleString('pt-BR'),
+            date: formattedDate,
             source: 'manual',
         };
         onSave(newResult);
@@ -87,7 +107,7 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
                         <div>
                              <Label htmlFor={`p1-${index}`}>Dupla {index + 1} (1)</Label>
                              <Select value={pair.p1} onValueChange={(val) => { const newPairs = [...pairs]; newPairs[index].p1 = val; setPairs(newPairs);}}>
-                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                <SelectTrigger id={`p1-${index}`}><SelectValue/></SelectTrigger>
                                 <SelectContent>
                                     {getAvailableNames(index, 'p1').map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
                                 </SelectContent>
@@ -96,7 +116,7 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
                         <div>
                             <Label htmlFor={`p2-${index}`}>Dupla {index + 1} (2)</Label>
                              <Select value={pair.p2} onValueChange={(val) => { const newPairs = [...pairs]; newPairs[index].p2 = val; setPairs(newPairs);}}>
-                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                <SelectTrigger id={`p2-${index}`}><SelectValue/></SelectTrigger>
                                 <SelectContent>
                                     {getAvailableNames(index, 'p2').map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
                                 </SelectContent>
@@ -105,7 +125,7 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
                          <div>
                             <Label htmlFor={`area-${index}`}>Área</Label>
                              <Select value={pair.area} onValueChange={(val) => { const newPairs = [...pairs]; newPairs[index].area = val; setPairs(newPairs);}}>
-                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                <SelectTrigger id={`area-${index}`}><SelectValue/></SelectTrigger>
                                 <SelectContent>
                                     {AREAS.map(area => <SelectItem key={area} value={area}>{area}</SelectItem>)}
                                 </SelectContent>
@@ -113,6 +133,15 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
                         </div>
                     </div>
                 ))}
+                 <div className="pt-2">
+                    <Label htmlFor="datetime-manual">Data e Hora do Sorteio</Label>
+                    <Input
+                        id="datetime-manual"
+                        type="datetime-local"
+                        value={customDateTime}
+                        onChange={(e) => setCustomDateTime(e.target.value)}
+                    />
+                </div>
             </CardContent>
             <CardFooter>
                  <Button className="w-full" onClick={handleSave}>
@@ -265,3 +294,5 @@ export default function PairingRoulette() {
     </div>
   );
 }
+
+    
