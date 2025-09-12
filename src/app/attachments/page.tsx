@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import html2camera from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Download } from 'lucide-react';
@@ -114,6 +114,32 @@ export default function AttachmentsPage() {
         }
     };
 
+    const groupedAttachments = useMemo(() => {
+        const groups: { [key: string]: Attachment[] } = {
+            'Estratégia 1': [],
+            'Estratégia 2': [],
+            'Outros': [],
+        };
+
+        attachments.forEach(attachment => {
+            const nameLower = attachment.name.toLowerCase();
+            let added = false;
+            if (nameLower.includes('estrategia 1') || nameLower.includes('estratégia 1')) {
+                groups['Estratégia 1'].push(attachment);
+                added = true;
+            }
+            if (nameLower.includes('estrategia 2') || nameLower.includes('estratégia 2')) {
+                groups['Estratégia 2'].push(attachment);
+                added = true;
+            }
+            if (!added) {
+                groups['Outros'].push(attachment);
+            }
+        });
+
+        return groups;
+    }, [attachments]);
+
 
     return (
         <div className="flex-1 p-4 md:p-8">
@@ -136,30 +162,50 @@ export default function AttachmentsPage() {
                 </div>
             </header>
 
-            <div ref={printRef}>
-            {isClient && attachments.length > 0 ? (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {attachments.map(attachment => (
-                        <AttachmentCard 
-                            key={attachment.id} 
-                            attachment={attachment}
-                            onEdit={() => handleOpenDialog(attachment)}
-                            onDelete={() => handleDeleteRequest(attachment.id)}
-                        />
-                    ))}
-                </div>
-            ) : (
-                <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[50vh]">
-                    <div className="flex flex-col items-center gap-1 text-center">
-                    <h3 className="text-2xl font-bold tracking-tight">
-                        Nenhum anexo encontrado
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                        Comece adicionando anexos para vê-los listados aqui.
-                    </p>
+            <div ref={printRef} className="space-y-12">
+                {isClient && attachments.length > 0 ? (
+                    Object.entries(groupedAttachments).map(([strategy, items]) => {
+                        if (items.length === 0) return null;
+                        return (
+                            <section key={strategy}>
+                                <h2 className="text-2xl font-bold mb-4 border-b pb-2">{strategy}</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                    {items.map(attachment => (
+                                        <AttachmentCard
+                                            key={attachment.id}
+                                            attachment={attachment}
+                                            onEdit={() => handleOpenDialog(attachment)}
+                                            onDelete={() => handleDeleteRequest(attachment.id)}
+                                        />
+                                    ))}
+                                </div>
+                            </section>
+                        );
+                    })
+                ) : (
+                    <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[50vh]">
+                        <div className="flex flex-col items-center gap-1 text-center">
+                            <h3 className="text-2xl font-bold tracking-tight">
+                                Nenhum anexo encontrado
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                                Comece adicionando anexos para vê-los listados aqui.
+                            </p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+                {isClient && attachments.length > 0 && Object.values(groupedAttachments).every(arr => arr.length === 0) && (
+                    <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[50vh]">
+                         <div className="flex flex-col items-center gap-1 text-center">
+                            <h3 className="text-2xl font-bold tracking-tight">
+                                Nenhum anexo encontrado
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                                Comece adicionando anexos para vê-los listados aqui.
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-[480px]">
