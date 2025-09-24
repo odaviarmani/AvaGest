@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -56,6 +57,19 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                                 </FormItem>
                             )}
                         />
+
+                         <FormField
+                            control={form.control}
+                            name="category"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Categoria</FormLabel>
+                                    <FormControl><Input placeholder="Ex: Estratégia 1" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
 
                          <FormField
                             control={form.control}
@@ -140,7 +154,7 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                                     <FormControl>
                                         <Input 
                                             type="file" 
-                                            accept="image/png" 
+                                            accept="image/png,image/jpeg,image/webp" 
                                             onChange={handleImageUpload}
                                             disabled={isUploading}
                                         />

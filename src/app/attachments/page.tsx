@@ -33,15 +33,8 @@ export default function AttachmentsPage() {
 
     useEffect(() => {
         if (isClient) {
-            const attachmentsToStore = attachments.map(a => {
-                const { imageUrl, ...rest } = a;
-                if (imageUrl && imageUrl.startsWith('data:image')) {
-                    return rest;
-                }
-                return a;
-            });
             try {
-                localStorage.setItem('attachments', JSON.stringify(attachmentsToStore));
+                localStorage.setItem('attachments', JSON.stringify(attachments));
             } catch (error) {
                 console.error("Failed to save attachments to localStorage:", error);
                 toast({
@@ -72,6 +65,7 @@ export default function AttachmentsPage() {
         setEditingAttachment(attachment ? attachment : {
             id: crypto.randomUUID(),
             name: '',
+            category: 'Estratégia 1',
             runExit: '',
             missions: '',
             points: 0,
@@ -115,29 +109,14 @@ export default function AttachmentsPage() {
     };
 
     const groupedAttachments = useMemo(() => {
-        const groups: { [key: string]: Attachment[] } = {
-            'Estratégia 1': [],
-            'Estratégia 2': [],
-            'Outros': [],
-        };
-
-        attachments.forEach(attachment => {
-            const nameLower = attachment.name.toLowerCase();
-            let added = false;
-            if (nameLower.includes('estrategia 1') || nameLower.includes('estratégia 1')) {
-                groups['Estratégia 1'].push(attachment);
-                added = true;
+        return attachments.reduce((acc, item) => {
+            const category = item.category || 'Sem Categoria';
+            if (!acc[category]) {
+                acc[category] = [];
             }
-            if (nameLower.includes('estrategia 2') || nameLower.includes('estratégia 2')) {
-                groups['Estratégia 2'].push(attachment);
-                added = true;
-            }
-            if (!added) {
-                groups['Outros'].push(attachment);
-            }
-        });
-
-        return groups;
+            acc[category].push(item);
+            return acc;
+        }, {} as Record<string, Attachment[]>);
     }, [attachments]);
 
 
@@ -164,11 +143,11 @@ export default function AttachmentsPage() {
 
             <div ref={printRef} className="space-y-12">
                 {isClient && attachments.length > 0 ? (
-                    Object.entries(groupedAttachments).map(([strategy, items]) => {
+                    Object.entries(groupedAttachments).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => {
                         if (items.length === 0) return null;
                         return (
-                            <section key={strategy}>
-                                <h2 className="text-2xl font-bold mb-4 border-b pb-2">{strategy}</h2>
+                            <section key={category}>
+                                <h2 className="text-2xl font-bold mb-4 border-b pb-2">{category}</h2>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                     {items.map(attachment => (
                                         <AttachmentCard
@@ -194,14 +173,14 @@ export default function AttachmentsPage() {
                         </div>
                     </div>
                 )}
-                {isClient && attachments.length > 0 && Object.values(groupedAttachments).every(arr => arr.length === 0) && (
+                 {isClient && attachments.length > 0 && Object.values(groupedAttachments).every(arr => arr.length === 0) && (
                     <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[50vh]">
                          <div className="flex flex-col items-center gap-1 text-center">
                             <h3 className="text-2xl font-bold tracking-tight">
                                 Nenhum anexo encontrado
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                                Comece adicionando anexos para vê-los listados aqui.
+                                As categorias que você criar aparecerão aqui.
                             </p>
                         </div>
                     </div>

@@ -23,6 +23,7 @@ export type Status = typeof statuses[number];
 export const attachmentSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'O nome é obrigatório'),
+    category: z.string().min(1, 'A categoria é obrigatória.'),
     runExit: z.string().min(1, 'A saída é obrigatória'),
     missions: z.string().min(1, 'As missões são obrigatórias'),
     points: z.coerce.number().min(0, 'Os pontos devem ser positivos'),
