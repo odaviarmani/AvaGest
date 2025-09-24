@@ -33,6 +33,7 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
             avgTime: 0,
             swapTime: 0,
             precision: 100,
+            evolution: [],
         },
     });
 
@@ -112,3 +113,4 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
         </Form>
     );
 }
+

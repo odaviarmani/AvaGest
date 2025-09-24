@@ -4,20 +4,85 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import html2camera from 'html2canvas';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Download, Copy } from 'lucide-react';
-import { Attachment } from '@/lib/types';
+import { PlusCircle, Download, Copy, TrendingUp } from 'lucide-react';
+import { Attachment, EvolutionEntry } from '@/lib/types';
 import AttachmentCard from '@/components/attachments/AttachmentCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import AttachmentForm from '@/components/attachments/AttachmentForm';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useForm } from 'react-hook-form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { evolutionEntrySchema } from '@/lib/types';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+const EvolutionForm = ({ 
+    attachmentName, 
+    onSave, 
+    onCancel 
+} : {
+    attachmentName: string;
+    onSave: (data: Omit<EvolutionEntry, 'date'>) => void;
+    onCancel: () => void;
+}) => {
+    const form = useForm({
+        resolver: zodResolver(evolutionEntrySchema.omit({ date: true })),
+        defaultValues: {
+            points: 0,
+            precision: 100,
+            avgTime: 0,
+        },
+    });
+
+    const onSubmit = (data: Omit<EvolutionEntry, 'date'>) => {
+        onSave(data);
+    };
+
+    return (
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+                 <ScrollArea className="h-auto max-h-[60vh] pr-6">
+                    <div className="space-y-4">
+                         <DialogHeader>
+                            <DialogTitle>Registrar Evolução para "{attachmentName}"</DialogTitle>
+                            <DialogDescription>
+                                Insira os novos dados de desempenho para esta versão do anexo. O estado atual será salvo no histórico.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField control={form.control} name="points" render={({ field }) => (
+                                <FormItem><FormLabel>Pontos</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <FormField control={form.control} name="precision" render={({ field }) => (
+                                <FormItem><FormLabel>Precisão (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                        </div>
+                        <FormField control={form.control} name="avgTime" render={({ field }) => (
+                            <FormItem><FormLabel>Tempo Médio (s)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
+                    </div>
+                </ScrollArea>
+                <div className="flex justify-end gap-2 pt-6">
+                    <Button type="button" variant="ghost" onClick={onCancel}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit">Salvar Evolução</Button>
+                </div>
+            </form>
+        </Form>
+    )
+};
 
 
 export default function AttachmentsPage() {
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [isClient, setIsClient] = useState(false);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isFormOpen, setIsFormOpen] = useState(false);
+    const [isEvolutionFormOpen, setIsEvolutionFormOpen] = useState(false);
     const [editingAttachment, setEditingAttachment] = useState<Attachment | null>(null);
+    const [evolvingAttachment, setEvolvingAttachment] = useState<Attachment | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
     const { toast } = useToast();
@@ -72,8 +137,7 @@ export default function AttachmentsPage() {
             }
             groups[category].push(attachment);
         });
-
-        // Sort categories alphabetically
+        
         return Object.keys(groups)
             .sort((a, b) => a.localeCompare(b))
             .reduce((acc, key) => {
@@ -83,15 +147,25 @@ export default function AttachmentsPage() {
             
     }, [attachments, isClient]);
 
-    const handleOpenDialog = (attachment: Attachment | null) => {
+    const handleOpenForm = (attachment: Attachment | null) => {
         setEditingAttachment(attachment);
-        setIsDialogOpen(true);
+        setIsFormOpen(true);
     };
 
-    const handleCloseDialog = () => {
+    const handleCloseForm = () => {
         setEditingAttachment(null);
-        setIsDialogOpen(false);
+        setIsFormOpen(false);
     };
+    
+    const handleOpenEvolutionForm = (attachment: Attachment) => {
+        setEvolvingAttachment(attachment);
+        setIsEvolutionFormOpen(true);
+    };
+    
+    const handleCloseEvolutionForm = () => {
+        setEvolvingAttachment(null);
+        setIsEvolutionFormOpen(false);
+    }
 
     const handleSaveAttachment = (data: Attachment) => {
         if (attachments.some(a => a.id === data.id)) {
@@ -101,7 +175,30 @@ export default function AttachmentsPage() {
             setAttachments([...attachments, data]);
             toast({ title: "Anexo adicionado!", description: `O anexo "${data.name}" foi criado.` });
         }
-        handleCloseDialog();
+        handleCloseForm();
+    };
+
+    const handleSaveEvolution = (data: Omit<EvolutionEntry, 'date'>) => {
+        if (!evolvingAttachment) return;
+        
+        const currentState: EvolutionEntry = {
+            date: new Date().toISOString(),
+            points: evolvingAttachment.points,
+            precision: evolvingAttachment.precision,
+            avgTime: evolvingAttachment.avgTime,
+        };
+
+        const updatedAttachment: Attachment = {
+            ...evolvingAttachment,
+            points: data.points,
+            precision: data.precision,
+            avgTime: data.avgTime,
+            evolution: [...(evolvingAttachment.evolution || []), currentState]
+        };
+
+        setAttachments(attachments.map(a => a.id === updatedAttachment.id ? updatedAttachment : a));
+        toast({ title: "Evolução registrada!", description: `O anexo "${updatedAttachment.name}" foi atualizado.`});
+        handleCloseEvolutionForm();
     };
 
     const handleDeleteRequest = (attachmentId: string) => {
@@ -143,7 +240,7 @@ export default function AttachmentsPage() {
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button onClick={() => handleOpenDialog(null)}>
+                    <Button onClick={() => handleOpenForm(null)}>
                         <PlusCircle className="mr-2" />
                         Adicionar Anexo
                     </Button>
@@ -164,9 +261,10 @@ export default function AttachmentsPage() {
                                     <AttachmentCard
                                         key={attachment.id}
                                         attachment={attachment}
-                                        onEdit={() => handleOpenDialog(attachment)}
+                                        onEdit={() => handleOpenForm(attachment)}
                                         onDelete={() => handleDeleteRequest(attachment.id)}
                                         onDuplicate={() => handleDuplicate(attachment.id)}
+                                        onEvolve={() => handleOpenEvolutionForm(attachment)}
                                     />
                                 ))}
                             </div>
@@ -185,20 +283,32 @@ export default function AttachmentsPage() {
                     </div>
                 )}
             </div>
-             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
                         <DialogTitle>{editingAttachment ? 'Editar Anexo' : 'Novo Anexo'}</DialogTitle>
                     </DialogHeader>
-                    {isDialogOpen && (
+                    {isFormOpen && (
                          <AttachmentForm
                             attachment={editingAttachment}
                             onSave={handleSaveAttachment}
-                            onCancel={handleCloseDialog}
+                            onCancel={handleCloseForm}
                         />
                     )}
                 </DialogContent>
             </Dialog>
+
+             <Dialog open={isEvolutionFormOpen} onOpenChange={setIsEvolutionFormOpen}>
+                <DialogContent className="sm:max-w-md">
+                     {evolvingAttachment && (
+                        <EvolutionForm 
+                            attachmentName={evolvingAttachment.name}
+                            onSave={handleSaveEvolution}
+                            onCancel={handleCloseEvolutionForm}
+                        />
+                     )}
+                </DialogContent>
+             </Dialog>
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>

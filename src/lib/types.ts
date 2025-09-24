@@ -20,6 +20,15 @@ export type Task = z.infer<typeof taskSchema>;
 export type Priority = Task['priority'];
 export type Status = typeof statuses[number];
 
+export const evolutionEntrySchema = z.object({
+    date: z.string(),
+    points: z.coerce.number().min(0, 'Os pontos devem ser positivos'),
+    precision: z.coerce.number().min(0).max(100, 'A precisão é de 0 a 100'),
+    avgTime: z.coerce.number().min(0, 'O tempo deve ser positivo'),
+});
+
+export type EvolutionEntry = z.infer<typeof evolutionEntrySchema>;
+
 export const attachmentSchema = z.object({
     id: z.string(),
     runExit: z.string().min(1, 'A saída é obrigatória'),
@@ -31,6 +40,7 @@ export const attachmentSchema = z.object({
     avgTime: z.coerce.number().min(0, 'O tempo deve ser positivo'),
     swapTime: z.coerce.number().min(0, 'O tempo de troca deve ser positivo'),
     precision: z.coerce.number().min(0).max(100, 'A precisão é de 0 a 100'),
+    evolution: z.array(evolutionEntrySchema).optional().default([]),
 });
 
 export type Attachment = z.infer<typeof attachmentSchema>;
