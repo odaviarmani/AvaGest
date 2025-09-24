@@ -10,142 +10,45 @@ import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import { Textarea } from '../ui/textarea';
-import { Separator } from '../ui/separator';
-import { Switch } from '../ui/switch';
-import { Label } from '../ui/label';
 
 interface AttachmentFormProps {
-    attachment: Attachment;
+    attachment: Attachment | null;
     onSave: (data: Attachment) => void;
     onCancel: () => void;
 }
 
-const AttachmentVersionFields = ({ versionNumber, control, setValue, isUploading }: any) => {
-    const prefix = `version${versionNumber}`;
-    const versionLabel = `Versão ${versionNumber}`;
+export default function AttachmentForm({ attachment, onSave, onCancel }: AttachmentFormProps) {
+    const [isUploading, setIsUploading] = useState(false);
+
+    const form = useForm<Attachment>({
+        resolver: zodResolver(attachmentSchema),
+        defaultValues: attachment || {
+            id: crypto.randomUUID(),
+            name: '',
+            runExit: '',
+            missions: '',
+            points: 0,
+            avgTime: 0,
+            swapTime: 0,
+            precision: 100,
+            imageUrl: null,
+        },
+    });
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setIsUploading(true);
             const reader = new FileReader();
             reader.onloadend = () => {
-                setValue(`${prefix}.imageUrl`, reader.result as string);
+                form.setValue('imageUrl', reader.result as string);
+                setIsUploading(false);
             };
             reader.readAsDataURL(file);
         }
     }
-
-
-    return (
-        <div className="space-y-4 p-4 border rounded-lg">
-             <h3 className="text-lg font-semibold">{versionLabel}</h3>
-             <FormField
-                control={control}
-                name={`${prefix}.name`}
-                render={({ field }: any) => (
-                    <FormItem>
-                        <FormLabel>Nome do Anexo ({versionLabel})</FormLabel>
-                        <FormControl><Input placeholder="Ex: Garra Dupla V1" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <FormField
-                control={control}
-                name={`${prefix}.missions`}
-                render={({ field }: any) => (
-                    <FormItem>
-                        <FormLabel>Quais missões realiza?</FormLabel>
-                        <FormControl><Textarea placeholder="Ex: M01, M05 e M13" {...field} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-            <div className="grid grid-cols-2 gap-4">
-                <FormField
-                    control={control}
-                    name={`${prefix}.points`}
-                    render={({ field }: any) => (
-                        <FormItem>
-                            <FormLabel>Pontos</FormLabel>
-                            <FormControl><Input type="number" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={control}
-                    name={`${prefix}.precision`}
-                    render={({ field }: any) => (
-                        <FormItem>
-                            <FormLabel>Taxa de Precisão (%)</FormLabel>
-                            <FormControl><Input type="number" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-                <FormField
-                    control={control}
-                    name={`${prefix}.avgTime`}
-                    render={({ field }: any) => (
-                        <FormItem>
-                            <FormLabel>Tempo Médio (s)</FormLabel>
-                            <FormControl><Input type="number" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={control}
-                    name={`${prefix}.swapTime`}
-                    render={({ field }: any) => (
-                        <FormItem>
-                            <FormLabel>Tempo de Troca (s)</FormLabel>
-                            <FormControl><Input type="number" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-             <FormField
-                control={control}
-                name={`${prefix}.imageUrl`}
-                render={({ field }: any) => (
-                    <FormItem>
-                        <FormLabel>Render do Anexo (PNG)</FormLabel>
-                        <FormControl>
-                            <Input
-                                type="file"
-                                accept="image/png,image/jpeg,image/webp"
-                                onChange={handleImageUpload}
-                                disabled={isUploading}
-                            />
-                        </FormControl>
-                        {isUploading && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
-                        {field.value && <img src={field.value} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded-md" />}
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-        </div>
-    )
-}
-
-export default function AttachmentForm({ attachment, onSave, onCancel }: AttachmentFormProps) {
-    const [isUploading, setIsUploading] = useState(false);
-    const [showVersion2, setShowVersion2] = useState(!!attachment.version2);
-
-    const form = useForm<Attachment>({
-        resolver: zodResolver(attachmentSchema),
-        defaultValues: attachment,
-    });
     
     const onSubmit = (data: Attachment) => {
-        if (!showVersion2) {
-            delete data.version2;
-        }
         onSave(data);
     };
 
@@ -156,11 +59,11 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                     <div className="space-y-4">
                         <FormField
                             control={form.control}
-                            name="category"
+                            name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Categoria / Pasta</FormLabel>
-                                    <FormControl><Input placeholder="Ex: Estratégia 1" {...field} /></FormControl>
+                                    <FormLabel>Nome do Anexo</FormLabel>
+                                    <FormControl><Input placeholder="Ex: Garra Dupla" {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -176,46 +79,85 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                                 </FormItem>
                             )}
                         />
-                        <Separator />
-                        
-                        <AttachmentVersionFields
-                            versionNumber={1}
+                         <FormField
                             control={form.control}
-                            setValue={form.setValue}
-                            isUploading={isUploading}
+                            name="missions"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Quais missões realiza?</FormLabel>
+                                    <FormControl><Textarea placeholder="Ex: M01, M05 e M13" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-
-                        <div className="flex items-center space-x-2 pt-4">
-                            <Switch
-                                id="add-version-2"
-                                checked={showVersion2}
-                                onCheckedChange={(checked) => {
-                                    setShowVersion2(checked)
-                                    if(checked && !form.getValues('version2')) {
-                                        form.setValue('version2', {
-                                            name: `${form.getValues('version1.name')} V2`,
-                                            missions: form.getValues('version1.missions'),
-                                            points: form.getValues('version1.points'),
-                                            avgTime: 0,
-                                            swapTime: 0,
-                                            precision: 100,
-                                            imageUrl: null,
-                                        })
-                                    }
-                                }}
-                            />
-                            <Label htmlFor="add-version-2">Adicionar Versão 2</Label>
-                        </div>
-                        
-                        {showVersion2 && (
-                            <AttachmentVersionFields
-                                versionNumber={2}
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
                                 control={form.control}
-                                setValue={form.setValue}
-                                isUploading={isUploading}
+                                name="points"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Pontos</FormLabel>
+                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                        )}
-
+                            <FormField
+                                control={form.control}
+                                name="precision"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Taxa de Precisão (%)</FormLabel>
+                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="avgTime"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tempo Médio (s)</FormLabel>
+                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="swapTime"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Tempo de Troca (s)</FormLabel>
+                                        <FormControl><Input type="number" {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                         <FormField
+                            control={form.control}
+                            name="imageUrl"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Render do Anexo (PNG)</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="file"
+                                            accept="image/png,image/jpeg,image/webp"
+                                            onChange={handleImageUpload}
+                                            disabled={isUploading}
+                                        />
+                                    </FormControl>
+                                    {isUploading && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
+                                    {field.value && <img src={field.value} alt="Preview" className="mt-2 w-32 h-32 object-cover rounded-md" />}
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
                 </ScrollArea>
 
