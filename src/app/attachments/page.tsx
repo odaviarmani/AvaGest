@@ -5,107 +5,19 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import html2camera from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Download, Copy, TrendingUp } from 'lucide-react';
-import { Attachment, EvolutionEntry } from '@/lib/types';
+import { Attachment } from '@/lib/types';
 import AttachmentCard from '@/components/attachments/AttachmentCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import AttachmentForm from '@/components/attachments/AttachmentForm';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { useForm } from 'react-hook-form';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { evolutionEntrySchema } from '@/lib/types';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import Image from 'next/image';
-
-const EvolutionForm = ({ 
-    attachmentName,
-    onSave, 
-    onCancel 
-} : {
-    attachmentName: string;
-    onSave: (data: Omit<EvolutionEntry, 'date'>) => void;
-    onCancel: () => void;
-}) => {
-    const form = useForm({
-        resolver: zodResolver(evolutionEntrySchema.omit({ date: true })),
-        defaultValues: {
-            points: 0,
-            precision: 100,
-            avgTime: 0,
-            imageUrl: null,
-        },
-    });
-    const [isUploading, setIsUploading] = useState(false);
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setIsUploading(true);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                form.setValue(`imageUrl`, reader.result as string, { shouldValidate: true });
-                setIsUploading(false);
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    const onSubmit = (data: Omit<EvolutionEntry, 'date'>) => {
-        onSave(data);
-    };
-
-    return (
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)}>
-                 <ScrollArea className="h-auto max-h-[70vh] pr-6">
-                    <div className="space-y-4">
-                         <DialogHeader>
-                            <DialogTitle>Registrar Evolução para "{attachmentName}"</DialogTitle>
-                            <DialogDescription>
-                                Insira os novos dados de desempenho e a nova imagem para esta versão do anexo. O estado atual será salvo no histórico.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid grid-cols-2 gap-4">
-                            <FormField control={form.control} name="points" render={({ field }) => (
-                                <FormItem><FormLabel>Pontos</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <FormField control={form.control} name="precision" render={({ field }) => (
-                                <FormItem><FormLabel>Precisão (%)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                        </div>
-                        <FormField control={form.control} name="avgTime" render={({ field }) => (
-                            <FormItem><FormLabel>Tempo Médio (s)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                         <FormItem><FormLabel>Nova Imagem (Opcional)</FormLabel>
-                        <FormControl>
-                            <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
-                        </FormControl>
-                        {isUploading && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
-                        {form.watch('imageUrl') && <Image src={form.watch('imageUrl')!} alt="Preview" width={200} height={112} className="mt-2 w-full h-auto object-cover rounded-md" unoptimized />}
-                        <FormMessage /></FormItem>
-                    </div>
-                </ScrollArea>
-                <div className="flex justify-end gap-2 pt-6">
-                    <Button type="button" variant="ghost" onClick={onCancel}>
-                        Cancelar
-                    </Button>
-                    <Button type="submit" disabled={isUploading}>Salvar Evolução</Button>
-                </div>
-            </form>
-        </Form>
-    )
-};
 
 
 export default function AttachmentsPage() {
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [isClient, setIsClient] = useState(false);
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [isEvolutionFormOpen, setIsEvolutionFormOpen] = useState(false);
     const [editingAttachment, setEditingAttachment] = useState<Attachment | null>(null);
-    const [evolvingAttachment, setEvolvingAttachment] = useState<Attachment | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
     const { toast } = useToast();
@@ -179,52 +91,16 @@ export default function AttachmentsPage() {
         setEditingAttachment(null);
         setIsFormOpen(false);
     };
-    
-    const handleOpenEvolutionForm = (attachment: Attachment) => {
-        setEvolvingAttachment(attachment);
-        setIsEvolutionFormOpen(true);
-    };
-    
-    const handleCloseEvolutionForm = () => {
-        setEvolvingAttachment(null);
-        setIsEvolutionFormOpen(false);
-    }
 
     const handleSaveAttachment = (data: Attachment) => {
         if (attachments.some(a => a.id === data.id)) {
             setAttachments(attachments.map(a => (a.id === data.id ? data : a)));
-            toast({ title: "Anexo atualizado!", description: `O anexo "${data.name}" foi atualizado.` });
+            toast({ title: "Anexo atualizado!", description: `O anexo "${data.version1.name}" foi atualizado.` });
         } else {
             setAttachments([...attachments, data]);
-            toast({ title: "Anexo adicionado!", description: `O anexo "${data.name}" foi criado.` });
+            toast({ title: "Anexo adicionado!", description: `O anexo "${data.version1.name}" foi criado.` });
         }
         handleCloseForm();
-    };
-
-    const handleSaveEvolution = (data: Omit<EvolutionEntry, 'date'>) => {
-        if (!evolvingAttachment) return;
-        
-        const currentState: EvolutionEntry = {
-            date: new Date().toISOString(),
-            points: evolvingAttachment.points,
-            precision: evolvingAttachment.precision,
-            avgTime: evolvingAttachment.avgTime,
-            imageUrl: evolvingAttachment.imageUrl,
-        };
-
-        const updatedAttachment: Attachment = {
-            ...evolvingAttachment,
-            points: data.points,
-            precision: data.precision,
-            avgTime: data.avgTime,
-            // If a new image is provided, use it. Otherwise, keep the current one.
-            imageUrl: data.imageUrl || evolvingAttachment.imageUrl,
-            evolution: [...(evolvingAttachment.evolution || []), currentState]
-        };
-
-        setAttachments(attachments.map(a => a.id === updatedAttachment.id ? updatedAttachment : a));
-        toast({ title: "Evolução registrada!", description: `O anexo "${updatedAttachment.name}" foi atualizado.`});
-        handleCloseEvolutionForm();
     };
 
     const handleDeleteRequest = (attachmentId: string) => {
@@ -234,7 +110,7 @@ export default function AttachmentsPage() {
 
     const handleDeleteConfirm = () => {
         if (attachmentToDelete) {
-            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.name;
+            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.version1.name;
             setAttachments(attachments.filter(a => a.id !== attachmentToDelete));
             toast({ title: "Anexo removido!", description: `O anexo "${attachmentName}" foi excluído.`, variant: 'destructive' });
             setAttachmentToDelete(null);
@@ -249,11 +125,18 @@ export default function AttachmentsPage() {
         const newAttachment: Attachment = {
             ...original,
             id: crypto.randomUUID(),
-            name: `${original.name} (Cópia)`
+            version1: {
+                ...original.version1,
+                name: `${original.version1.name} (Cópia)`
+            },
+            version2: original.version2 ? {
+                 ...original.version2,
+                name: `${original.version2.name} (Cópia)`
+            } : undefined,
         };
 
         setAttachments(prev => [...prev, newAttachment]);
-        toast({ title: "Anexo duplicado!", description: `Uma cópia de "${original.name}" foi criada.`});
+        toast({ title: "Anexo duplicado!", description: `Uma cópia de "${original.version1.name}" foi criada.`});
     };
     
     return (
@@ -290,7 +173,6 @@ export default function AttachmentsPage() {
                                         onEdit={() => handleOpenForm(attachment)}
                                         onDelete={() => handleDeleteRequest(attachment.id)}
                                         onDuplicate={() => handleDuplicate(attachment.id)}
-                                        onEvolve={() => handleOpenEvolutionForm(attachment)}
                                     />
                                 ))}
                             </div>
@@ -310,7 +192,7 @@ export default function AttachmentsPage() {
                 )}
             </div>
              <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                <DialogContent className="sm:max-w-xl">
+                <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{editingAttachment ? 'Editar Anexo' : 'Novo Anexo'}</DialogTitle>
                     </DialogHeader>
@@ -323,18 +205,6 @@ export default function AttachmentsPage() {
                     )}
                 </DialogContent>
             </Dialog>
-
-             <Dialog open={isEvolutionFormOpen} onOpenChange={setIsEvolutionFormOpen}>
-                <DialogContent className="sm:max-w-md">
-                     {evolvingAttachment && (
-                        <EvolutionForm 
-                            attachmentName={evolvingAttachment.name}
-                            onSave={handleSaveEvolution}
-                            onCancel={handleCloseEvolutionForm}
-                        />
-                     )}
-                </DialogContent>
-             </Dialog>
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                 <AlertDialogContent>
