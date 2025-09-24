@@ -20,27 +20,38 @@ export type Task = z.infer<typeof taskSchema>;
 export type Priority = Task['priority'];
 export type Status = typeof statuses[number];
 
-const versionSchema = z.object({
-    name: z.string().min(1, 'O nome é obrigatório'),
-    missions: z.string().min(1, 'As missões são obrigatórias'),
-    points: z.coerce.number().min(0, 'Os pontos devem ser positivos'),
-    imageUrl: z.string().optional().nullable(),
+export const evolutionEntrySchema = z.object({
+    id: z.string(),
+    date: z.string(),
+    name: z.string(),
+    missions: z.string(),
+    points: z.coerce.number(),
+    avgTime: z.coerce.number(),
+    swapTime: z.coerce.number(),
+    precision: z.coerce.number(),
+    imageUrl: z.string().nullable().optional(),
+    notes: z.string().optional(),
 });
+
+export type EvolutionEntry = z.infer<typeof evolutionEntrySchema>;
 
 export const attachmentSchema = z.object({
     id: z.string(),
     runExit: z.string().min(1, 'A saída é obrigatória'),
     category: z.string().optional(),
+    // Current state fields
+    name: z.string().min(1, 'O nome é obrigatório'),
+    missions: z.string().min(1, 'As missões são obrigatórias'),
+    points: z.coerce.number().min(0, 'Os pontos devem ser positivos'),
+    imageUrl: z.string().nullable().optional(),
     avgTime: z.coerce.number().min(0, 'O tempo deve ser positivo'),
     swapTime: z.coerce.number().min(0, 'O tempo de troca deve ser positivo'),
     precision: z.coerce.number().min(0).max(100, 'A precisão é de 0 a 100'),
-    version1: versionSchema,
-    version2Enabled: z.boolean().default(false),
-    version2: versionSchema.optional(),
+    // Log of previous states
+    evolutionLog: z.array(evolutionEntrySchema).optional(),
 });
 
 export type Attachment = z.infer<typeof attachmentSchema>;
-export type AttachmentVersion = z.infer<typeof versionSchema>;
 
 
 export const CRITERIA = [

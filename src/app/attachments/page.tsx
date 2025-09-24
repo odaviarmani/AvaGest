@@ -2,13 +2,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import html2camera from 'html2canvas';
+import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Download, Copy, TrendingUp } from 'lucide-react';
-import { Attachment } from '@/lib/types';
+import { PlusCircle, Download, Copy, TrendingUp, GitCommit } from 'lucide-react';
+import { Attachment, EvolutionEntry } from '@/lib/types';
 import AttachmentCard from '@/components/attachments/AttachmentCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import AttachmentForm from '@/components/attachments/AttachmentForm';
+import EvolutionForm from '@/components/attachments/EvolutionForm';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
@@ -16,10 +17,16 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 export default function AttachmentsPage() {
     const [attachments, setAttachments] = useState<Attachment[]>([]);
     const [isClient, setIsClient] = useState(false);
-    const [isFormOpen, setIsFormOpen] = useState(false);
+    
+    const [isAttachmentFormOpen, setIsAttachmentFormOpen] = useState(false);
     const [editingAttachment, setEditingAttachment] = useState<Attachment | null>(null);
+    
+    const [isEvolutionFormOpen, setIsEvolutionFormOpen] = useState(false);
+    const [evolvingAttachment, setEvolvingAttachment] = useState<Attachment | null>(null);
+
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
+    
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
 
@@ -48,7 +55,7 @@ export default function AttachmentsPage() {
 
     const handleDownloadCroqui = () => {
         if (printRef.current) {
-            html2camera(printRef.current, {
+            html2canvas(printRef.current, {
                 useCORS: true,
                 backgroundColor: null,
                 scale: 2,
@@ -82,26 +89,65 @@ export default function AttachmentsPage() {
             
     }, [attachments, isClient]);
 
-    const handleOpenForm = (attachment: Attachment | null) => {
+    const handleOpenAttachmentForm = (attachment: Attachment | null) => {
         setEditingAttachment(attachment);
-        setIsFormOpen(true);
+        setIsAttachmentFormOpen(true);
     };
 
-    const handleCloseForm = () => {
+    const handleOpenEvolutionForm = (attachment: Attachment) => {
+        setEvolvingAttachment(attachment);
+        setIsEvolutionFormOpen(true);
+    };
+
+    const handleCloseForms = () => {
         setEditingAttachment(null);
-        setIsFormOpen(false);
+        setEvolvingAttachment(null);
+        setIsAttachmentFormOpen(false);
+        setIsEvolutionFormOpen(false);
     };
 
     const handleSaveAttachment = (data: Attachment) => {
         if (attachments.some(a => a.id === data.id)) {
             setAttachments(attachments.map(a => (a.id === data.id ? data : a)));
-            toast({ title: "Anexo atualizado!", description: `O anexo "${data.version1.name}" foi atualizado.` });
+            toast({ title: "Anexo atualizado!", description: `O anexo "${data.name}" foi atualizado.` });
         } else {
             setAttachments([...attachments, data]);
-            toast({ title: "Anexo adicionado!", description: `O anexo "${data.version1.name}" foi criado.` });
+            toast({ title: "Anexo adicionado!", description: `O anexo "${data.name}" foi criado.` });
         }
-        handleCloseForm();
+        handleCloseForms();
     };
+
+    const handleSaveEvolution = (attachmentToUpdate: Attachment, newEvolutionData: Omit<EvolutionEntry, 'id' | 'date'>) => {
+        const previousState: EvolutionEntry = {
+            id: crypto.randomUUID(),
+            date: new Date().toISOString(),
+            name: attachmentToUpdate.name,
+            missions: attachmentToUpdate.missions,
+            points: attachmentToUpdate.points,
+            avgTime: attachmentToUpdate.avgTime,
+            swapTime: attachmentToUpdate.swapTime,
+            precision: attachmentToUpdate.precision,
+            imageUrl: attachmentToUpdate.imageUrl,
+            notes: newEvolutionData.notes,
+        };
+
+        const updatedAttachment: Attachment = {
+            ...attachmentToUpdate,
+            name: newEvolutionData.name,
+            missions: newEvolutionData.missions,
+            points: newEvolutionData.points,
+            avgTime: newEvolutionData.avgTime,
+            swapTime: newEvolutionData.swapTime,
+            precision: newEvolutionData.precision,
+            imageUrl: newEvolutionData.imageUrl,
+            evolutionLog: [...(attachmentToUpdate.evolutionLog || []), previousState],
+        };
+
+        setAttachments(prev => prev.map(a => a.id === updatedAttachment.id ? updatedAttachment : a));
+        toast({ title: "Evolução registrada!", description: `Nova evolução para "${updatedAttachment.name}" foi salva.` });
+        handleCloseForms();
+    };
+
 
     const handleDeleteRequest = (attachmentId: string) => {
         setAttachmentToDelete(attachmentId);
@@ -110,7 +156,7 @@ export default function AttachmentsPage() {
 
     const handleDeleteConfirm = () => {
         if (attachmentToDelete) {
-            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.version1.name;
+            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.name;
             setAttachments(attachments.filter(a => a.id !== attachmentToDelete));
             toast({ title: "Anexo removido!", description: `O anexo "${attachmentName}" foi excluído.`, variant: 'destructive' });
             setAttachmentToDelete(null);
@@ -125,18 +171,12 @@ export default function AttachmentsPage() {
         const newAttachment: Attachment = {
             ...original,
             id: crypto.randomUUID(),
-            version1: {
-                ...original.version1,
-                name: `${original.version1.name} (Cópia)`
-            },
-            version2: original.version2 ? {
-                 ...original.version2,
-                name: `${original.version2.name} (Cópia)`
-            } : undefined,
+            name: `${original.name} (Cópia)`,
+            evolutionLog: [], // Clones don't inherit history
         };
 
         setAttachments(prev => [...prev, newAttachment]);
-        toast({ title: "Anexo duplicado!", description: `Uma cópia de "${original.version1.name}" foi criada.`});
+        toast({ title: "Anexo duplicado!", description: `Uma cópia de "${original.name}" foi criada.`});
     };
     
     return (
@@ -145,11 +185,11 @@ export default function AttachmentsPage() {
                 <div>
                     <h1 className="text-3xl font-bold">Anexos</h1>
                     <p className="text-muted-foreground">
-                        Gerencie os anexos da equipe da temporada Unearthed.
+                        Gerencie os anexos da equipe e acompanhe sua evolução.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button onClick={() => handleOpenForm(null)}>
+                    <Button onClick={() => handleOpenAttachmentForm(null)}>
                         <PlusCircle className="mr-2" />
                         Adicionar Anexo
                     </Button>
@@ -170,9 +210,10 @@ export default function AttachmentsPage() {
                                     <AttachmentCard
                                         key={attachment.id}
                                         attachment={attachment}
-                                        onEdit={() => handleOpenForm(attachment)}
+                                        onEdit={() => handleOpenAttachmentForm(attachment)}
                                         onDelete={() => handleDeleteRequest(attachment.id)}
                                         onDuplicate={() => handleDuplicate(attachment.id)}
+                                        onEvolve={() => handleOpenEvolutionForm(attachment)}
                                     />
                                 ))}
                             </div>
@@ -191,16 +232,32 @@ export default function AttachmentsPage() {
                     </div>
                 )}
             </div>
-             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+             <Dialog open={isAttachmentFormOpen} onOpenChange={setIsAttachmentFormOpen}>
                 <DialogContent className="sm:max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>{editingAttachment ? 'Editar Anexo' : 'Novo Anexo'}</DialogTitle>
                     </DialogHeader>
-                    {isFormOpen && (
+                    {isAttachmentFormOpen && (
                          <AttachmentForm
                             attachment={editingAttachment}
                             onSave={handleSaveAttachment}
-                            onCancel={handleCloseForm}
+                            onCancel={handleCloseForms}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isEvolutionFormOpen} onOpenChange={setIsEvolutionFormOpen}>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Registrar Evolução</DialogTitle>
+                        <DialogDescription>Registre uma nova versão do anexo "{evolvingAttachment?.name}".</DialogDescription>
+                    </DialogHeader>
+                    {isEvolutionFormOpen && evolvingAttachment && (
+                         <EvolutionForm
+                            baseAttachment={evolvingAttachment}
+                            onSave={handleSaveEvolution}
+                            onCancel={handleCloseForms}
                         />
                     )}
                 </DialogContent>

@@ -4,36 +4,37 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Attachment, attachmentSchema } from '@/lib/types';
+import { Attachment, EvolutionEntry, evolutionEntrySchema } from '@/lib/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { ScrollArea } from '../ui/scroll-area';
 import { Textarea } from '../ui/textarea';
+import { z } from 'zod';
 
-interface AttachmentFormProps {
-    attachment: Attachment | null;
-    onSave: (data: Attachment) => void;
+const formSchema = evolutionEntrySchema.omit({ id: true, date: true });
+type EvolutionFormValues = z.infer<typeof formSchema>;
+
+interface EvolutionFormProps {
+    baseAttachment: Attachment;
+    onSave: (attachmentToUpdate: Attachment, data: EvolutionFormValues) => void;
     onCancel: () => void;
 }
 
-export default function AttachmentForm({ attachment, onSave, onCancel }: AttachmentFormProps) {
+export default function EvolutionForm({ baseAttachment, onSave, onCancel }: EvolutionFormProps) {
     const [isUploading, setIsUploading] = useState(false);
 
-    const form = useForm<Attachment>({
-        resolver: zodResolver(attachmentSchema),
-        defaultValues: attachment || {
-            id: crypto.randomUUID(),
-            runExit: '',
-            category: 'Estratégia 1',
-            name: '',
-            missions: '',
-            points: 0,
-            imageUrl: null,
-            avgTime: 0,
-            swapTime: 0,
-            precision: 100,
-            evolutionLog: [],
+    const form = useForm<EvolutionFormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            name: baseAttachment.name,
+            missions: baseAttachment.missions,
+            points: baseAttachment.points,
+            avgTime: baseAttachment.avgTime,
+            swapTime: baseAttachment.swapTime,
+            precision: baseAttachment.precision,
+            imageUrl: baseAttachment.imageUrl,
+            notes: '',
         },
     });
 
@@ -50,8 +51,8 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
         }
     }
     
-    const onSubmit = (data: Attachment) => {
-        onSave(data);
+    const onSubmit = (data: EvolutionFormValues) => {
+        onSave(baseAttachment, data);
     };
 
     return (
@@ -60,21 +61,12 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                  <ScrollArea className="h-[70vh] pr-6">
                     <div className="space-y-4">
                         <FormField control={form.control} name="name" render={({ field }) => (
-                            <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Ex: Garra Dupla" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Nome do Anexo</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )}/>
-                        <div className="grid grid-cols-2 gap-4">
-                             <FormField control={form.control} name="runExit" render={({ field }) => (
-                                <FormItem><FormLabel>Saída</FormLabel><FormControl><Input placeholder="Ex: Saída 1" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                             <FormField control={form.control} name="category" render={({ field }) => (
-                                <FormItem><FormLabel>Categoria</FormLabel><FormControl><Input placeholder="Ex: Estratégia 1" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                        </div>
                         <FormField control={form.control} name="missions" render={({ field }) => (
-                            <FormItem><FormLabel>Missões</FormLabel><FormControl><Textarea placeholder="Ex: M01, M05 e M13" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Missões</FormLabel><FormControl><Textarea {...field} /></FormControl><FormMessage /></FormItem>
                         )}/>
-                        
-                        <div className="grid grid-cols-2 gap-4">
+                         <div className="grid grid-cols-2 gap-4">
                             <FormField control={form.control} name="points" render={({ field }) => (
                                 <FormItem><FormLabel>Pontos</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
@@ -90,14 +82,17 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                                 <FormItem><FormLabel>Tempo Troca (s)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
                         </div>
-
-                         <FormItem><FormLabel>Render</FormLabel>
+                        <FormItem>
+                           <FormLabel>Render da Evolução</FormLabel>
                             <FormControl>
                                 <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
                             </FormControl>
                             {form.watch('imageUrl') && <img src={form.watch('imageUrl')!} alt="Preview" className="mt-2 w-full h-auto object-cover rounded-md" />}
                             <FormMessage />
                         </FormItem>
+                         <FormField control={form.control} name="notes" render={({ field }) => (
+                            <FormItem><FormLabel>Notas da Evolução (Opcional)</FormLabel><FormControl><Textarea placeholder="Descreva as mudanças feitas..." {...field} /></FormControl><FormMessage /></FormItem>
+                        )}/>
                     </div>
                 </ScrollArea>
 
@@ -105,7 +100,7 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                     <Button type="button" variant="ghost" onClick={onCancel}>
                         Cancelar
                     </Button>
-                    <Button type="submit" disabled={isUploading}>Salvar</Button>
+                    <Button type="submit" disabled={isUploading}>Salvar Evolução</Button>
                 </div>
             </form>
         </Form>
