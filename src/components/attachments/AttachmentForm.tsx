@@ -51,11 +51,12 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, version: 'version1' | 'version2') => {
         const file = e.target.files?.[0];
         if (file) {
-            setIsUploading(prev => ({...prev, [version === 'version1' ? 'v1' : 'v2']: true}));
+            const versionKey = version === 'version1' ? 'v1' : 'v2';
+            setIsUploading(prev => ({...prev, [versionKey]: true}));
             const reader = new FileReader();
             reader.onloadend = () => {
-                form.setValue(`${version}.imageUrl`, reader.result as string);
-                setIsUploading(prev => ({...prev, [version === 'version1' ? 'v1' : 'v2']: false}));
+                form.setValue(`${version}.imageUrl`, reader.result as string, { shouldValidate: true });
+                setIsUploading(prev => ({...prev, [versionKey]: false}));
             };
             reader.readAsDataURL(file);
         }
@@ -109,13 +110,13 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                             <FormField control={form.control} name="version1.points" render={({ field }) => (
                                 <FormItem><FormLabel>Pontos</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                             )}/>
-                            <FormField control={form.control} name="version1.imageUrl" render={({ field }) => (
-                                <FormItem><FormLabel>Render</FormLabel>
-                                <FormControl><Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'version1')} disabled={isUploading.v1} /></FormControl>
-                                {isUploading.v1 && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
-                                {field.value && <img src={field.value} alt="Preview V1" className="mt-2 w-32 h-32 object-cover rounded-md" />}
-                                <FormMessage /></FormItem>
-                            )}/>
+                            <FormItem><FormLabel>Render</FormLabel>
+                            <FormControl>
+                                <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'version1')} disabled={isUploading.v1} />
+                            </FormControl>
+                            {isUploading.v1 && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
+                            {form.watch('version1.imageUrl') && <img src={form.watch('version1.imageUrl')!} alt="Preview V1" className="mt-2 w-32 h-32 object-cover rounded-md" />}
+                            <FormMessage /></FormItem>
                         </div>
                         
                         <Separator />
@@ -142,21 +143,21 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                              <div className="space-y-4 p-4 border rounded-lg animate-in fade-in-50">
                                 <h3 className="font-semibold text-lg">Versão 2</h3>
                                 <FormField control={form.control} name="version2.name" render={({ field }) => (
-                                    <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome da V2" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Nome</FormLabel><FormControl><Input placeholder="Nome da V2" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={form.control} name="version2.missions" render={({ field }) => (
-                                    <FormItem><FormLabel>Missões</FormLabel><FormControl><Textarea placeholder="Missões da V2" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Missões</FormLabel><FormControl><Textarea placeholder="Missões da V2" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>
                                 )}/>
                                 <FormField control={form.control} name="version2.points" render={({ field }) => (
-                                    <FormItem><FormLabel>Pontos</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Pontos</FormLabel><FormControl><Input type="number" {...field} value={field.value || 0} /></FormControl><FormMessage /></FormItem>
                                 )}/>
-                                 <FormField control={form.control} name="version2.imageUrl" render={({ field }) => (
-                                    <FormItem><FormLabel>Render</FormLabel>
-                                    <FormControl><Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'version2')} disabled={isUploading.v2} /></FormControl>
+                                 <FormItem><FormLabel>Render</FormLabel>
+                                    <FormControl>
+                                        <Input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'version2')} disabled={isUploading.v2} />
+                                    </FormControl>
                                     {isUploading.v2 && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
-                                    {field.value && <img src={field.value} alt="Preview V2" className="mt-2 w-32 h-32 object-cover rounded-md" />}
-                                    <FormMessage /></FormItem>
-                                )}/>
+                                    {form.watch('version2.imageUrl') && <img src={form.watch('version2.imageUrl')!} alt="Preview V2" className="mt-2 w-32 h-32 object-cover rounded-md" />}
+                                <FormMessage /></FormItem>
                             </div>
                         )}
                     </div>

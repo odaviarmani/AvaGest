@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { MoreVertical, Pencil, Trash2, Clock, Target, Star, GitBranch, Puzzle, Copy } from 'lucide-react';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
+import { Separator } from '../ui/separator';
 
 interface AttachmentCardProps {
     attachment: Attachment;
@@ -28,19 +28,19 @@ const StatItem = ({ icon, value, label }: { icon: React.ReactNode, value: React.
 );
 
 const VersionDisplay = ({ version, versionNumber }: { version: AttachmentVersion, versionNumber: number }) => (
-    <div className="flex flex-col p-1 h-full">
-        <div className="aspect-video w-full rounded-md overflow-hidden bg-muted flex items-center justify-center mb-4">
+    <div className="flex flex-col space-y-3 p-1">
+        <div className="aspect-video w-full rounded-md overflow-hidden bg-muted flex items-center justify-center mb-2">
             {version.imageUrl ? (
                 <Image src={version.imageUrl} alt={`Render do anexo ${version.name}`} width={300} height={169} className="object-cover w-full h-full" unoptimized />
             ) : (
                 <Puzzle className="w-16 h-16 text-muted-foreground" />
             )}
         </div>
-        <div className="flex-1">
-            <h4 className="font-semibold text-sm mb-1">{`V${versionNumber}: ${version.name}`}</h4>
-            <p className="text-sm text-muted-foreground break-words">{version.missions}</p>
+        <div className="space-y-1">
+            <h4 className="font-semibold text-sm">{`V${versionNumber}: ${version.name}`}</h4>
+            <p className="text-xs text-muted-foreground break-words h-10">{version.missions}</p>
         </div>
-        <div className="pt-4">
+        <div className="pt-2">
              <StatItem icon={<Star className="w-4 h-4"/>} value={`${version.points} pts`} label="Pontuação" />
         </div>
     </div>
@@ -56,8 +56,8 @@ export default function AttachmentCard({ attachment, onEdit, onDelete, onDuplica
             <CardHeader className="flex-row items-start justify-between">
                  <div className="flex flex-col">
                     <CardTitle>{version1.name}</CardTitle>
-                    <CardDescription className="flex gap-2">
-                        <span>Saída: {runExit}</span>
+                    <CardDescription className="flex gap-2 pt-1">
+                        <span className="font-medium">Saída: {runExit}</span>
                         {category && <span className="font-semibold text-primary">{category}</span>}
                     </CardDescription>
                 </div>
@@ -76,18 +76,10 @@ export default function AttachmentCard({ attachment, onEdit, onDelete, onDuplica
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
                 {hasTwoVersions ? (
-                    <Carousel className="w-full">
-                        <CarouselContent>
-                            <CarouselItem>
-                                <VersionDisplay version={version1} versionNumber={1} />
-                            </CarouselItem>
-                            <CarouselItem>
-                                <VersionDisplay version={version2} versionNumber={2} />
-                            </CarouselItem>
-                        </CarouselContent>
-                        <CarouselPrevious className="left-2" />
-                        <CarouselNext className="right-2" />
-                    </Carousel>
+                     <div className="grid grid-cols-2 gap-4">
+                        <VersionDisplay version={version1} versionNumber={1} />
+                        <VersionDisplay version={version2} versionNumber={2} />
+                    </div>
                 ) : (
                     <div className="p-1">
                         <div className="aspect-video w-full rounded-md overflow-hidden bg-muted flex items-center justify-center">
@@ -97,25 +89,21 @@ export default function AttachmentCard({ attachment, onEdit, onDelete, onDuplica
                                 <Puzzle className="w-16 h-16 text-muted-foreground" />
                             )}
                         </div>
-                    </div>
-                )}
-            </CardContent>
-            <CardFooter className="grid grid-cols-3 gap-y-2 gap-x-4 p-4 pt-2">
-                <StatItem icon={<Target className="w-4 h-4"/>} value={`${precision}%`} label="Precisão" />
-                <StatItem icon={<Clock className="w-4 h-4"/>} value={`${avgTime}s`} label="Tempo Médio" />
-                <StatItem icon={<GitBranch className="w-4 h-4"/>} value={`${swapTime}s`} label="Tempo Troca" />
-
-                {!hasTwoVersions && (
-                    <>
-                        <div className="col-span-3 mt-2">
+                         <div className="mt-4 space-y-1">
                             <h4 className="font-semibold text-sm mb-1">{version1.name}</h4>
                             <p className="text-sm text-muted-foreground break-words">{version1.missions}</p>
                         </div>
-                        <div className="col-span-3">
+                        <div className="mt-4">
                              <StatItem icon={<Star className="w-4 h-4"/>} value={`${version1.points} pts`} label="Pontuação" />
                         </div>
-                    </>
+                    </div>
                 )}
+            </CardContent>
+            <Separator className="my-2" />
+            <CardFooter className="grid grid-cols-3 gap-y-2 gap-x-4 p-4">
+                <StatItem icon={<Target className="w-4 h-4"/>} value={`${precision}%`} label="Precisão" />
+                <StatItem icon={<Clock className="w-4 h-4"/>} value={`${avgTime}s`} label="Tempo Médio" />
+                <StatItem icon={<GitBranch className="w-4 h-4"/>} value={`${swapTime}s`} label="Tempo Troca" />
             </CardFooter>
         </Card>
     )
