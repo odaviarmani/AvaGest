@@ -48,9 +48,15 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
         setCustomDateTime(now.toISOString().slice(0, 16));
     }, []);
 
+    const handlePairChange = (index: number, part: 'p1' | 'p2', value: string) => {
+        const newPairs = [...pairs];
+        newPairs[index][part] = value;
+        setPairs(newPairs);
+    };
+
     const handleSave = () => {
-        const assignedNames = new Set(pairs.flatMap(p => [p.p1, p.p2]).filter(Boolean));
-        if (assignedNames.size !== 6 || pairs.some(p => !p.p1 || !p.p2 || !p.area)) {
+        const assignedNames = new Set(pairs.flatMap(p => [p.p1.trim(), p.p2.trim()]).filter(Boolean));
+        if (assignedNames.size !== 6 || pairs.some(p => !p.p1.trim() || !p.p2.trim() || !p.area)) {
             toast({
                 variant: 'destructive',
                 title: 'Erro de Validação',
@@ -73,7 +79,7 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
         const newResult: SpinResult = {
             id: crypto.randomUUID(),
             pairs: pairs.map(p => ({
-                pair: [p.p1, p.p2] as [string, string],
+                pair: [p.p1.trim(), p.p2.trim()] as [string, string],
                 area: p.area,
             })),
             date: formattedDate,
@@ -81,18 +87,6 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
         };
         onSave(newResult);
         toast({ title: "Sorteio manual registrado!" });
-    };
-    
-    const getAvailableNames = (currentIndex: number, part: 'p1' | 'p2') => {
-        const currentPair = pairs[currentIndex];
-        const assignedNames = new Set(pairs.flatMap((p, i) => {
-            // Don't count the other part of the current pair being edited
-            if(i === currentIndex) {
-                 return part === 'p1' ? [p.p2] : [p.p1];
-            }
-            return [p.p1, p.p2];
-        }).filter(Boolean));
-        return NAMES.filter(name => !assignedNames.has(name));
     };
 
     return (
@@ -106,21 +100,21 @@ const ManualSpinForm = ({ onSave }: { onSave: (result: SpinResult) => void }) =>
                     <div key={index} className="grid grid-cols-3 gap-2 items-end">
                         <div>
                              <Label htmlFor={`p1-${index}`}>Dupla {index + 1} (1)</Label>
-                             <Select value={pair.p1} onValueChange={(val) => { const newPairs = [...pairs]; newPairs[index].p1 = val; setPairs(newPairs);}}>
-                                <SelectTrigger id={`p1-${index}`}><SelectValue/></SelectTrigger>
-                                <SelectContent>
-                                    {getAvailableNames(index, 'p1').map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-                                </SelectContent>
-                             </Select>
+                             <Input 
+                                id={`p1-${index}`}
+                                placeholder="Nome"
+                                value={pair.p1}
+                                onChange={(e) => handlePairChange(index, 'p1', e.target.value)}
+                             />
                         </div>
                         <div>
                             <Label htmlFor={`p2-${index}`}>Dupla {index + 1} (2)</Label>
-                             <Select value={pair.p2} onValueChange={(val) => { const newPairs = [...pairs]; newPairs[index].p2 = val; setPairs(newPairs);}}>
-                                <SelectTrigger id={`p2-${index}`}><SelectValue/></SelectTrigger>
-                                <SelectContent>
-                                    {getAvailableNames(index, 'p2').map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-                                </SelectContent>
-                             </Select>
+                             <Input 
+                                id={`p2-${index}`}
+                                placeholder="Nome"
+                                value={pair.p2}
+                                onChange={(e) => handlePairChange(index, 'p2', e.target.value)}
+                             />
                         </div>
                          <div>
                             <Label htmlFor={`area-${index}`}>Área</Label>
