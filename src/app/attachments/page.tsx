@@ -205,7 +205,7 @@ export default function AttachmentsPage() {
                     Object.entries(groupedAttachments).map(([category, items]) => (
                         <div key={category}>
                              <h2 className="text-2xl font-bold tracking-tight mb-4 border-b pb-2">{category}</h2>
-                             <div className="space-y-6">
+                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                                 {items.map(attachment => (
                                     <AttachmentCard
                                         key={attachment.id}

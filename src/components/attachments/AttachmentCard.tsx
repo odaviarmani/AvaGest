@@ -28,11 +28,11 @@ export default function AttachmentCard({ attachment, onEdit, onDelete, onDuplica
     const [isEvolutionVisible, setIsEvolutionVisible] = useState(false);
 
     return (
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 items-start">
-            <Card className={cn(
-                "flex flex-col transition-all duration-200 hover:shadow-lg",
-                isEvolutionVisible ? "xl:col-span-3" : "xl:col-span-5"
-            )}>
+        <div className={cn(
+            "grid grid-cols-1 gap-4 items-start",
+            isEvolutionVisible ? "lg:col-span-2" : ""
+        )}>
+            <Card className="flex flex-col transition-all duration-200 hover:shadow-lg h-full">
                 <CardHeader className="flex-row items-start justify-between">
                     <div className="flex flex-col">
                         <CardTitle className="leading-tight">{name}</CardTitle>
@@ -91,7 +91,7 @@ export default function AttachmentCard({ attachment, onEdit, onDelete, onDuplica
             </Card>
 
             {isEvolutionVisible && (
-                <div className="xl:col-span-2">
+                <div className="col-span-1">
                     <EvolutionDetails attachment={attachment} />
                 </div>
             )}
