@@ -64,7 +64,7 @@ export default function AttachmentsPage() {
     const handleOpenDialog = (attachment: Attachment | null) => {
         setEditingAttachment(attachment ? attachment : {
             id: crypto.randomUUID(),
-            category: 'Estratégia 1',
+            category: 'Outros',
             runExit: '',
             version1: {
                 name: '',
