@@ -64,15 +64,17 @@ export default function AttachmentsPage() {
     const handleOpenDialog = (attachment: Attachment | null) => {
         setEditingAttachment(attachment ? attachment : {
             id: crypto.randomUUID(),
-            name: '',
             category: 'Estratégia 1',
             runExit: '',
-            missions: '',
-            points: 0,
-            avgTime: 0,
-            swapTime: 0,
-            precision: 100,
-            imageUrl: null,
+            version1: {
+                name: '',
+                missions: '',
+                points: 0,
+                avgTime: 0,
+                swapTime: 0,
+                precision: 100,
+                imageUrl: null,
+            }
         });
         setIsDialogOpen(true);
     };
@@ -85,10 +87,10 @@ export default function AttachmentsPage() {
     const handleSaveAttachment = (data: Attachment) => {
         if (attachments.some(a => a.id === data.id)) {
             setAttachments(attachments.map(a => (a.id === data.id ? data : a)));
-            toast({ title: "Anexo atualizado!", description: `O anexo "${data.name}" foi atualizado.` });
+            toast({ title: "Anexo atualizado!", description: `O anexo "${data.version1.name}" foi atualizado.` });
         } else {
             setAttachments([...attachments, data]);
-            toast({ title: "Anexo adicionado!", description: `O anexo "${data.name}" foi criado.` });
+            toast({ title: "Anexo adicionado!", description: `O anexo "${data.version1.name}" foi criado.` });
         }
         handleCloseDialog();
     };
@@ -100,7 +102,7 @@ export default function AttachmentsPage() {
 
     const handleDeleteConfirm = () => {
         if (attachmentToDelete) {
-            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.name;
+            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.version1.name;
             setAttachments(attachments.filter(a => a.id !== attachmentToDelete));
             toast({ title: "Anexo removido!", description: `O anexo "${attachmentName}" foi excluído.`, variant: 'destructive' });
             setAttachmentToDelete(null);
@@ -114,10 +116,17 @@ export default function AttachmentsPage() {
             const newAttachment = {
                 ...originalAttachment,
                 id: crypto.randomUUID(),
-                name: `${originalAttachment.name} (Cópia)`,
+                version1: {
+                    ...originalAttachment.version1,
+                    name: `${originalAttachment.version1.name} (Cópia)`,
+                },
+                version2: originalAttachment.version2 ? {
+                    ...originalAttachment.version2,
+                    name: `${originalAttachment.version2.name} (Cópia)`,
+                } : undefined,
             };
             setAttachments(prev => [...prev, newAttachment]);
-            toast({ title: 'Anexo duplicado!', description: `Uma cópia de "${originalAttachment.name}" foi criada.` });
+            toast({ title: 'Anexo duplicado!', description: `Uma cópia de "${originalAttachment.version1.name}" foi criada.` });
         }
     };
 
@@ -201,7 +210,7 @@ export default function AttachmentsPage() {
                 )}
             </div>
              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[480px]">
+                <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
                         <DialogTitle>{editingAttachment && attachments.some(a => a.id === editingAttachment.id) ? 'Editar Anexo' : 'Novo Anexo'}</DialogTitle>
                     </DialogHeader>

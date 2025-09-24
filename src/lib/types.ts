@@ -20,11 +20,8 @@ export type Task = z.infer<typeof taskSchema>;
 export type Priority = Task['priority'];
 export type Status = typeof statuses[number];
 
-export const attachmentSchema = z.object({
-    id: z.string(),
-    name: z.string().min(1, 'O nome é obrigatório'),
-    category: z.string().min(1, 'A categoria é obrigatória.'),
-    runExit: z.string().min(1, 'A saída é obrigatória'),
+const attachmentVersionSchema = z.object({
+    name: z.string().min(1, 'O nome da versão é obrigatório'),
     missions: z.string().min(1, 'As missões são obrigatórias'),
     points: z.coerce.number().min(0, 'Os pontos devem ser positivos'),
     avgTime: z.coerce.number().min(0, 'O tempo deve ser positivo'),
@@ -33,7 +30,17 @@ export const attachmentSchema = z.object({
     imageUrl: z.string().optional().nullable(),
 });
 
+export const attachmentSchema = z.object({
+    id: z.string(),
+    category: z.string().min(1, 'A categoria é obrigatória.'),
+    runExit: z.string().min(1, 'A saída é obrigatória'),
+    version1: attachmentVersionSchema,
+    version2: attachmentVersionSchema.optional(),
+});
+
+
 export type Attachment = z.infer<typeof attachmentSchema>;
+export type AttachmentVersion = z.infer<typeof attachmentVersionSchema>;
 
 export const CRITERIA = [
     { key: 'coherence', label: 'Coerências T-P-S' },
