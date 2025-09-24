@@ -12,7 +12,6 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Textarea } from '../ui/textarea';
 import { Switch } from '../ui/switch';
 import { Separator } from '../ui/separator';
-import { Label } from '../ui/label';
 
 interface AttachmentFormProps {
     attachment: Attachment | null;
