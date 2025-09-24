@@ -96,10 +96,10 @@ export default function AttachmentsPage() {
     const handleSaveAttachment = (data: Attachment) => {
         if (attachments.some(a => a.id === data.id)) {
             setAttachments(attachments.map(a => (a.id === data.id ? data : a)));
-            toast({ title: "Anexo atualizado!", description: `O anexo "${data.version1.name}" foi atualizado.` });
+            toast({ title: "Anexo atualizado!", description: `O anexo "${data.name}" foi atualizado.` });
         } else {
             setAttachments([...attachments, data]);
-            toast({ title: "Anexo adicionado!", description: `O anexo "${data.version1.name}" foi criado.` });
+            toast({ title: "Anexo adicionado!", description: `O anexo "${data.name}" foi criado.` });
         }
         handleCloseDialog();
     };
@@ -111,7 +111,7 @@ export default function AttachmentsPage() {
 
     const handleDeleteConfirm = () => {
         if (attachmentToDelete) {
-            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.version1.name;
+            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.name;
             setAttachments(attachments.filter(a => a.id !== attachmentToDelete));
             toast({ title: "Anexo removido!", description: `O anexo "${attachmentName}" foi excluído.`, variant: 'destructive' });
             setAttachmentToDelete(null);
@@ -126,18 +126,11 @@ export default function AttachmentsPage() {
         const newAttachment: Attachment = {
             ...original,
             id: crypto.randomUUID(),
-            version1: {
-                ...original.version1,
-                name: `${original.version1.name} (Cópia)`
-            },
-            version2: original.version2 ? {
-                ...original.version2,
-                 name: `${original.version2.name} (Cópia)`
-            } : undefined
+            name: `${original.name} (Cópia)`
         };
 
         setAttachments(prev => [...prev, newAttachment]);
-        toast({ title: "Anexo duplicado!", description: `Uma cópia de "${original.version1.name}" foi criada.`});
+        toast({ title: "Anexo duplicado!", description: `Uma cópia de "${original.name}" foi criada.`});
     };
     
     return (
