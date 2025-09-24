@@ -20,9 +20,21 @@ interface AttachmentFormProps {
     onCancel: () => void;
 }
 
-const AttachmentVersionFields = ({ versionNumber, control, handleImageUpload, isUploading }: any) => {
+const AttachmentVersionFields = ({ versionNumber, control, setValue, isUploading }: any) => {
     const prefix = `version${versionNumber}`;
     const versionLabel = `Versão ${versionNumber}`;
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setValue(`${prefix}.imageUrl`, reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
 
     return (
         <div className="space-y-4 p-4 border rounded-lg">
@@ -107,7 +119,7 @@ const AttachmentVersionFields = ({ versionNumber, control, handleImageUpload, is
                             <Input
                                 type="file"
                                 accept="image/png,image/jpeg,image/webp"
-                                onChange={(e) => handleImageUpload(e, `${prefix}.imageUrl`)}
+                                onChange={handleImageUpload}
                                 disabled={isUploading}
                             />
                         </FormControl>
@@ -129,19 +141,6 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
         resolver: zodResolver(attachmentSchema),
         defaultValues: attachment,
     });
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, fieldName: string) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setIsUploading(true);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                form.setValue(fieldName as any, reader.result as string);
-                setIsUploading(false);
-            };
-            reader.readAsDataURL(file);
-        }
-    }
     
     const onSubmit = (data: Attachment) => {
         if (!showVersion2) {
@@ -182,7 +181,7 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                         <AttachmentVersionFields
                             versionNumber={1}
                             control={form.control}
-                            handleImageUpload={handleImageUpload}
+                            setValue={form.setValue}
                             isUploading={isUploading}
                         />
 
@@ -212,7 +211,7 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
                             <AttachmentVersionFields
                                 versionNumber={2}
                                 control={form.control}
-                                handleImageUpload={handleImageUpload}
+                                setValue={form.setValue}
                                 isUploading={isUploading}
                             />
                         )}
@@ -230,5 +229,3 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
         </Form>
     );
 }
-
-    
