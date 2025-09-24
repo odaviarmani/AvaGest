@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import html2camera from 'html2canvas';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Download } from 'lucide-react';
+import { PlusCircle, Download, Copy } from 'lucide-react';
 import { Attachment } from '@/lib/types';
 import AttachmentCard from '@/components/attachments/AttachmentCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -60,6 +60,28 @@ export default function AttachmentsPage() {
             });
         }
     };
+    
+    const groupedAttachments = useMemo(() => {
+        const groups: Record<string, Attachment[]> = {};
+        if (!isClient) return groups;
+
+        attachments.forEach(attachment => {
+            const category = attachment.category || 'Sem Categoria';
+            if (!groups[category]) {
+                groups[category] = [];
+            }
+            groups[category].push(attachment);
+        });
+
+        // Sort categories alphabetically
+        return Object.keys(groups)
+            .sort((a, b) => a.localeCompare(b))
+            .reduce((acc, key) => {
+                acc[key] = groups[key];
+                return acc;
+            }, {} as Record<string, Attachment[]>);
+            
+    }, [attachments, isClient]);
 
     const handleOpenDialog = (attachment: Attachment | null) => {
         setEditingAttachment(attachment);
@@ -74,10 +96,10 @@ export default function AttachmentsPage() {
     const handleSaveAttachment = (data: Attachment) => {
         if (attachments.some(a => a.id === data.id)) {
             setAttachments(attachments.map(a => (a.id === data.id ? data : a)));
-            toast({ title: "Anexo atualizado!", description: `O anexo "${data.name}" foi atualizado.` });
+            toast({ title: "Anexo atualizado!", description: `O anexo "${data.version1.name}" foi atualizado.` });
         } else {
             setAttachments([...attachments, data]);
-            toast({ title: "Anexo adicionado!", description: `O anexo "${data.name}" foi criado.` });
+            toast({ title: "Anexo adicionado!", description: `O anexo "${data.version1.name}" foi criado.` });
         }
         handleCloseDialog();
     };
@@ -89,12 +111,33 @@ export default function AttachmentsPage() {
 
     const handleDeleteConfirm = () => {
         if (attachmentToDelete) {
-            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.name;
+            const attachmentName = attachments.find(a => a.id === attachmentToDelete)?.version1.name;
             setAttachments(attachments.filter(a => a.id !== attachmentToDelete));
             toast({ title: "Anexo removido!", description: `O anexo "${attachmentName}" foi excluído.`, variant: 'destructive' });
             setAttachmentToDelete(null);
             setIsDeleteDialogOpen(false);
         }
+    };
+
+    const handleDuplicate = (attachmentId: string) => {
+        const original = attachments.find(a => a.id === attachmentId);
+        if (!original) return;
+
+        const newAttachment: Attachment = {
+            ...original,
+            id: crypto.randomUUID(),
+            version1: {
+                ...original.version1,
+                name: `${original.version1.name} (Cópia)`
+            },
+            version2: original.version2 ? {
+                ...original.version2,
+                 name: `${original.version2.name} (Cópia)`
+            } : undefined
+        };
+
+        setAttachments(prev => [...prev, newAttachment]);
+        toast({ title: "Anexo duplicado!", description: `Uma cópia de "${original.version1.name}" foi criada.`});
     };
     
     return (
@@ -120,16 +163,22 @@ export default function AttachmentsPage() {
 
             <div ref={printRef} className="space-y-12">
                 {isClient && attachments.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {attachments.map(attachment => (
-                            <AttachmentCard
-                                key={attachment.id}
-                                attachment={attachment}
-                                onEdit={() => handleOpenDialog(attachment)}
-                                onDelete={() => handleDeleteRequest(attachment.id)}
-                            />
-                        ))}
-                    </div>
+                    Object.entries(groupedAttachments).map(([category, items]) => (
+                        <div key={category}>
+                             <h2 className="text-2xl font-bold tracking-tight mb-4 border-b pb-2">{category}</h2>
+                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {items.map(attachment => (
+                                    <AttachmentCard
+                                        key={attachment.id}
+                                        attachment={attachment}
+                                        onEdit={() => handleOpenDialog(attachment)}
+                                        onDelete={() => handleDeleteRequest(attachment.id)}
+                                        onDuplicate={() => handleDuplicate(attachment.id)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ))
                 ) : (
                     <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[50vh]">
                         <div className="flex flex-col items-center gap-1 text-center">
