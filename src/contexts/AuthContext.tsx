@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -31,19 +32,8 @@ export const USERS = Object.keys(validUsers);
 export const ADMIN_USERS = ["Davi", "Leandro", "Valquíria", "Sthefany", "Avalon"];
 
 const addActivityLog = (username: string, action: 'login' | 'logout') => {
-    const newLog: ActivityLog = {
-        id: crypto.randomUUID(),
-        username,
-        action,
-        timestamp: new Date().toISOString(),
-    };
-    try {
-        const existingLogsRaw = localStorage.getItem('activityLog');
-        const existingLogs: ActivityLog[] = existingLogsRaw ? JSON.parse(existingLogsRaw) : [];
-        localStorage.setItem('activityLog', JSON.stringify([newLog, ...existingLogs]));
-    } catch (error) {
-        console.error("Failed to save activity log:", error);
-    }
+    // This function is now a no-op but is kept to avoid breaking other parts of the app that might call it.
+    // The activity log functionality is removed.
 }
 
 

@@ -35,7 +35,6 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
   }, []);
 
   const isAuthPage = pathname === '/login';
-  const isAdmin = username && ADMIN_USERS.includes(username);
   
   const theme = username && userThemes[username] ? userThemes[username] : null;
 
@@ -99,17 +98,6 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                       <Button variant="ghost" asChild>
                           <Link href="/rubricas">Rubricas</Link>
                       </Button>
-                       <Button variant="ghost" asChild>
-                          <Link href="/inventory">Inventário</Link>
-                      </Button>
-                      <Button variant="ghost" asChild>
-                          <Link href="/chat">Chat</Link>
-                      </Button>
-                       {isAdmin && (
-                         <Button variant="ghost" asChild>
-                           <Link href="/activity-log">Log de Atividade</Link>
-                         </Button>
-                       )}
                       <Button variant="ghost" asChild>
                           <Link href="/notificacoes" className="relative">
                             Notificações

@@ -80,37 +80,6 @@ export const customNotificationSchema = z.object({
 
 export type CustomNotification = z.infer<typeof customNotificationSchema>;
 
-export const activityLogSchema = z.object({
-    id: z.string(),
-    username: z.string(),
-    action: z.enum(['login', 'logout']),
-    timestamp: z.string(),
-});
-
-export type ActivityLog = z.infer<typeof activityLogSchema>;
-
-export const chatMessageSchema = z.object({
-    id: z.string(),
-    username: z.string(),
-    message: z.string(),
-    timestamp: z.string(),
-});
-
-export type ChatMessage = z.infer<typeof chatMessageSchema>;
-
-export const inventoryItemSchema = z.object({
-    id: z.string(),
-    name: z.string().min(1, 'O nome é obrigatório'),
-    category: z.string().min(1, 'A categoria é obrigatória.'),
-    quantity: z.union([
-        z.string().min(1, "A quantidade é obrigatória."),
-        z.coerce.number().int().min(0, 'A quantidade não pode ser negativa')
-    ]),
-    location: z.string().min(1, 'A localização é obrigatória'),
-});
-
-export type InventoryItem = z.infer<typeof inventoryItemSchema>;
-
 export const missionSchema = z.object({
     id: z.string(),
     name: z.string().min(1, "O nome da missão é obrigatório."),

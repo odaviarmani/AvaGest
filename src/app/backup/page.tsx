@@ -26,16 +26,12 @@ const LOCALSTORAGE_KEYS = [
     'roundsHistory',
     'innovationProjectScores_v2',
     'robotDesignScores_v2',
-    'chatMessages',
     'customNotifications',
-    'chatMuted',
     'strategyMapImage',
     'strategyHistory',
     'strategySteps',
     'strategyResources',
     'attachments',
-    'activityLog',
-    'inventoryItems',
     'missionAnalysisData_v2'
 ];
 
@@ -48,11 +44,8 @@ const ARRAY_KEYS_TO_MERGE = [
     'decodeEvaluations',
     'coreValuesTeams',
     'roundsHistory',
-    'chatMessages',
     'customNotifications',
     'attachments',
-    'activityLog',
-    'inventoryItems',
     'missionAnalysisData_v2',
     'starRatingJustifications'
 ];
