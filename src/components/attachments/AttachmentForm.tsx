@@ -12,6 +12,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Textarea } from '../ui/textarea';
 import { Separator } from '../ui/separator';
 import { Switch } from '../ui/switch';
+import { Label } from '../ui/label';
 
 interface AttachmentFormProps {
     attachment: Attachment;
@@ -229,3 +230,5 @@ export default function AttachmentForm({ attachment, onSave, onCancel }: Attachm
         </Form>
     );
 }
+
+    
