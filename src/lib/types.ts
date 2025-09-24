@@ -25,6 +25,7 @@ export const evolutionEntrySchema = z.object({
     points: z.coerce.number().min(0, 'Os pontos devem ser positivos'),
     precision: z.coerce.number().min(0).max(100, 'A precisão é de 0 a 100'),
     avgTime: z.coerce.number().min(0, 'O tempo deve ser positivo'),
+    imageUrl: z.string().optional().nullable(),
 });
 
 export type EvolutionEntry = z.infer<typeof evolutionEntrySchema>;

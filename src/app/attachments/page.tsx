@@ -17,9 +17,10 @@ import { Input } from '@/components/ui/input';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { evolutionEntrySchema } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import Image from 'next/image';
 
 const EvolutionForm = ({ 
-    attachmentName, 
+    attachmentName,
     onSave, 
     onCancel 
 } : {
@@ -33,8 +34,23 @@ const EvolutionForm = ({
             points: 0,
             precision: 100,
             avgTime: 0,
+            imageUrl: null,
         },
     });
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setIsUploading(true);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                form.setValue(`imageUrl`, reader.result as string, { shouldValidate: true });
+                setIsUploading(false);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
 
     const onSubmit = (data: Omit<EvolutionEntry, 'date'>) => {
         onSave(data);
@@ -43,12 +59,12 @@ const EvolutionForm = ({
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
-                 <ScrollArea className="h-auto max-h-[60vh] pr-6">
+                 <ScrollArea className="h-auto max-h-[70vh] pr-6">
                     <div className="space-y-4">
                          <DialogHeader>
                             <DialogTitle>Registrar Evolução para "{attachmentName}"</DialogTitle>
                             <DialogDescription>
-                                Insira os novos dados de desempenho para esta versão do anexo. O estado atual será salvo no histórico.
+                                Insira os novos dados de desempenho e a nova imagem para esta versão do anexo. O estado atual será salvo no histórico.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid grid-cols-2 gap-4">
@@ -62,13 +78,20 @@ const EvolutionForm = ({
                         <FormField control={form.control} name="avgTime" render={({ field }) => (
                             <FormItem><FormLabel>Tempo Médio (s)</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>
                         )}/>
+                         <FormItem><FormLabel>Nova Imagem (Opcional)</FormLabel>
+                        <FormControl>
+                            <Input type="file" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
+                        </FormControl>
+                        {isUploading && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
+                        {form.watch('imageUrl') && <Image src={form.watch('imageUrl')!} alt="Preview" width={200} height={112} className="mt-2 w-full h-auto object-cover rounded-md" unoptimized />}
+                        <FormMessage /></FormItem>
                     </div>
                 </ScrollArea>
                 <div className="flex justify-end gap-2 pt-6">
                     <Button type="button" variant="ghost" onClick={onCancel}>
                         Cancelar
                     </Button>
-                    <Button type="submit">Salvar Evolução</Button>
+                    <Button type="submit" disabled={isUploading}>Salvar Evolução</Button>
                 </div>
             </form>
         </Form>
@@ -186,6 +209,7 @@ export default function AttachmentsPage() {
             points: evolvingAttachment.points,
             precision: evolvingAttachment.precision,
             avgTime: evolvingAttachment.avgTime,
+            imageUrl: evolvingAttachment.imageUrl,
         };
 
         const updatedAttachment: Attachment = {
@@ -193,6 +217,8 @@ export default function AttachmentsPage() {
             points: data.points,
             precision: data.precision,
             avgTime: data.avgTime,
+            // If a new image is provided, use it. Otherwise, keep the current one.
+            imageUrl: data.imageUrl || evolvingAttachment.imageUrl,
             evolution: [...(evolvingAttachment.evolution || []), currentState]
         };
 
