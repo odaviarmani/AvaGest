@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { MoreVertical, Pencil, Trash2, Clock, Target, Star, GitBranch, Puzzle } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Clock, Target, Star, GitBranch, Puzzle, Copy } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 
@@ -15,6 +15,7 @@ interface AttachmentCardProps {
     attachment: Attachment;
     onEdit: () => void;
     onDelete: () => void;
+    onDuplicate: () => void;
 }
 
 const StatItem = ({ icon, value, label }: { icon: React.ReactNode, value: React.ReactNode, label: string }) => (
@@ -27,7 +28,7 @@ const StatItem = ({ icon, value, label }: { icon: React.ReactNode, value: React.
     </div>
 );
 
-export default function AttachmentCard({ attachment, onEdit, onDelete }: AttachmentCardProps) {
+export default function AttachmentCard({ attachment, onEdit, onDelete, onDuplicate }: AttachmentCardProps) {
     const { name, runExit, missions, points, avgTime, swapTime, precision, imageUrl } = attachment;
 
     return (
@@ -45,6 +46,7 @@ export default function AttachmentCard({ attachment, onEdit, onDelete }: Attachm
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
+                        <DropdownMenuItem onClick={onDuplicate}><Copy className="mr-2 h-4 w-4" /> Duplicar</DropdownMenuItem>
                         <DropdownMenuItem onClick={onDelete} className="text-red-500 focus:text-red-500"><Trash2 className="mr-2 h-4 w-4" /> Excluir</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

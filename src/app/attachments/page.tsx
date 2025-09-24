@@ -107,6 +107,19 @@ export default function AttachmentsPage() {
             setIsDeleteDialogOpen(false);
         }
     };
+    
+    const handleDuplicateAttachment = (attachmentId: string) => {
+        const originalAttachment = attachments.find(a => a.id === attachmentId);
+        if (originalAttachment) {
+            const newAttachment = {
+                ...originalAttachment,
+                id: crypto.randomUUID(),
+                name: `${originalAttachment.name} (Cópia)`,
+            };
+            setAttachments(prev => [...prev, newAttachment]);
+            toast({ title: 'Anexo duplicado!', description: `Uma cópia de "${originalAttachment.name}" foi criada.` });
+        }
+    };
 
     const groupedAttachments = useMemo(() => {
         return attachments.reduce((acc, item) => {
@@ -155,6 +168,7 @@ export default function AttachmentsPage() {
                                             attachment={attachment}
                                             onEdit={() => handleOpenDialog(attachment)}
                                             onDelete={() => handleDeleteRequest(attachment.id)}
+                                            onDuplicate={() => handleDuplicateAttachment(attachment.id)}
                                         />
                                     ))}
                                 </div>
