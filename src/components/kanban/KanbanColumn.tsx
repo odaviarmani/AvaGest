@@ -21,13 +21,10 @@ interface KanbanColumnProps {
 
 export default function KanbanColumn({ column, onEditTask, onDeleteTask, isDoneColumn = false }: KanbanColumnProps) {
 
-  const ContainerComponent = isDoneColumn ? 'div' : ScrollArea;
-  const containerProps = isDoneColumn ? {} : { className: "flex-1 p-2 rounded-lg transition-colors" };
-
   return (
     <div className={cn(
         "flex flex-col h-full",
-        isDoneColumn ? "w-full" : "w-[300px] shrink-0"
+        isDoneColumn ? "w-full" : ""
     )}>
       <div className="flex items-center justify-between p-2 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
         <h2 className="text-lg font-semibold text-foreground">{column.title}</h2>
@@ -37,21 +34,21 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask, isDoneC
       </div>
       <Droppable droppableId={column.id} key={column.id} direction={isDoneColumn ? 'horizontal' : 'vertical'}>
         {(provided, snapshot) => (
-           <ContainerComponent
-             {...containerProps}
+           <div
              ref={provided.innerRef}
              {...provided.droppableProps}
              className={cn(
-                "transition-colors",
+                "transition-colors rounded-lg",
                 snapshot.isDraggingOver ? 'bg-primary/10' : 'bg-secondary/50',
-                isDoneColumn ? 'p-2 rounded-lg flex-1' : 'flex-1'
+                isDoneColumn ? 'p-2' : 'p-1'
              )}
           >
-            <div className={cn(
-              isDoneColumn 
-                ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" 
-                : "space-y-4"
-            )}>
+             <div className={cn(
+                 "min-h-[100px]",
+                 isDoneColumn 
+                    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4" 
+                    : "space-y-4"
+             )}>
               {column.tasks.map((task, index) => (
                 <Draggable key={task.id} draggableId={task.id} index={index}>
                   {(provided, snapshot) => (
@@ -74,7 +71,7 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask, isDoneC
               ))}
               {provided.placeholder}
             </div>
-          </ContainerComponent>
+          </div>
         )}
       </Droppable>
     </div>

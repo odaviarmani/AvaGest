@@ -248,9 +248,9 @@ export default function KanbanBoard() {
   if (!isClient) {
     return (
         <div className="p-4 flex-1 flex flex-col">
-             <div className="flex gap-6 overflow-x-auto pb-4">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {progressStatuses.map(name => (
-                    <div key={name} className="w-[300px] shrink-0">
+                    <div key={name}>
                         <Skeleton className="h-8 w-1/2 mb-4" />
                         <div className="space-y-4">
                             <Skeleton className="h-24 w-full" />
@@ -323,15 +323,15 @@ export default function KanbanBoard() {
             </div>
         </div>
         <DragDropContext onDragEnd={onDragEnd}>
-            <div className="flex gap-6 items-start overflow-x-auto pb-4">
-            {progressColumns.map((column) => (
-                <KanbanColumn
-                    key={column.id}
-                    column={column}
-                    onEditTask={handleOpenDialog}
-                    onDeleteTask={handleDeleteRequest}
-                />
-            ))}
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                {progressColumns.map((column) => (
+                    <KanbanColumn
+                        key={column.id}
+                        column={column}
+                        onEditTask={handleOpenDialog}
+                        onDeleteTask={handleDeleteRequest}
+                    />
+                ))}
             </div>
             
              <Separator className="my-6 md:my-8" />
