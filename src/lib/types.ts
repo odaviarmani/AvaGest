@@ -66,6 +66,7 @@ export const evaluationSchema = z.object({
     id: z.string(),
     name: z.string().min(1, 'O nome do item é obrigatório.'),
     scores: z.record(z.string(), z.number().min(1).max(4)),
+    isPinned: z.boolean(),
 });
 
 export type Evaluation = z.infer<typeof evaluationSchema>;
@@ -142,3 +143,27 @@ export type StarRatingJustification = Record<string, {
     reason: string;
     date: string;
 }[]>;
+
+export interface ChatMessage {
+  id: string;
+  username: string;
+  message: string;
+  timestamp: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  username: string;
+  action: 'login' | 'logout';
+  timestamp: string;
+}
+
+export const inventoryItemSchema = z.object({
+    id: z.string(),
+    name: z.string().min(1, "O nome do item é obrigatório."),
+    category: z.string().optional(),
+    quantity: z.union([z.string(), z.number()]),
+    location: z.string().optional(),
+});
+
+export type InventoryItem = z.infer<typeof inventoryItemSchema>;
