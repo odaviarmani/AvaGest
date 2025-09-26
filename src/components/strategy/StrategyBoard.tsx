@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -27,6 +28,7 @@ const COLORS = [
     { value: "#14b8a6", label: "Ciano" },
 ];
 const NUM_STRATEGIES = 4;
+const NUM_SAIDAS = 6;
 const MAT_WIDTH_CM = 240;
 
 type DrawingTool = 'line' | 'circle';
@@ -53,14 +55,24 @@ type Drawing = Line | CircleShape;
 
 type DrawingHistory = Drawing[];
 
-const initialHistory = () => {
-    const history: Record<string, DrawingHistory[]> = {};
-    const steps: Record<string, number> = {};
+// The key will be `strategy-X` or `saida-X`
+type HistoryState = Record<string, DrawingHistory[]>;
+type StepState = Record<string, number>;
+
+const initialHistory = (): { history: HistoryState, steps: StepState } => {
+    const history: HistoryState = {};
+    const steps: StepState = {};
     for (let i = 1; i <= NUM_STRATEGIES; i++) {
-        history[`strategy-${i}`] = [[]];
-        steps[`strategy-${i}`] = 0;
+        const key = `strategy-${i}`;
+        history[key] = [[]];
+        steps[key] = 0;
+        for (let j = 1; j <= NUM_SAIDAS; j++) {
+            const saidaKey = `${key}-saida-${j}`;
+            history[saidaKey] = [[]];
+            steps[saidaKey] = 0;
+        }
     }
-    return {history, steps};
+    return { history, steps };
 }
 
 const StrategyResources = ({ strategyKey }: { strategyKey: string }) => {
@@ -186,6 +198,7 @@ const StrategyResources = ({ strategyKey }: { strategyKey: string }) => {
 
 export default function StrategyBoard() {
   const [activeStrategy, setActiveStrategy] = useState(`strategy-1`);
+  const [activeView, setActiveView] = useState('strategy'); // 'strategy' or 'saida-X'
   const [color, setColor] = useState(COLORS[0].value);
   const [lineWidth, setLineWidth] = useState(3);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('line');
@@ -200,8 +213,10 @@ export default function StrategyBoard() {
   const imageRef = useRef<HTMLImageElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const historyRef = useRef<Record<string, DrawingHistory[]>>({});
-  const currentStepRef = useRef<Record<string, number>>({});
+  const historyRef = useRef<HistoryState>({});
+  const currentStepRef = useRef<StepState>({});
+
+  const activeKey = activeView.startsWith('saida-') ? `${activeStrategy}-${activeView}` : activeStrategy;
 
   useEffect(() => {
     setIsClient(true);
@@ -222,6 +237,11 @@ export default function StrategyBoard() {
     }
     drawMainCanvas();
   }, []);
+
+  // Reset view when strategy changes
+  useEffect(() => {
+      setActiveView('strategy');
+  }, [activeStrategy]);
   
   const forceUpdate = () => setForceRender(v => v + 1);
 
@@ -251,6 +271,12 @@ export default function StrategyBoard() {
     ctx.fillText(text, x + textOffset, y - textOffset);
   };
 
+  const getDrawingsForKey = (key: string) => {
+      const history = historyRef.current[key] || [];
+      const step = currentStepRef.current[key] || 0;
+      return (step > 0 ? history.slice(0, step) : []).flat();
+  }
+
   const drawAllLinesForCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -259,48 +285,19 @@ export default function StrategyBoard() {
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const currentHistory = historyRef.current[activeStrategy] || [];
-    const currentStep = currentStepRef.current[activeStrategy] || 0;
-    const drawings = (currentStep > 0 ? currentHistory.slice(0, currentStep) : []).flat();
-    
-    drawings.forEach((drawing, index) => {
-      ctx.strokeStyle = drawing.color;
-      ctx.lineWidth = drawing.lineWidth;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+    // Draw strategy drawings with opacity if in saida view
+    if (activeView.startsWith('saida-')) {
+        const strategyDrawings = getDrawingsForKey(activeStrategy);
+        ctx.globalAlpha = 0.3;
+        drawDrawings(ctx, strategyDrawings, false); // No metrics for background
+        ctx.globalAlpha = 1.0;
+    }
 
-      if (drawing.type === 'line') {
-        const [x1, y1, x2, y2] = drawing.points;
-        const lengthText = `${drawing.lengthCm.toFixed(1)}cm`;
+    const currentDrawings = getDrawingsForKey(activeKey);
+    drawDrawings(ctx, currentDrawings, true);
 
-        ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.stroke();
-        drawMetricsOnCanvas(ctx, lengthText, (x1 + x2) / 2, (y1 + y2) / 2);
 
-        const lineDrawings = drawings.filter(d => d.type === 'line') as Line[];
-        const currentLineIndex = lineDrawings.findIndex(l => l === drawing);
-        const prevDrawing = currentLineIndex > 0 ? lineDrawings[currentLineIndex - 1] : null;
-
-        if (prevDrawing) {
-          const angleDiff = drawing.angleDeg - prevDrawing.angleDeg;
-          const displayAngle = (angleDiff + 360) % 360;
-          if(displayAngle !== 0 && displayAngle !== 360) {
-            const finalAngle = displayAngle > 180 ? 360 - displayAngle : displayAngle;
-            if (finalAngle > 1) { // Threshold to avoid tiny angle displays
-                 const angleText = `${Math.round(finalAngle)}°`;
-                 drawMetricsOnCanvas(ctx, angleText, x1, y1, -15);
-            }
-          }
-        }
-      } else if (drawing.type === 'circle') {
-          ctx.beginPath();
-          ctx.arc(drawing.cx, drawing.cy, drawing.radius, 0, 2 * Math.PI);
-          ctx.stroke();
-      }
-    });
-
+    // Draw current drawing action
     if (isDrawing && startPoint && endPoint) {
         ctx.strokeStyle = color;
         ctx.lineWidth = lineWidth;
@@ -321,7 +318,49 @@ export default function StrategyBoard() {
             ctx.stroke();
         }
     }
-  }, [activeStrategy, isDrawing, startPoint, endPoint, color, lineWidth, drawingTool]);
+  }, [activeStrategy, activeView, activeKey, isDrawing, startPoint, endPoint, color, lineWidth, drawingTool]);
+
+  const drawDrawings = (ctx: CanvasRenderingContext2D, drawings: Drawing[], withMetrics: boolean) => {
+    drawings.forEach((drawing, index) => {
+      ctx.strokeStyle = drawing.color;
+      ctx.lineWidth = drawing.lineWidth;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (drawing.type === 'line') {
+        const [x1, y1, x2, y2] = drawing.points;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        
+        if (withMetrics) {
+            const lengthText = `${drawing.lengthCm.toFixed(1)}cm`;
+            drawMetricsOnCanvas(ctx, lengthText, (x1 + x2) / 2, (y1 + y2) / 2);
+
+            const lineDrawings = drawings.filter(d => d.type === 'line') as Line[];
+            const currentLineIndex = lineDrawings.findIndex(l => l === drawing);
+            const prevDrawing = currentLineIndex > 0 ? lineDrawings[currentLineIndex - 1] : null;
+
+            if (prevDrawing) {
+              const angleDiff = drawing.angleDeg - prevDrawing.angleDeg;
+              const displayAngle = (angleDiff + 360) % 360;
+              if(displayAngle !== 0 && displayAngle !== 360) {
+                const finalAngle = displayAngle > 180 ? 360 - displayAngle : displayAngle;
+                if (finalAngle > 1) {
+                     const angleText = `${Math.round(finalAngle)}°`;
+                     drawMetricsOnCanvas(ctx, angleText, x1, y1, -15);
+                }
+              }
+            }
+        }
+      } else if (drawing.type === 'circle') {
+          ctx.beginPath();
+          ctx.arc(drawing.cx, drawing.cy, drawing.radius, 0, 2 * Math.PI);
+          ctx.stroke();
+      }
+    });
+  }
 
   const drawMainCanvas = useCallback(() => {
       drawAllLinesForCanvas();
@@ -329,7 +368,7 @@ export default function StrategyBoard() {
 
   useEffect(() => {
     drawMainCanvas();
-  }, [drawMainCanvas, activeStrategy, _]);
+  }, [drawMainCanvas, activeKey, _]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -386,10 +425,10 @@ export default function StrategyBoard() {
     setStartPoint(coords);
     setEndPoint(coords);
 
-    const step = currentStepRef.current[activeStrategy] || 0;
-    const historyForTab = historyRef.current[activeStrategy] || [];
+    const step = currentStepRef.current[activeKey] || 0;
+    const historyForTab = historyRef.current[activeKey] || [];
     const newHistory = historyForTab.slice(0, step);
-    historyRef.current[activeStrategy] = newHistory;
+    historyRef.current[activeKey] = newHistory;
   };
 
   const stopDrawing = () => {
@@ -430,11 +469,11 @@ export default function StrategyBoard() {
         };
     }
     
-    const step = currentStepRef.current[activeStrategy] || 0;
-    const newHistory = [...(historyRef.current[activeStrategy] || []).slice(0, step), [newDrawing]];
+    const step = currentStepRef.current[activeKey] || 0;
+    const newHistory = [...(historyRef.current[activeKey] || []).slice(0, step), [newDrawing]];
     
-    historyRef.current[activeStrategy] = newHistory;
-    currentStepRef.current[activeStrategy] = newHistory.length;
+    historyRef.current[activeKey] = newHistory;
+    currentStepRef.current[activeKey] = newHistory.length;
 
     setIsDrawing(false);
     setStartPoint(null);
@@ -454,27 +493,27 @@ export default function StrategyBoard() {
   };
 
   const undo = () => {
-    const currentStep = currentStepRef.current[activeStrategy] || 0;
+    const currentStep = currentStepRef.current[activeKey] || 0;
     if (currentStep > 0) {
-        currentStepRef.current[activeStrategy] = currentStep - 1;
+        currentStepRef.current[activeKey] = currentStep - 1;
         drawMainCanvas();
         saveData();
     }
   };
 
   const redo = () => {
-    const history = historyRef.current[activeStrategy] || [];
-    const currentStep = currentStepRef.current[activeStrategy] || 0;
+    const history = historyRef.current[activeKey] || [];
+    const currentStep = currentStepRef.current[activeKey] || 0;
     if (currentStep < history.length) {
-      currentStepRef.current[activeStrategy] = currentStep + 1;
+      currentStepRef.current[activeKey] = currentStep + 1;
       drawMainCanvas();
       saveData();
     }
   };
 
   const clearCanvas = () => {
-    historyRef.current[activeStrategy] = [[]];
-    currentStepRef.current[activeStrategy] = 0;
+    historyRef.current[activeKey] = [[]];
+    currentStepRef.current[activeKey] = 0;
     drawMainCanvas();
     saveData();
   };
@@ -574,25 +613,19 @@ export default function StrategyBoard() {
   
     const instructions = useMemo((): Instruction[] => {
         if (!isClient) return [];
-        const currentDrawings = (historyRef.current[activeStrategy] || [])
-            .slice(0, currentStepRef.current[activeStrategy] || 0)
-            .flat();
+        const currentDrawings = getDrawingsForKey(activeKey);
 
         const result: Instruction[] = [];
         let stepCounter = 1;
         
-        const allLines = currentDrawings.filter(d => d.type === 'line') as Line[];
-
         currentDrawings.forEach((drawing, index) => {
             if (drawing.type === 'line') {
-                // Add move instruction
                 result.push({
                     step: stepCounter++,
                     action: "Mover para frente",
                     value: `${drawing.lengthCm.toFixed(1)}cm`,
                 });
 
-                // Find the next line drawing to calculate the turn
                 const nextLine = currentDrawings.slice(index + 1).find(d => d.type === 'line') as Line | undefined;
 
                 if (nextLine) {
@@ -606,8 +639,7 @@ export default function StrategyBoard() {
                     if (angleDeg < -180) angleDeg += 360;
 
                     if (Math.abs(angleDeg) > 1) { // Threshold for turning
-                        const crossProduct = v1.x * v2.y - v1.y * v2.x;
-                        const direction = crossProduct > 0 ? "Esquerda" : "Direita";
+                        const direction = angleDeg > 0 ? "Esquerda" : "Direita";
                         result.push({
                             step: stepCounter++,
                             action: `Girar para ${direction}`,
@@ -618,70 +650,84 @@ export default function StrategyBoard() {
             } else if (drawing.type === 'circle') {
                  result.push({
                     step: stepCounter++,
-                    action: "Girar garra",
+                    action: "Ação (Círculo)",
                     value: ``,
                 });
             }
         });
 
         return result;
-    }, [activeStrategy, isClient, _]);
+    }, [activeKey, isClient, _]);
 
 
   return (
     <div className="w-full flex-1 flex flex-col">
-        <Tabs value={activeStrategy} onValueChange={setActiveStrategy} className="w-full mb-4">
-            <TabsList>
-                 {Array.from({ length: NUM_STRATEGIES }, (_, i) => (
-                    <TabsTrigger key={i + 1} value={`strategy-${i + 1}`}>
-                        Estratégia {i + 1}
-                    </TabsTrigger>
-                ))}
-            </TabsList>
-        </Tabs>
+        <div className="flex justify-between items-center mb-4">
+            <Tabs value={activeStrategy} onValueChange={setActiveStrategy}>
+                <TabsList>
+                     {Array.from({ length: NUM_STRATEGIES }, (_, i) => (
+                        <TabsTrigger key={i + 1} value={`strategy-${i + 1}`}>
+                            Estratégia {i + 1}
+                        </TabsTrigger>
+                    ))}
+                </TabsList>
+            </Tabs>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-             <div className="lg:col-span-3 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
-                {isClient && mapImage ? (
-                    <>
-                        <Image
-                            ref={imageRef}
-                            src={mapImage}
-                            alt="Mapa da FLL"
-                            fill
-                            className='object-contain'
-                            priority
-                            unoptimized
-                            crossOrigin="anonymous"
-                        />
-                        <canvas
-                            ref={canvasRef}
-                            className="absolute top-0 left-0 w-full h-full cursor-crosshair"
-                            onMouseDown={startDrawing}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
-                            onMouseMove={handleDrawing}
-                            onTouchStart={startDrawing}
-                            onTouchEnd={stopDrawing}
-                            onTouchMove={handleDrawing}
-                        />
-                    </>
-                ) : (
-                    <div className="flex flex-col gap-4 items-center">
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            onChange={handleImageUpload}
-                            accept="image/*"
-                            className="hidden"
-                        />
-                        <Button onClick={() => fileInputRef.current?.click()}>
-                            <Upload className="mr-2 h-4 w-4" />
-                            Fazer Upload do Mapa
-                        </Button>
-                        <p className="text-sm text-muted-foreground">Carregue a imagem do tapete da temporada.</p>
-                    </div>
-                )}
-            </div>
+             <div className="lg:col-span-3 space-y-4">
+                <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
+                    <TabsList className="grid w-full grid-cols-7">
+                        <TabsTrigger value="strategy">Estratégia Completa</TabsTrigger>
+                         {Array.from({ length: NUM_SAIDAS }, (_, i) => (
+                            <TabsTrigger key={i + 1} value={`saida-${i + 1}`}>
+                                Saída {i + 1}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                </Tabs>
+                <div className="relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
+                    {isClient && mapImage ? (
+                        <>
+                            <Image
+                                ref={imageRef}
+                                src={mapImage}
+                                alt="Mapa da FLL"
+                                fill
+                                className='object-contain'
+                                priority
+                                unoptimized
+                                crossOrigin="anonymous"
+                            />
+                            <canvas
+                                ref={canvasRef}
+                                className="absolute top-0 left-0 w-full h-full cursor-crosshair"
+                                onMouseDown={startDrawing}
+                                onMouseUp={stopDrawing}
+                                onMouseLeave={stopDrawing}
+                                onMouseMove={handleDrawing}
+                                onTouchStart={startDrawing}
+                                onTouchEnd={stopDrawing}
+                                onTouchMove={handleDrawing}
+                            />
+                        </>
+                    ) : (
+                        <div className="flex flex-col gap-4 items-center">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                onChange={handleImageUpload}
+                                accept="image/*"
+                                className="hidden"
+                            />
+                            <Button onClick={() => fileInputRef.current?.click()}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Fazer Upload do Mapa
+                            </Button>
+                            <p className="text-sm text-muted-foreground">Carregue a imagem do tapete da temporada.</p>
+                        </div>
+                    )}
+                </div>
+             </div>
 
             <div className="lg:col-span-1">
                  <Card className="w-full shrink-0">
@@ -728,10 +774,10 @@ export default function StrategyBoard() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeStrategy] || 0) === 0}>
+                            <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeKey] || 0) === 0}>
                                 <Undo className="mr-2 h-4 w-4"/> Desfazer
                             </Button>
-                            <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeStrategy] || 0) >= (historyRef.current[activeStrategy] || []).length)}>
+                            <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeKey] || 0) >= (historyRef.current[activeKey] || []).length)}>
                                 <Redo className="mr-2 h-4 w-4"/> Refazer
                             </Button>
                         </div>
