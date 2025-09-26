@@ -28,7 +28,7 @@ const COLORS = [
     { value: "#14b8a6", label: "Ciano" },
 ];
 const NUM_STRATEGIES = 4;
-const NUM_SAIDAS = 6;
+const NUM_SAIDAS = 10;
 const MAT_WIDTH_CM = 240;
 
 type DrawingTool = 'line' | 'circle';
@@ -676,8 +676,8 @@ export default function StrategyBoard() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
              <div className="lg:col-span-3 space-y-4">
                 <Tabs value={activeView} onValueChange={setActiveView} className="w-full">
-                    <TabsList className="grid w-full grid-cols-7">
-                        <TabsTrigger value="strategy">Estratégia Completa</TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
+                        <TabsTrigger value="strategy">Completa</TabsTrigger>
                          {Array.from({ length: NUM_SAIDAS }, (_, i) => (
                             <TabsTrigger key={i + 1} value={`saida-${i + 1}`}>
                                 Saída {i + 1}
