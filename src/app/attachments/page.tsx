@@ -32,9 +32,13 @@ export default function AttachmentsPage() {
 
     useEffect(() => {
         setIsClient(true);
-        const savedAttachments = localStorage.getItem('attachments');
-        if (savedAttachments) {
-            setAttachments(JSON.parse(savedAttachments));
+        try {
+            const savedAttachments = localStorage.getItem('attachments');
+            if (savedAttachments) {
+                setAttachments(JSON.parse(savedAttachments));
+            }
+        } catch (error) {
+            console.error("Failed to load attachments from localStorage:", error);
         }
     }, []);
 
@@ -142,8 +146,10 @@ export default function AttachmentsPage() {
             imageUrl: newEvolutionData.imageUrl,
             evolutionLog: [...(attachmentToUpdate.evolutionLog || []), previousState],
         };
+        
+        const newAttachments = attachments.map(a => a.id === updatedAttachment.id ? updatedAttachment : a);
+        setAttachments(newAttachments);
 
-        setAttachments(prev => prev.map(a => a.id === updatedAttachment.id ? updatedAttachment : a));
         toast({ title: "Evolução registrada!", description: `Nova evolução para "${updatedAttachment.name}" foi salva.` });
         handleCloseForms();
     };
