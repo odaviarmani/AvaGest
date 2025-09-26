@@ -19,8 +19,6 @@ const areaColorMap: Record<string, string> = {
   "default": "bg-gray-500/80",
 };
 
-const getStatusFromColumnId = (columnId: string) => columnId.split('-')[0];
-
 export default function TaskCalendar() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -128,7 +126,7 @@ export default function TaskCalendar() {
                         <Badge variant="outline" className="bg-accent/20 text-accent-foreground border-accent">Entrega</Badge>
                     )}
                      <Badge variant="secondary">{task.priority}</Badge>
-                     <Badge variant="secondary">{getStatusFromColumnId(task.columnId)}</Badge>
+                     <Badge variant="secondary">{task.columnId}</Badge>
                      {task.area.map(a => <Badge key={a} variant="outline">{a}</Badge>)}
                   </div>
                 </div>

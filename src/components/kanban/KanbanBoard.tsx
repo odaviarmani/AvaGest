@@ -18,12 +18,12 @@ import { format } from 'date-fns';
 import { Separator } from '../ui/separator';
 
 const DEFAULT_TASKS: Task[] = [
-    { id: 'task-1', name: 'Configurar ambiente de desenvolvimento', area: ['Programação'], priority: 'Alta', startDate: new Date(), dueDate: null, columnId: 'Fazer' },
-    { id: 'task-2', name: 'Criar wireframes da UI', area: ['Core Values'], priority: 'Média', startDate: new Date(), dueDate: null, columnId: 'Planejamento' },
-    { id: 'task-3', name: 'Testar endpoint de login', area: ['Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Fazendo' },
+    { id: 'task-1', name: 'Configurar ambiente de desenvolvimento', area: ['Programação'], priority: 'Alta', startDate: new Date(), dueDate: null, columnId: 'Learning' },
+    { id: 'task-2', name: 'Criar wireframes da UI', area: ['Core Values'], priority: 'Média', startDate: new Date(), dueDate: null, columnId: 'Learning' },
+    { id: 'task-3', name: 'Testar endpoint de login', area: ['Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Action' },
     { id: 'task-4', name: 'Publicar landing page', area: ['Construção'], priority: 'Baixa', startDate: null, dueDate: null, columnId: 'Feito' },
-    { id: 'task-5', name: 'Revisar copy do site', area: ['Construção'], priority: 'Média', startDate: null, dueDate: null, columnId: 'Fazer' },
-    { id: 'task-6', name: 'Implementar autenticação', area: ['Projeto de Inovação', 'Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Planejamento' },
+    { id: 'task-5', name: 'Revisar copy do site', area: ['Construção'], priority: 'Média', startDate: null, dueDate: null, columnId: 'Learning' },
+    { id: 'task-6', name: 'Implementar autenticação', area: ['Projeto de Inovação', 'Programação'], priority: 'Alta', startDate: null, dueDate: null, columnId: 'Decode' },
 ];
 
 const progressStatuses = statuses.filter(s => s !== 'Feito');
@@ -51,10 +51,26 @@ export default function KanbanBoard() {
         }
         return value;
       });
-      const validatedTasks = parsedTasks.map((task: Task) => ({
-          ...task,
-          columnId: task.columnId.split('-')[0] // Ensure columnId is just the status name
-      }));
+      const validatedTasks = parsedTasks.map((task: Task) => {
+          let newColumnId = task.columnId;
+          const oldStatusMap: Record<string, string> = {
+            'Planejamento': 'Learning',
+            'Fazer': 'Learning',
+            'Fazendo': 'Action',
+            'Análise': 'Decode',
+            'Aprimoramento': 'Decode',
+          };
+          if (oldStatusMap[task.columnId]) {
+              newColumnId = oldStatusMap[task.columnId];
+          } else if (!statuses.includes(task.columnId as any)) {
+              newColumnId = 'Learning'; // Default fallback
+          }
+
+          return {
+              ...task,
+              columnId: newColumnId
+          };
+      });
       setTasks(validatedTasks);
     } else {
       setTasks(DEFAULT_TASKS);
@@ -122,7 +138,7 @@ export default function KanbanBoard() {
             } else {
                 // If column is empty, we need to decide where to put it.
                 // A simple approach is to find the column index and place it after the last task of the previous column.
-                const columnIndex = statuses.indexOf(destination.droppableId);
+                const columnIndex = statuses.indexOf(destination.droppableId as any);
                 if (columnIndex > 0) {
                     const prevColumnId = statuses[columnIndex - 1];
                     const lastIndexOfPrevColumn = newTasks.map(t => t.columnId).lastIndexOf(prevColumnId);
@@ -148,7 +164,7 @@ export default function KanbanBoard() {
         area: [],
         startDate: null,
         dueDate: null,
-        columnId: columnId || 'Planejamento',
+        columnId: columnId || 'Learning',
       });
     }
     setIsDialogOpen(true);
@@ -256,7 +272,7 @@ export default function KanbanBoard() {
     <div className="p-4 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-4 gap-4 flex-wrap">
             <div className="flex gap-2">
-                <Button onClick={() => handleOpenDialog(null, 'Planejamento')}>
+                <Button onClick={() => handleOpenDialog(null, 'Learning')}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Nova Tarefa
                 </Button>

@@ -51,7 +51,7 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
       area: [],
       startDate: null,
       dueDate: null,
-      columnId: 'Planejamento',
+      columnId: 'Learning',
     },
   });
 

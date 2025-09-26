@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 export const priorities = ['Baixa', 'Média', 'Alta'] as const;
-export const statuses = ['Planejamento', 'Fazer', 'Fazendo', 'Análise', 'Aprimoramento', 'Feito'] as const;
+export const statuses = ['Learning', 'Action', 'Decode', 'Feito'] as const;
 export const areaNames = ['Projeto de Inovação', 'Construção', 'Programação', 'Core Values'] as const;
 
 
