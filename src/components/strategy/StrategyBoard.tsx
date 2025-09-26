@@ -13,6 +13,7 @@ import StrategySteps from './StrategySteps';
 import type { Instruction } from './StrategySteps';
 import { useToast } from '@/hooks/use-toast';
 import StrategyFlowchart from './StrategyFlowchart';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const COLORS = [
@@ -25,7 +26,7 @@ const COLORS = [
     { value: "#ec4899", label: "Rosa" },
     { value: "#14b8a6", label: "Ciano" },
 ];
-const NUM_SAIDAS = 10;
+const NUM_STRATEGIES = 4;
 const MAT_WIDTH_CM = 240;
 
 type DrawingTool = 'line' | 'circle';
@@ -55,14 +56,14 @@ type DrawingHistory = Drawing[];
 const initialHistory = () => {
     const history: Record<string, DrawingHistory[]> = {};
     const steps: Record<string, number> = {};
-    for (let i = 1; i <= NUM_SAIDAS; i++) {
-        history[`saida-${i}`] = [[]];
-        steps[`saida-${i}`] = 0;
+    for (let i = 1; i <= NUM_STRATEGIES; i++) {
+        history[`strategy-${i}`] = [[]];
+        steps[`strategy-${i}`] = 0;
     }
     return {history, steps};
 }
 
-const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
+const StrategyResources = ({ strategyKey }: { strategyKey: string }) => {
     const [fileInfo, setFileInfo] = useState<{ name: string; url: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
@@ -72,14 +73,18 @@ const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
             const savedFilesRaw = localStorage.getItem('strategyResources');
             if (savedFilesRaw) {
                 const savedFiles = JSON.parse(savedFilesRaw);
-                if (savedFiles[saidaKey]) {
-                    setFileInfo(savedFiles[saidaKey]);
+                if (savedFiles[strategyKey]) {
+                    setFileInfo(savedFiles[strategyKey]);
+                } else {
+                    setFileInfo(null);
                 }
+            } else {
+                setFileInfo(null);
             }
         } catch (error) {
             console.error("Failed to load resources from localStorage:", error);
         }
-    }, [saidaKey]);
+    }, [strategyKey]);
 
     const saveFileToLocalStorage = (key: string, info: { name: string; url: string } | null) => {
         try {
@@ -111,7 +116,7 @@ const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
                 const url = reader.result as string;
                 const newFileInfo = { name: file.name, url };
                 setFileInfo(newFileInfo);
-                saveFileToLocalStorage(saidaKey, newFileInfo);
+                saveFileToLocalStorage(strategyKey, newFileInfo);
             };
             reader.readAsDataURL(file);
         }
@@ -119,7 +124,7 @@ const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
 
     const handleRemoveFile = () => {
         setFileInfo(null);
-        saveFileToLocalStorage(saidaKey, null);
+        saveFileToLocalStorage(strategyKey, null);
         if(fileInputRef.current) {
             fileInputRef.current.value = "";
         }
@@ -130,7 +135,7 @@ const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
     return (
         <Card className="overflow-hidden flex flex-col">
             <CardHeader>
-                <CardTitle>Recursos Saída {saidaKey.split('-')[1]}</CardTitle>
+                <CardTitle>Recursos Estratégia {strategyKey.split('-')[1]}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4 flex-1 flex flex-col">
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
@@ -180,7 +185,7 @@ const SaidaResources = ({ saidaKey }: { saidaKey: string }) => {
 
 
 export default function StrategyBoard() {
-  const [activeTab, setActiveTab] = useState(`saida-1`);
+  const [activeStrategy, setActiveStrategy] = useState(`strategy-1`);
   const [color, setColor] = useState(COLORS[0].value);
   const [lineWidth, setLineWidth] = useState(3);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>('line');
@@ -254,8 +259,8 @@ export default function StrategyBoard() {
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    const currentHistory = historyRef.current[activeTab] || [];
-    const currentStep = currentStepRef.current[activeTab] || 0;
+    const currentHistory = historyRef.current[activeStrategy] || [];
+    const currentStep = currentStepRef.current[activeStrategy] || 0;
     const drawings = (currentStep > 0 ? currentHistory.slice(0, currentStep) : []).flat();
     
     drawings.forEach((drawing, index) => {
@@ -316,7 +321,7 @@ export default function StrategyBoard() {
             ctx.stroke();
         }
     }
-  }, [activeTab, isDrawing, startPoint, endPoint, color, lineWidth, drawingTool]);
+  }, [activeStrategy, isDrawing, startPoint, endPoint, color, lineWidth, drawingTool]);
 
   const drawMainCanvas = useCallback(() => {
       drawAllLinesForCanvas();
@@ -324,7 +329,7 @@ export default function StrategyBoard() {
 
   useEffect(() => {
     drawMainCanvas();
-  }, [drawMainCanvas, activeTab, _]);
+  }, [drawMainCanvas, activeStrategy, _]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -381,10 +386,10 @@ export default function StrategyBoard() {
     setStartPoint(coords);
     setEndPoint(coords);
 
-    const step = currentStepRef.current[activeTab] || 0;
-    const historyForTab = historyRef.current[activeTab] || [];
+    const step = currentStepRef.current[activeStrategy] || 0;
+    const historyForTab = historyRef.current[activeStrategy] || [];
     const newHistory = historyForTab.slice(0, step);
-    historyRef.current[activeTab] = newHistory;
+    historyRef.current[activeStrategy] = newHistory;
   };
 
   const stopDrawing = () => {
@@ -425,11 +430,11 @@ export default function StrategyBoard() {
         };
     }
     
-    const step = currentStepRef.current[activeTab] || 0;
-    const newHistory = [...(historyRef.current[activeTab] || []).slice(0, step), [newDrawing]];
+    const step = currentStepRef.current[activeStrategy] || 0;
+    const newHistory = [...(historyRef.current[activeStrategy] || []).slice(0, step), [newDrawing]];
     
-    historyRef.current[activeTab] = newHistory;
-    currentStepRef.current[activeTab] = newHistory.length;
+    historyRef.current[activeStrategy] = newHistory;
+    currentStepRef.current[activeStrategy] = newHistory.length;
 
     setIsDrawing(false);
     setStartPoint(null);
@@ -449,27 +454,27 @@ export default function StrategyBoard() {
   };
 
   const undo = () => {
-    const currentStep = currentStepRef.current[activeTab] || 0;
+    const currentStep = currentStepRef.current[activeStrategy] || 0;
     if (currentStep > 0) {
-        currentStepRef.current[activeTab] = currentStep - 1;
+        currentStepRef.current[activeStrategy] = currentStep - 1;
         drawMainCanvas();
         saveData();
     }
   };
 
   const redo = () => {
-    const history = historyRef.current[activeTab] || [];
-    const currentStep = currentStepRef.current[activeTab] || 0;
+    const history = historyRef.current[activeStrategy] || [];
+    const currentStep = currentStepRef.current[activeStrategy] || 0;
     if (currentStep < history.length) {
-      currentStepRef.current[activeTab] = currentStep + 1;
+      currentStepRef.current[activeStrategy] = currentStep + 1;
       drawMainCanvas();
       saveData();
     }
   };
 
   const clearCanvas = () => {
-    historyRef.current[activeTab] = [[]];
-    currentStepRef.current[activeTab] = 0;
+    historyRef.current[activeStrategy] = [[]];
+    currentStepRef.current[activeStrategy] = 0;
     drawMainCanvas();
     saveData();
   };
@@ -562,15 +567,15 @@ export default function StrategyBoard() {
     });
 
     const link = document.createElement('a');
-    link.download = `estrategia_${activeTab}_${new Date().toISOString()}.png`;
+    link.download = `estrategia_${activeStrategy}_${new Date().toISOString()}.png`;
     link.href = downloadCanvas.toDataURL('image/png');
     link.click();
   };
   
     const instructions = useMemo((): Instruction[] => {
         if (!isClient) return [];
-        const currentDrawings = (historyRef.current[activeTab] || [])
-            .slice(0, currentStepRef.current[activeTab] || 0)
+        const currentDrawings = (historyRef.current[activeStrategy] || [])
+            .slice(0, currentStepRef.current[activeStrategy] || 0)
             .flat();
 
         const result: Instruction[] = [];
@@ -620,11 +625,20 @@ export default function StrategyBoard() {
         });
 
         return result;
-    }, [activeTab, isClient, _]);
+    }, [activeStrategy, isClient, _]);
 
 
   return (
     <div className="w-full flex-1 flex flex-col">
+        <Tabs value={activeStrategy} onValueChange={setActiveStrategy} className="w-full mb-4">
+            <TabsList>
+                 {Array.from({ length: NUM_STRATEGIES }, (_, i) => (
+                    <TabsTrigger key={i + 1} value={`strategy-${i + 1}`}>
+                        Estratégia {i + 1}
+                    </TabsTrigger>
+                ))}
+            </TabsList>
+        </Tabs>
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
              <div className="lg:col-span-3 relative w-full aspect-[2/1] rounded-lg border overflow-hidden shadow-lg bg-muted flex items-center justify-center">
                 {isClient && mapImage ? (
@@ -671,92 +685,81 @@ export default function StrategyBoard() {
 
             <div className="lg:col-span-1">
                  <Card className="w-full shrink-0">
-                    <CardContent className="p-4">
-                        <RadioGroup value={activeTab} onValueChange={setActiveTab} className="grid w-full grid-cols-5 gap-2 mb-4">
-                             {Array.from({ length: NUM_SAIDAS }, (_, i) => (
-                                <Label key={i + 1} htmlFor={`saida-${i + 1}`} className="border rounded-md p-2 text-center text-sm font-medium cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
-                                    <RadioGroupItem value={`saida-${i + 1}`} id={`saida-${i + 1}`} className="sr-only"/>
-                                    S{i + 1}
+                    <CardContent className="p-4 space-y-6">
+                        <div>
+                            <Label className="text-base font-semibold">Ferramenta</Label>
+                            <RadioGroup value={drawingTool} onValueChange={(v) => setDrawingTool(v as DrawingTool)} className="grid grid-cols-2 gap-2 mt-2">
+                                <Label htmlFor="tool-line" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                    <RadioGroupItem value="line" id="tool-line" className="sr-only"/>
+                                    <MousePointer className="w-4 h-4"/> Linha
                                 </Label>
-                            ))}
-                        </RadioGroup>
-                            
-                        <div className="p-1 pt-4 space-y-6">
-                            <div>
-                                <Label className="text-base font-semibold">Ferramenta</Label>
-                                <RadioGroup value={drawingTool} onValueChange={(v) => setDrawingTool(v as DrawingTool)} className="grid grid-cols-2 gap-2 mt-2">
-                                    <Label htmlFor="tool-line" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
-                                        <RadioGroupItem value="line" id="tool-line" className="sr-only"/>
-                                        <MousePointer className="w-4 h-4"/> Linha
-                                    </Label>
-                                    <Label htmlFor="tool-circle" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
-                                        <RadioGroupItem value="circle" id="tool-circle" className="sr-only"/>
-                                        <Circle className="w-4 h-4"/> Círculo
-                                    </Label>
-                                </RadioGroup>
-                            </div>
-
-                            <div>
-                                <Label className="text-base font-semibold">Cor do Pincel</Label>
-                                <RadioGroup value={color} onValueChange={setColor} className="grid grid-cols-4 gap-2 mt-2">
-                                    {COLORS.map(c => (
-                                        <div key={c.value} className="flex items-center">
-                                            <RadioGroupItem value={c.value} id={c.value} className="sr-only" />
-                                            <Label htmlFor={c.value} className="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer" style={{ backgroundColor: c.value, 'boxShadow': color === c.value ? `0 0 0 3px ${c.value}` : 'none' }}></Label>
-                                        </div>
-                                    ))}
-                                </RadioGroup>
-                            </div>
-                            
-                            <div>
-                                <Label htmlFor="lineWidth" className="text-base font-semibold">
-                                    Espessura: {lineWidth}px
+                                <Label htmlFor="tool-circle" className="border rounded-md p-2 flex items-center justify-center gap-2 cursor-pointer has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:checked]:border-primary">
+                                    <RadioGroupItem value="circle" id="tool-circle" className="sr-only"/>
+                                    <Circle className="w-4 h-4"/> Círculo
                                 </Label>
-                                <Slider
-                                    id="lineWidth"
-                                    value={[lineWidth]}
-                                    onValueChange={(val) => setLineWidth(val[0])}
-                                    min={1}
-                                    max={20}
-                                    step={1}
-                                    className="mt-2"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-2">
-                                <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeTab] || 0) === 0}>
-                                    <Undo className="mr-2 h-4 w-4"/> Desfazer
-                                </Button>
-                                <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeTab] || 0) >= (historyRef.current[activeTab] || []).length)}>
-                                    <Redo className="mr-2 h-4 w-4"/> Refazer
-                                </Button>
-                            </div>
-                            
-                            <Button variant="destructive" onClick={clearCanvas} className="w-full" disabled={!mapImage}>
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Limpar Desenho
-                            </Button>
-
-                            <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Baixar Desenho e Código
-                            </Button>
-
-                            {mapImage && (
-                                <Button variant="secondary" onClick={() => {
-                                    setMapImage(null);
-                                    localStorage.removeItem('strategyMapImage');
-                                    const { history, steps } = initialHistory();
-                                    historyRef.current = history;
-                                    currentStepRef.current = steps;
-                                    saveData();
-                                    drawMainCanvas();
-                                }} className="w-full mt-2">
-                                    <Upload className="mr-2 h-4 w-4" />
-                                    Trocar Imagem
-                                </Button>
-                            )}
+                            </RadioGroup>
                         </div>
+
+                        <div>
+                            <Label className="text-base font-semibold">Cor do Pincel</Label>
+                            <RadioGroup value={color} onValueChange={setColor} className="grid grid-cols-4 gap-2 mt-2">
+                                {COLORS.map(c => (
+                                    <div key={c.value} className="flex items-center">
+                                        <RadioGroupItem value={c.value} id={c.value} className="sr-only" />
+                                        <Label htmlFor={c.value} className="w-10 h-10 rounded-full border-2 border-transparent cursor-pointer" style={{ backgroundColor: c.value, 'boxShadow': color === c.value ? `0 0 0 3px ${c.value}` : 'none' }}></Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        </div>
+                        
+                        <div>
+                            <Label htmlFor="lineWidth" className="text-base font-semibold">
+                                Espessura: {lineWidth}px
+                            </Label>
+                            <Slider
+                                id="lineWidth"
+                                value={[lineWidth]}
+                                onValueChange={(val) => setLineWidth(val[0])}
+                                min={1}
+                                max={20}
+                                step={1}
+                                className="mt-2"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button variant="outline" onClick={undo} disabled={!mapImage || (currentStepRef.current[activeStrategy] || 0) === 0}>
+                                <Undo className="mr-2 h-4 w-4"/> Desfazer
+                            </Button>
+                            <Button variant="outline" onClick={redo} disabled={!mapImage || ((currentStepRef.current[activeStrategy] || 0) >= (historyRef.current[activeStrategy] || []).length)}>
+                                <Redo className="mr-2 h-4 w-4"/> Refazer
+                            </Button>
+                        </div>
+                        
+                        <Button variant="destructive" onClick={clearCanvas} className="w-full" disabled={!mapImage}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Limpar Desenho
+                        </Button>
+
+                        <Button onClick={handleDownload} className="w-full" disabled={!mapImage}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Baixar Desenho e Código
+                        </Button>
+
+                        {mapImage && (
+                            <Button variant="secondary" onClick={() => {
+                                setMapImage(null);
+                                localStorage.removeItem('strategyMapImage');
+                                const { history, steps } = initialHistory();
+                                historyRef.current = history;
+                                currentStepRef.current = steps;
+                                saveData();
+                                drawMainCanvas();
+                            }} className="w-full mt-2">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Trocar Imagem
+                            </Button>
+                        )}
                     </CardContent>
                 </Card>
             </div>
@@ -770,12 +773,12 @@ export default function StrategyBoard() {
 
         {isClient && mapImage && (
             <div className="mt-12 w-full">
-                <h2 className="text-2xl font-bold mb-4 text-center">Recursos das Saídas</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-                    {Array.from({ length: NUM_SAIDAS }, (_, i) => {
-                        const saidaKey = `saida-${i + 1}`;
+                <h2 className="text-2xl font-bold mb-4 text-center">Recursos das Estratégias</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {Array.from({ length: NUM_STRATEGIES }, (_, i) => {
+                        const strategyKey = `strategy-${i + 1}`;
                         return (
-                           <SaidaResources key={saidaKey} saidaKey={saidaKey} />
+                           <StrategyResources key={strategyKey} strategyKey={strategyKey} />
                         );
                     })}
                 </div>
@@ -784,5 +787,3 @@ export default function StrategyBoard() {
     </div>
   );
 }
-
-    
