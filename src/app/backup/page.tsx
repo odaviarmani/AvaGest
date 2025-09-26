@@ -128,7 +128,7 @@ export default function BackupPage() {
         }
     };
 
-    const handleImportConfirm = () => {
+    const handleImportConfirm = (strategy: 'merge' | 'replace') => {
         if (!fileToImport) return;
 
         const reader = new FileReader();
@@ -146,11 +146,18 @@ export default function BackupPage() {
                      throw new Error("Este não parece ser um arquivo de backup válido.");
                 }
 
+                if (strategy === 'replace') {
+                    LOCALSTORAGE_KEYS.forEach(key => {
+                        localStorage.removeItem(key);
+                    });
+                }
+
+
                 importedKeys.forEach(key => {
                     if (LOCALSTORAGE_KEYS.includes(key)) {
                         const importedValue = importedData[key];
                         
-                        if (ARRAY_KEYS_TO_MERGE.includes(key) && Array.isArray(importedValue)) {
+                        if (strategy === 'merge' && ARRAY_KEYS_TO_MERGE.includes(key) && Array.isArray(importedValue)) {
                             const existingValueRaw = localStorage.getItem(key);
                             const existingValue: any[] = existingValueRaw ? JSON.parse(existingValueRaw) : [];
                             
@@ -170,7 +177,7 @@ export default function BackupPage() {
                 
                 toast({
                     title: 'Importação Concluída!',
-                    description: 'Os dados foram mesclados. A página será recarregada.',
+                    description: `Os dados foram importados com a estratégia de ${strategy === 'merge' ? 'mesclagem' : 'substituição'}. A página será recarregada.`,
                 });
                 
                 setTimeout(() => window.location.reload(), 2000);
@@ -198,7 +205,7 @@ export default function BackupPage() {
                     <div>
                         <h1 className="text-3xl font-bold">Backup e Restauração de Dados</h1>
                         <p className="text-muted-foreground">
-                            Exporte seus dados para um arquivo de backup ou importe para mesclar com seu ambiente atual.
+                            Exporte seus dados para um arquivo de backup ou importe para mesclar/substituir seu ambiente atual.
                         </p>
                     </div>
                 </div>
@@ -228,7 +235,7 @@ export default function BackupPage() {
                         <CardHeader>
                             <CardTitle>Importar Dados</CardTitle>
                             <CardDescription>
-                                Selecione um arquivo de backup para restaurar os dados. Os dados do backup serão MESCLADOS aos dados já existentes. Itens duplicados (com o mesmo ID) serão ignorados.
+                                Selecione um arquivo de backup para restaurar os dados. Você poderá escolher entre mesclar com os dados existentes ou substituí-los completamente.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -253,17 +260,20 @@ export default function BackupPage() {
                          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 mb-4">
                             <AlertTriangle className="h-6 w-6 text-yellow-600" />
                         </div>
-                        <AlertDialogTitle className="text-center">Aviso de Importação</AlertDialogTitle>
+                        <AlertDialogTitle className="text-center">Como você deseja importar os dados?</AlertDialogTitle>
                         <AlertDialogDescription className="text-center">
-                           Você está prestes a MESCLAR os dados do arquivo selecionado com os dados existentes. Itens novos serão adicionados e itens duplicados serão ignorados.
-                           <br/><br/>
-                           Arquivo: <span className="font-semibold">{fileToImport?.name}</span>
+                           <p className="font-semibold mb-2">Arquivo: {fileToImport?.name}</p>
+                           <p><span className="font-bold">Substituir:</span> Apaga todos os dados atuais e os substitui pelos dados do backup. Use com cuidado!</p>
+                           <p className="mt-2"><span className="font-bold">Mesclar:</span> Mantém os dados atuais e adiciona apenas os itens novos do backup. Itens com o mesmo ID serão ignorados.</p>
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="sm:justify-center">
+                    <AlertDialogFooter className="sm:justify-center flex-col-reverse sm:flex-row gap-2">
                         <AlertDialogCancel onClick={() => setImportAlertOpen(false)}>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleImportConfirm}>
-                            Sim, mesclar dados
+                        <Button variant="destructive" onClick={() => handleImportConfirm('replace')}>
+                            Substituir Dados
+                        </Button>
+                        <AlertDialogAction onClick={() => handleImportConfirm('merge')}>
+                            Mesclar Dados
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -271,5 +281,3 @@ export default function BackupPage() {
         </div>
     );
 }
-
-    
