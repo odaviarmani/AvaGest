@@ -16,7 +16,19 @@ import { useAuth } from '@/contexts/AuthContext';
 
 type TestFormValues = Omit<RobotTest, 'id' | 'date'>;
 
-const formSchema = robotTestSchema.omit({ id: true, date: true });
+const formSchema = z.object({
+    name: z.string().min(1, "O nome do teste é obrigatório."),
+    type: z.enum(['Robô', 'Anexo', 'Programação']),
+    attempts: z.coerce.number().min(1, "Deve haver pelo menos uma tentativa."),
+    successes: z.coerce.number().min(0, "O número de acertos não pode ser negativo."),
+    objective: z.string().optional(),
+    imageUrl: z.string().nullable().optional(),
+    testedBy: z.string().min(1, "É obrigatório informar quem realizou o teste."),
+}).refine(data => data.successes <= data.attempts, {
+    message: "O número de acertos não pode ser maior que o de tentativas.",
+    path: ["successes"], 
+});
+
 
 interface TestFormProps {
     onSave: (data: TestFormValues) => void;
