@@ -16,9 +16,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
 
+// We define the form schema here, omitting fields that are auto-generated or not part of the form
+const formSchema = robotTestSchema.omit({ id: true, date: true });
+type TestFormValues = z.infer<typeof formSchema>;
+
 
 interface TestFormProps {
-    onSave: (data: RobotTest) => void;
+    onSave: (data: TestFormValues) => void;
     onCancel: () => void;
     existingTest: RobotTest | null;
 }
@@ -27,13 +31,14 @@ export default function TestForm({ onSave, onCancel, existingTest }: TestFormPro
     const [isUploading, setIsUploading] = useState(false);
     const { username } = useAuth();
     
-    const form = useForm<RobotTest>({
-        resolver: zodResolver(robotTestSchema),
-        defaultValues: existingTest || {
-            id: crypto.randomUUID(),
+    const form = useForm<TestFormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: existingTest ? {
+            ...existingTest,
+            date: new Date(existingTest.date), // ensure date is a Date object if it's a string
+        } : {
             name: '',
             type: 'Robô',
-            date: new Date(),
             attempts: 10,
             successes: 8,
             objective: '',
@@ -56,8 +61,8 @@ export default function TestForm({ onSave, onCancel, existingTest }: TestFormPro
     }
 
 
-    const onSubmit = (data: RobotTest) => {
-        onSave({ ...data, date: new Date() });
+    const onSubmit = (data: TestFormValues) => {
+        onSave(data);
     };
 
     return (

@@ -52,7 +52,7 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
                         <Badge variant={getTypeBadgeVariant(type)}>{type}</Badge>
                          <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5"/>
-                            {format(date, 'dd/MM/yy HH:mm', { locale: ptBR })}
+                            {format(new Date(date), 'dd/MM/yy HH:mm', { locale: ptBR })}
                         </span>
                     </CardDescription>
                 </div>
@@ -70,7 +70,9 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
                                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}><ImageIcon className="mr-2 h-4 w-4" /> Ver Imagem</DropdownMenuItem>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-3xl">
-                                    <Image src={imageUrl} alt={`Imagem do teste ${name}`} width={800} height={600} className="w-full h-auto object-contain rounded-md" unoptimized />
+                                    <div className="relative aspect-video mt-6">
+                                        <Image src={imageUrl} alt={`Imagem do teste ${name}`} layout="fill" className="object-contain rounded-md" unoptimized />
+                                    </div>
                                 </DialogContent>
                             </Dialog>
                         )}
@@ -106,7 +108,7 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
                     <p className="text-sm text-muted-foreground break-words italic">"{objective || 'Nenhum objetivo definido.'}"</p>
                 </div>
             </CardContent>
-            <CardFooter className="p-4">
+            <CardFooter className="p-4 flex flex-col items-start gap-2">
                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Testado por:</span>
                     <div className="flex -space-x-2">
@@ -117,6 +119,9 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
                             </Avatar>
                         ))}
                     </div>
+                </div>
+                <div className="text-sm font-medium text-foreground">
+                    {testedBy.join(', ')}
                 </div>
             </CardFooter>
         </Card>

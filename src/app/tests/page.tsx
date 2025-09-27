@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import html2camera from 'html2canvas';
+import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, FlaskConical, BarChart, Download } from 'lucide-react';
 import { RobotTest } from '@/lib/types';
@@ -47,7 +47,7 @@ export default function TestsPage() {
 
     const handleDownloadCroqui = () => {
         if (printRef.current) {
-            html2camera(printRef.current, {
+            html2canvas(printRef.current, {
                 useCORS: true,
                 backgroundColor: null,
                 scale: 2,
@@ -81,13 +81,14 @@ export default function TestsPage() {
         setIsDialogOpen(false);
     };
 
-    const handleSaveTest = (data: RobotTest) => {
-        if (tests.some(t => t.id === data.id)) {
-            setTests(tests.map(t => (t.id === data.id ? data : t)));
-            toast({ title: "Teste atualizado!", description: `O teste "${data.name}" foi atualizado.` });
+    const handleSaveTest = (data: Omit<RobotTest, 'date'>) => {
+        const testWithDate = { ...data, date: new Date() };
+        if (tests.some(t => t.id === testWithDate.id)) {
+            setTests(tests.map(t => (t.id === testWithDate.id ? testWithDate : t)));
+            toast({ title: "Teste atualizado!", description: `O teste "${testWithDate.name}" foi atualizado.` });
         } else {
-            setTests(prev => [...prev, data].sort((a, b) => b.date.getTime() - a.date.getTime()));
-            toast({ title: "Teste registrado!", description: `O teste "${data.name}" foi salvo.` });
+            setTests(prev => [...prev, testWithDate].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            toast({ title: "Teste registrado!", description: `O teste "${testWithDate.name}" foi salvo.` });
         }
         handleCloseDialog();
     };
