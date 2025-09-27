@@ -86,13 +86,13 @@ export default function TestsPage() {
         setIsDialogOpen(false);
     };
 
-    const handleSaveTest = (data: Omit<RobotTest, 'date'>) => {
-        if (existingTest) {
-             const testWithDate = { ...data, date: existingTest.date };
+    const handleSaveTest = (data: Omit<RobotTest, 'id' | 'date'>) => {
+        if (editingTest) {
+            const testWithDate = { ...data, id: editingTest.id, date: editingTest.date };
             setTests(prev => prev.map(t => (t.id === testWithDate.id ? testWithDate : t)));
             toast({ title: "Teste atualizado!", description: `O teste "${data.name}" foi atualizado.` });
         } else {
-            const newTest = { ...data, date: new Date() };
+            const newTest = { ...data, id: crypto.randomUUID(), date: new Date() };
             setTests(prev => [newTest, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
             toast({ title: "Teste registrado!", description: `O teste "${data.name}" foi salvo.` });
         }
