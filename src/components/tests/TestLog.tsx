@@ -1,17 +1,18 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { History, Trash2 } from 'lucide-react';
+import { History, Trash2, Image as ImageIcon } from 'lucide-react';
 import { RobotTest } from '@/lib/types';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Badge } from '../ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import Image from 'next/image';
 
 interface TestLogProps {
     tests: RobotTest[];
@@ -20,7 +21,7 @@ interface TestLogProps {
 }
 
 export default function TestLog({ tests, onDelete, onClearAll }: TestLogProps) {
-    const [isClearAllOpen, setIsClearAllOpen] = React.useState(false);
+    const [isClearAllOpen, setIsClearAllOpen] = useState(false);
     
     const getTypeBadgeVariant = (type: RobotTest['type']) => {
         switch (type) {
@@ -46,23 +47,41 @@ export default function TestLog({ tests, onDelete, onClearAll }: TestLogProps) {
                 <ScrollArea className="h-[400px] pr-4">
                     {tests.length > 0 ? (
                         <div className="space-y-3">
-                            {tests.map(test => (
-                                <div key={test.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                                    <div className="flex-1 overflow-hidden">
+                            {tests.map(test => {
+                                const successPercentage = test.attempts > 0 ? (test.successes / test.attempts) * 100 : 0;
+                                return (
+                                <div key={test.id} className="flex items-start justify-between p-3 bg-secondary/50 rounded-lg">
+                                    <div className="flex-1 overflow-hidden space-y-1">
                                         <p className="font-semibold truncate" title={test.name}>{test.name}</p>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-sm text-muted-foreground italic">"{test.objective || 'Nenhum objetivo definido.'}"</p>
+                                        <p className="text-xs text-muted-foreground">
                                             {format(test.date, 'dd/MM/yy HH:mm', { locale: ptBR })}
                                         </p>
-                                        <div className="flex items-center gap-2 mt-1">
+                                        <div className="flex items-center gap-2 pt-1">
                                              <Badge variant={getTypeBadgeVariant(test.type)}>{test.type}</Badge>
-                                             <Badge variant="outline">{test.successPercentage}%</Badge>
+                                             <Badge variant="outline">{successPercentage.toFixed(0)}% de acerto</Badge>
+                                             <Badge variant="secondary">{test.successes}/{test.attempts} acertos</Badge>
                                         </div>
                                     </div>
-                                    <Button variant="ghost" size="icon" onClick={() => onDelete(test.id)}>
-                                        <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive"/>
-                                    </Button>
+                                    <div className="flex flex-col items-center gap-1 ml-2">
+                                        {test.imageUrl && (
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                        <ImageIcon className="w-4 h-4 text-blue-500" />
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="max-w-3xl">
+                                                    <Image src={test.imageUrl} alt={`Imagem do teste ${test.name}`} width={800} height={600} className="w-full h-auto object-contain rounded-md" />
+                                                </DialogContent>
+                                            </Dialog>
+                                        )}
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onDelete(test.id)}>
+                                            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive"/>
+                                        </Button>
+                                    </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     ) : (
                         <div className="text-center text-muted-foreground h-full flex items-center justify-center">

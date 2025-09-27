@@ -1,35 +1,53 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { robotTestSchema, RobotTest } from '@/lib/types';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { z } from 'zod';
-import { Slider } from '../ui/slider';
+import { Textarea } from '../ui/textarea';
 
-type TestFormValues = z.infer<typeof robotTestSchema>;
-
-interface TestFormProps {
-    onSave: (data: Omit<TestFormValues, 'id' | 'date'>) => void;
-    onCancel: () => void;
-}
+type TestFormValues = Omit<RobotTest, 'id' | 'date'>;
 
 const formSchema = robotTestSchema.omit({ id: true, date: true });
 
+interface TestFormProps {
+    onSave: (data: TestFormValues) => void;
+    onCancel: () => void;
+}
+
 export default function TestForm({ onSave, onCancel }: TestFormProps) {
+    const [isUploading, setIsUploading] = useState(false);
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: '',
             type: 'Robô',
-            successPercentage: 80,
+            attempts: 10,
+            successes: 8,
+            objective: '',
+            imageUrl: null,
         },
     });
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setIsUploading(true);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                form.setValue('imageUrl', reader.result as string, { shouldValidate: true });
+                setIsUploading(false);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
 
     const onSubmit = (data: z.infer<typeof formSchema>) => {
         onSave(data);
@@ -37,7 +55,7 @@ export default function TestForm({ onSave, onCancel }: TestFormProps) {
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
                     control={form.control}
                     name="name"
@@ -51,6 +69,21 @@ export default function TestForm({ onSave, onCancel }: TestFormProps) {
                         </FormItem>
                     )}
                 />
+
+                <FormField
+                    control={form.control}
+                    name="objective"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Objetivo do Teste</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Descreva o que este teste visa validar..." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                
                 <FormField
                     control={form.control}
                     name="type"
@@ -73,21 +106,51 @@ export default function TestForm({ onSave, onCancel }: TestFormProps) {
                         </FormItem>
                     )}
                 />
-                <FormField
+
+                <div className="grid grid-cols-2 gap-4">
+                     <FormField
+                        control={form.control}
+                        name="attempts"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nº de Tentativas</FormLabel>
+                                <FormControl>
+                                    <Input type="number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="successes"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Nº de Acertos</FormLabel>
+                                <FormControl>
+                                    <Input type="number" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                 <FormField
                     control={form.control}
-                    name="successPercentage"
+                    name="imageUrl"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Porcentagem de Acerto: {field.value}%</FormLabel>
+                            <FormLabel>Anexar Imagem (Opcional)</FormLabel>
                             <FormControl>
-                                <Slider
-                                    value={[field.value]}
-                                    onValueChange={(value) => field.onChange(value[0])}
-                                    min={0}
-                                    max={100}
-                                    step={5}
+                                <Input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    onChange={handleImageUpload}
+                                    disabled={isUploading}
                                 />
                             </FormControl>
+                            {isUploading && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
+                            {form.watch('imageUrl') && <img src={form.watch('imageUrl')!} alt="Preview" className="mt-2 max-h-40 w-auto object-cover rounded-md" />}
                             <FormMessage />
                         </FormItem>
                     )}
@@ -97,7 +160,7 @@ export default function TestForm({ onSave, onCancel }: TestFormProps) {
                     <Button type="button" variant="ghost" onClick={onCancel}>
                         Cancelar
                     </Button>
-                    <Button type="submit">Salvar Teste</Button>
+                    <Button type="submit" disabled={isUploading}>Salvar Teste</Button>
                 </div>
             </form>
         </Form>

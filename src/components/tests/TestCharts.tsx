@@ -3,7 +3,7 @@
 
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { RobotTest } from '@/lib/types';
 import { format } from 'date-fns';
 
@@ -17,6 +17,7 @@ export default function TestCharts({ tests }: TestChartsProps) {
     const chartData = useMemo(() => {
         return tests.map(test => ({
             ...test,
+            successPercentage: test.attempts > 0 ? (test.successes / test.attempts) * 100 : 0,
             dateFormatted: format(test.date, 'dd/MM'),
         }));
     }, [tests]);
@@ -58,7 +59,7 @@ export default function TestCharts({ tests }: TestChartsProps) {
                                     borderColor: 'hsl(var(--border))'
                                 }}
                                 labelFormatter={(label, payload) => `${payload?.[0]?.payload.name || ''} - ${label}`}
-                                formatter={(value: number) => [`${value}%`, 'Sucesso']}
+                                formatter={(value: number) => [`${value.toFixed(0)}%`, 'Sucesso']}
                             />
                             <Legend />
                             <Line type="monotone" dataKey="successPercentage" name="Taxa de Sucesso" stroke="hsl(var(--primary))" strokeWidth={2} />

@@ -100,8 +100,15 @@ export const robotTestSchema = z.object({
     name: z.string().min(1, "O nome do teste é obrigatório."),
     type: z.enum(['Robô', 'Anexo', 'Programação']),
     date: z.date(),
-    successPercentage: z.coerce.number().min(0).max(100, "A porcentagem deve ser entre 0 e 100."),
+    attempts: z.coerce.number().min(1, "Deve haver pelo menos uma tentativa."),
+    successes: z.coerce.number().min(0, "O número de acertos não pode ser negativo."),
+    objective: z.string().optional(),
+    imageUrl: z.string().nullable().optional(),
+}).refine(data => data.successes <= data.attempts, {
+    message: "O número de acertos não pode ser maior que o de tentativas.",
+    path: ["successes"], 
 });
+
 
 export type RobotTest = z.infer<typeof robotTestSchema>;
 
@@ -148,13 +155,6 @@ export interface ChatMessage {
   id: string;
   username: string;
   message: string;
-  timestamp: string;
-}
-
-export interface ActivityLog {
-  id: string;
-  username: string;
-  action: 'login' | 'logout';
   timestamp: string;
 }
 
