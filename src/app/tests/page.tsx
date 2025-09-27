@@ -1,21 +1,25 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import html2camera from 'html2canvas';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FlaskConical, Trash2, Download } from 'lucide-react';
+import { PlusCircle, FlaskConical, BarChart, Download } from 'lucide-react';
 import { RobotTest } from '@/lib/types';
 import TestForm from '@/components/tests/TestForm';
-import TestLog from '@/components/tests/TestLog';
-import TestCharts from '@/components/tests/TestCharts';
+import TestCard from '@/components/tests/TestCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import Link from 'next/link';
 
 export default function TestsPage() {
     const [tests, setTests] = useState<RobotTest[]>([]);
     const [isClient, setIsClient] = useState(false);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingTest, setEditingTest] = useState<RobotTest | null>(null);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [testToDelete, setTestToDelete] = useState<string | null>(null);
     const { toast } = useToast();
     const printRef = useRef<HTMLDivElement>(null);
 
@@ -23,7 +27,6 @@ export default function TestsPage() {
         setIsClient(true);
         const savedTests = localStorage.getItem('robotTests');
         if (savedTests) {
-            // Parse dates correctly from strings
             const parsedTests = JSON.parse(savedTests).map((test: RobotTest) => ({
                 ...test,
                 date: new Date(test.date),
@@ -57,26 +60,52 @@ export default function TestsPage() {
         }
     };
 
-    const handleSaveTest = (data: Omit<RobotTest, 'id' | 'date'>) => {
-        const newTest: RobotTest = {
-            id: crypto.randomUUID(),
-            date: new Date(),
-            ...data,
-        };
-        setTests(prev => [...prev, newTest].sort((a, b) => a.date.getTime() - b.date.getTime()));
-        toast({ title: "Teste registrado!", description: `O teste "${data.name}" foi salvo com sucesso.` });
+    const groupedItems = useMemo(() => {
+        return tests.reduce((acc, item) => {
+            const category = item.type || 'Sem Categoria';
+            if (!acc[category]) {
+                acc[category] = [];
+            }
+            acc[category].push(item);
+            return acc;
+        }, {} as Record<string, RobotTest[]>);
+    }, [tests]);
+
+    const handleOpenDialog = (test: RobotTest | null) => {
+        setEditingTest(test);
+        setIsDialogOpen(true);
+    };
+
+     const handleCloseDialog = () => {
+        setEditingTest(null);
         setIsDialogOpen(false);
     };
 
-    const handleDeleteTest = (testId: string) => {
-        setTests(prev => prev.filter(t => t.id !== testId));
-        toast({ title: "Teste removido!", variant: 'destructive' });
+    const handleSaveTest = (data: RobotTest) => {
+        if (tests.some(t => t.id === data.id)) {
+            setTests(tests.map(t => (t.id === data.id ? data : t)));
+            toast({ title: "Teste atualizado!", description: `O teste "${data.name}" foi atualizado.` });
+        } else {
+            setTests(prev => [...prev, data].sort((a, b) => b.date.getTime() - a.date.getTime()));
+            toast({ title: "Teste registrado!", description: `O teste "${data.name}" foi salvo.` });
+        }
+        handleCloseDialog();
     };
 
-    const handleClearAll = () => {
-        setTests([]);
-        toast({ title: "Histórico de testes limpo!", variant: 'destructive' });
-    }
+    const handleDeleteRequest = (testId: string) => {
+        setTestToDelete(testId);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const handleDeleteConfirm = () => {
+        if (testToDelete) {
+            const testName = tests.find(t => t.id === testToDelete)?.name;
+            setTests(prev => prev.filter(t => t.id !== testToDelete));
+            toast({ title: "Teste removido!", description: `O teste "${testName}" foi excluído.`, variant: 'destructive' });
+            setTestToDelete(null);
+            setIsDeleteDialogOpen(false);
+        }
+    };
 
     return (
         <div className="flex-1 p-4 md:p-8">
@@ -91,9 +120,15 @@ export default function TestsPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button onClick={() => setIsDialogOpen(true)}>
+                    <Button onClick={() => handleOpenDialog(null)}>
                         <PlusCircle className="mr-2" />
                         Registrar Teste
+                    </Button>
+                    <Button asChild variant="outline">
+                        <Link href="/tests/stats">
+                            <BarChart className="mr-2"/>
+                            Ver Estatísticas
+                        </Link>
                     </Button>
                     <Button onClick={handleDownloadCroqui} variant="outline">
                         <Download className="mr-2" />
@@ -102,28 +137,67 @@ export default function TestsPage() {
                 </div>
             </header>
 
-            <div ref={printRef}>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                    <div className="lg:col-span-2">
-                        <TestCharts tests={tests} />
+            <div ref={printRef} className="space-y-12">
+                 {isClient && tests.length > 0 ? (
+                    Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
+                        <div key={category}>
+                             <h2 className="text-2xl font-bold tracking-tight mb-4 border-b pb-2">{category}</h2>
+                             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+                                {items.map(test => (
+                                    <TestCard
+                                        key={test.id}
+                                        test={test}
+                                        onEdit={() => handleOpenDialog(test)}
+                                        onDelete={() => handleDeleteRequest(test.id)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[50vh]">
+                        <div className="flex flex-col items-center gap-1 text-center">
+                            <h3 className="text-2xl font-bold tracking-tight">
+                                Nenhum teste encontrado
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                                Comece registrando testes para vê-los aqui.
+                            </p>
+                        </div>
                     </div>
-                    <div className="lg:col-span-1">
-                        <TestLog tests={tests} onDelete={handleDeleteTest} onClearAll={handleClearAll} />
-                    </div>
-                </div>
+                )}
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
-                        <DialogTitle>Registrar Novo Teste</DialogTitle>
+                        <DialogTitle>{editingTest ? 'Editar Teste' : 'Registrar Novo Teste'}</DialogTitle>
                         <DialogDescription>
                             Adicione os resultados de um novo teste para análise.
                         </DialogDescription>
                     </DialogHeader>
-                    <TestForm onSave={handleSaveTest} onCancel={() => setIsDialogOpen(false)} />
+                    <TestForm 
+                        onSave={handleSaveTest} 
+                        onCancel={handleCloseDialog}
+                        existingTest={editingTest}
+                    />
                 </DialogContent>
             </Dialog>
+
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. Isso excluirá permanentemente o registro do teste.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteConfirm}>Excluir</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
