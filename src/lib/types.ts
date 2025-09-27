@@ -103,7 +103,6 @@ export const robotTestSchema = z.object({
     attempts: z.coerce.number().min(1, "Deve haver pelo menos uma tentativa."),
     successes: z.coerce.number().min(0, "O número de acertos não pode ser negativo."),
     objective: z.string().optional(),
-    imageUrl: z.string().nullable().optional(),
     testedBy: z.array(z.string()).min(1, "É obrigatório informar quem realizou o teste."),
 }).refine(data => data.successes <= data.attempts, {
     message: "O número de acertos não pode ser maior que o de tentativas.",

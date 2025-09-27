@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { RobotTest } from '@/lib/types';
@@ -16,14 +16,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
 
-// Define the form schema locally to avoid the .omit() issue.
+// Define the form schema locally to avoid issues with .omit() and ensure consistency.
 const formSchema = z.object({
     name: z.string().min(1, "O nome do teste é obrigatório."),
     type: z.enum(['Robô', 'Anexo', 'Programação']),
     attempts: z.coerce.number().min(1, "Deve haver pelo menos uma tentativa."),
     successes: z.coerce.number().min(0, "O número de acertos não pode ser negativo."),
     objective: z.string().optional(),
-    imageUrl: z.string().nullable().optional(),
     testedBy: z.array(z.string()).min(1, "É obrigatório informar quem realizou o teste."),
 }).refine(data => data.successes <= data.attempts, {
     message: "O número de acertos não pode ser maior que o de tentativas.",
@@ -39,7 +38,6 @@ interface TestFormProps {
 }
 
 export default function TestForm({ onSave, onCancel, existingTest }: TestFormProps) {
-    const [isUploading, setIsUploading] = useState(false);
     const { username } = useAuth();
     
     const form = useForm<TestFormValues>({
@@ -52,24 +50,9 @@ export default function TestForm({ onSave, onCancel, existingTest }: TestFormPro
             attempts: 10,
             successes: 8,
             objective: '',
-            imageUrl: null,
             testedBy: username ? [username] : [],
         },
     });
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setIsUploading(true);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                form.setValue('imageUrl', reader.result as string, { shouldValidate: true });
-                setIsUploading(false);
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
 
     const onSubmit = (data: TestFormValues) => {
         const dataToSave: RobotTest = {
@@ -207,26 +190,6 @@ export default function TestForm({ onSave, onCancel, existingTest }: TestFormPro
                                 )}
                             />
                         </div>
-                        <FormField
-                            control={form.control}
-                            name="imageUrl"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Anexar Imagem (Opcional)</FormLabel>
-                                    <FormControl>
-                                        <Input 
-                                            type="file" 
-                                            accept="image/*" 
-                                            onChange={handleImageUpload}
-                                            disabled={isUploading}
-                                        />
-                                    </FormControl>
-                                    {isUploading && <p className="text-sm text-muted-foreground">Enviando imagem...</p>}
-                                    {form.watch('imageUrl') && <img src={form.watch('imageUrl')!} alt="Preview" className="mt-2 max-h-40 w-auto object-cover rounded-md" />}
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
                     </div>
                 </ScrollArea>
 
@@ -234,7 +197,7 @@ export default function TestForm({ onSave, onCancel, existingTest }: TestFormPro
                     <Button type="button" variant="ghost" onClick={onCancel}>
                         Cancelar
                     </Button>
-                    <Button type="submit" disabled={isUploading}>{existingTest ? 'Salvar Alterações' : 'Salvar Teste'}</Button>
+                    <Button type="submit">{existingTest ? 'Salvar Alterações' : 'Salvar Teste'}</Button>
                 </div>
             </form>
         </Form>

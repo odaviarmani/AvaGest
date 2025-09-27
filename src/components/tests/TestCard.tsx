@@ -8,7 +8,6 @@ import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { MoreVertical, Pencil, Trash2, Calendar, Target, CheckCircle, XCircle } from 'lucide-react';
 import { Badge } from '../ui/badge';
-import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { legoAvatars } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
@@ -31,7 +30,7 @@ const getTypeBadgeVariant = (type: RobotTest['type']) => {
 };
 
 export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
-    const { name, type, date, attempts, successes, objective, imageUrl, testedBy } = test;
+    const { name, type, date, attempts, successes, objective, testedBy } = test;
     const successPercentage = attempts > 0 ? (successes / attempts) * 100 : 0;
     const failures = attempts - successes;
 
@@ -67,36 +66,27 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </CardHeader>
-            <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-4 pt-0">
-                 <div className="relative aspect-video bg-muted rounded-md overflow-hidden flex items-center justify-center">
-                    {imageUrl ? (
-                        <Image src={imageUrl} alt={`Imagem do teste ${name}`} layout="fill" className="object-contain" unoptimized />
-                    ) : (
-                        <span className="text-sm text-muted-foreground">Sem imagem</span>
-                    )}
-                </div>
-                <div className="flex flex-col justify-center h-full">
-                    <div className="flex gap-4 items-center">
-                        <div className="w-24 h-24 shrink-0">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie data={chartData} cx="50%" cy="50%" innerRadius={25} outerRadius={40} dataKey="value" stroke="none">
-                                        {chartData.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip
-                                        cursor={{ fill: 'transparent' }}
-                                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="space-y-1 text-sm">
-                            <p className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500"/> <strong>{successes}</strong> Acertos</p>
-                            <p className="flex items-center gap-2"><XCircle className="w-4 h-4 text-red-500"/> <strong>{failures}</strong> Erros</p>
-                            <p className="flex items-center gap-2"><Target className="w-4 h-4 text-blue-500"/> <strong>{successPercentage.toFixed(0)}%</strong> de Precisão</p>
-                        </div>
+            <CardContent className="flex-1 flex flex-col justify-center p-4 pt-0">
+                 <div className="flex gap-4 items-center">
+                    <div className="w-24 h-24 shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie data={chartData} cx="50%" cy="50%" innerRadius={25} outerRadius={40} dataKey="value" stroke="none">
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip
+                                    cursor={{ fill: 'transparent' }}
+                                    contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                        <p className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500"/> <strong>{successes}</strong> Acertos</p>
+                        <p className="flex items-center gap-2"><XCircle className="w-4 h-4 text-red-500"/> <strong>{failures}</strong> Erros</p>
+                        <p className="flex items-center gap-2"><Target className="w-4 h-4 text-blue-500"/> <strong>{successPercentage.toFixed(0)}%</strong> de Precisão</p>
                     </div>
                 </div>
             </CardContent>
