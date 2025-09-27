@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { robotTestSchema, RobotTest } from '@/lib/types';
+import { RobotTest } from '@/lib/types';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
 import { Input } from '../ui/input';
 import { Button } from '../ui/button';
@@ -16,13 +16,24 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
 
-// We define the form schema here, omitting fields that are auto-generated or not part of the form
-const formSchema = robotTestSchema.omit({ id: true, date: true });
+// Define the form schema locally to avoid the .omit() issue.
+const formSchema = z.object({
+    name: z.string().min(1, "O nome do teste é obrigatório."),
+    type: z.enum(['Robô', 'Anexo', 'Programação']),
+    attempts: z.coerce.number().min(1, "Deve haver pelo menos uma tentativa."),
+    successes: z.coerce.number().min(0, "O número de acertos não pode ser negativo."),
+    objective: z.string().optional(),
+    imageUrl: z.string().nullable().optional(),
+    testedBy: z.array(z.string()).min(1, "É obrigatório informar quem realizou o teste."),
+}).refine(data => data.successes <= data.attempts, {
+    message: "O número de acertos não pode ser maior que o de tentativas.",
+    path: ["successes"], 
+});
+
 type TestFormValues = z.infer<typeof formSchema>;
 
-
 interface TestFormProps {
-    onSave: (data: TestFormValues) => void;
+    onSave: (data: RobotTest) => void;
     onCancel: () => void;
     existingTest: RobotTest | null;
 }
@@ -35,7 +46,6 @@ export default function TestForm({ onSave, onCancel, existingTest }: TestFormPro
         resolver: zodResolver(formSchema),
         defaultValues: existingTest ? {
             ...existingTest,
-            date: new Date(existingTest.date), // ensure date is a Date object if it's a string
         } : {
             name: '',
             type: 'Robô',
@@ -62,7 +72,12 @@ export default function TestForm({ onSave, onCancel, existingTest }: TestFormPro
 
 
     const onSubmit = (data: TestFormValues) => {
-        onSave(data);
+        const dataToSave: RobotTest = {
+            ...data,
+            id: existingTest?.id || crypto.randomUUID(),
+            date: existingTest?.date || new Date(),
+        };
+        onSave(dataToSave);
     };
 
     return (
