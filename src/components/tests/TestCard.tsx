@@ -6,9 +6,8 @@ import { RobotTest } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { MoreVertical, Pencil, Trash2, Image as ImageIcon, Calendar, Target, CheckCircle, XCircle } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Calendar, Target, CheckCircle, XCircle } from 'lucide-react';
 import { Badge } from '../ui/badge';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { legoAvatars } from '@/contexts/AuthContext';
@@ -46,9 +45,9 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
     return (
         <Card className="flex flex-col transition-all duration-200 hover:shadow-lg h-full">
              <CardHeader className="flex-row items-start justify-between">
-                <div className="flex flex-col">
+                <div className="flex-1">
                     <CardTitle className="leading-tight">{name}</CardTitle>
-                    <CardDescription className="flex items-center gap-2 pt-1">
+                    <CardDescription className="flex items-center flex-wrap gap-x-4 gap-y-1 pt-1">
                         <Badge variant={getTypeBadgeVariant(type)}>{type}</Badge>
                          <span className="text-xs text-muted-foreground flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5"/>
@@ -64,51 +63,48 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={onEdit}><Pencil className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
-                         {imageUrl && (
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}><ImageIcon className="mr-2 h-4 w-4" /> Ver Imagem</DropdownMenuItem>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-3xl">
-                                    <div className="relative aspect-video mt-6">
-                                        <Image src={imageUrl} alt={`Imagem do teste ${name}`} layout="fill" className="object-contain rounded-md" unoptimized />
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        )}
                         <DropdownMenuItem onClick={onDelete} className="text-red-500 focus:text-red-500"><Trash2 className="mr-2 h-4 w-4" /> Excluir</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col p-4 pt-0">
-                <div className="flex gap-4 items-center">
-                    <div className="w-24 h-24 shrink-0">
-                         <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie data={chartData} cx="50%" cy="50%" innerRadius={25} outerRadius={40} dataKey="value" stroke="none">
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                 <Tooltip
-                                    cursor={{ fill: 'transparent' }}
-                                    contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                        <p className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500"/> <strong>{successes}</strong> Acertos</p>
-                        <p className="flex items-center gap-2"><XCircle className="w-4 h-4 text-red-500"/> <strong>{failures}</strong> Erros</p>
-                        <p className="flex items-center gap-2"><Target className="w-4 h-4 text-blue-500"/> <strong>{successPercentage.toFixed(0)}%</strong> de Precisão</p>
+            <CardContent className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center p-4 pt-0">
+                 <div className="relative aspect-video bg-muted rounded-md overflow-hidden flex items-center justify-center">
+                    {imageUrl ? (
+                        <Image src={imageUrl} alt={`Imagem do teste ${name}`} layout="fill" className="object-contain" unoptimized />
+                    ) : (
+                        <span className="text-sm text-muted-foreground">Sem imagem</span>
+                    )}
+                </div>
+                <div className="flex flex-col justify-center h-full">
+                    <div className="flex gap-4 items-center">
+                        <div className="w-24 h-24 shrink-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={chartData} cx="50%" cy="50%" innerRadius={25} outerRadius={40} dataKey="value" stroke="none">
+                                        {chartData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip
+                                        cursor={{ fill: 'transparent' }}
+                                        contentStyle={{ backgroundColor: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 'var(--radius)' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="space-y-1 text-sm">
+                            <p className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500"/> <strong>{successes}</strong> Acertos</p>
+                            <p className="flex items-center gap-2"><XCircle className="w-4 h-4 text-red-500"/> <strong>{failures}</strong> Erros</p>
+                            <p className="flex items-center gap-2"><Target className="w-4 h-4 text-blue-500"/> <strong>{successPercentage.toFixed(0)}%</strong> de Precisão</p>
+                        </div>
                     </div>
                 </div>
-                 <div className="mt-4">
+            </CardContent>
+             <CardFooter className="p-4 flex flex-col items-start gap-2">
+                 <div>
                     <h4 className="font-semibold text-sm">Objetivo:</h4>
                     <p className="text-sm text-muted-foreground break-words italic">"{objective || 'Nenhum objetivo definido.'}"</p>
                 </div>
-            </CardContent>
-            <CardFooter className="p-4 flex flex-col items-start gap-2">
                  <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Testado por:</span>
                     <div className="flex -space-x-2">
@@ -119,9 +115,7 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
                             </Avatar>
                         ))}
                     </div>
-                </div>
-                <div className="text-sm font-medium text-foreground">
-                    {testedBy.join(', ')}
+                     <span className="text-sm font-medium text-foreground pl-2">{testedBy.join(', ')}</span>
                 </div>
             </CardFooter>
         </Card>

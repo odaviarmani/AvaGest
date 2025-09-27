@@ -27,11 +27,16 @@ export default function TestsPage() {
         setIsClient(true);
         const savedTests = localStorage.getItem('robotTests');
         if (savedTests) {
-            const parsedTests = JSON.parse(savedTests).map((test: RobotTest) => ({
-                ...test,
-                date: new Date(test.date),
-            }));
-            setTests(parsedTests);
+            try {
+                const parsedTests = JSON.parse(savedTests).map((test: any) => ({
+                    ...test,
+                    date: new Date(test.date),
+                }));
+                setTests(parsedTests);
+            } catch (error) {
+                console.error("Failed to parse tests from localStorage:", error);
+                setTests([]);
+            }
         }
     }, []);
 
@@ -82,13 +87,14 @@ export default function TestsPage() {
     };
 
     const handleSaveTest = (data: Omit<RobotTest, 'date'>) => {
-        const testWithDate = { ...data, date: new Date() };
-        if (tests.some(t => t.id === testWithDate.id)) {
-            setTests(tests.map(t => (t.id === testWithDate.id ? testWithDate : t)));
-            toast({ title: "Teste atualizado!", description: `O teste "${testWithDate.name}" foi atualizado.` });
+        if (existingTest) {
+             const testWithDate = { ...data, date: existingTest.date };
+            setTests(prev => prev.map(t => (t.id === testWithDate.id ? testWithDate : t)));
+            toast({ title: "Teste atualizado!", description: `O teste "${data.name}" foi atualizado.` });
         } else {
-            setTests(prev => [...prev, testWithDate].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-            toast({ title: "Teste registrado!", description: `O teste "${testWithDate.name}" foi salvo.` });
+            const newTest = { ...data, date: new Date() };
+            setTests(prev => [newTest, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            toast({ title: "Teste registrado!", description: `O teste "${data.name}" foi salvo.` });
         }
         handleCloseDialog();
     };
@@ -143,7 +149,7 @@ export default function TestsPage() {
                     Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
                         <div key={category}>
                              <h2 className="text-2xl font-bold tracking-tight mb-4 border-b pb-2">{category}</h2>
-                             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+                             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
                                 {items.map(test => (
                                     <TestCard
                                         key={test.id}
