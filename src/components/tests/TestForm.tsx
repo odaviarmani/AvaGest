@@ -11,6 +11,8 @@ import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { z } from 'zod';
 import { Textarea } from '../ui/textarea';
+import { USERS } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 type TestFormValues = Omit<RobotTest, 'id' | 'date'>;
 
@@ -23,6 +25,8 @@ interface TestFormProps {
 
 export default function TestForm({ onSave, onCancel }: TestFormProps) {
     const [isUploading, setIsUploading] = useState(false);
+    const { username } = useAuth();
+    
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
@@ -32,6 +36,7 @@ export default function TestForm({ onSave, onCancel }: TestFormProps) {
             successes: 8,
             objective: '',
             imageUrl: null,
+            testedBy: username || '',
         },
     });
 
@@ -84,28 +89,50 @@ export default function TestForm({ onSave, onCancel }: TestFormProps) {
                     )}
                 />
                 
-                <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Tipo de Teste</FormLabel>
-                             <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o tipo" />
-                                </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    <SelectItem value="Robô">Robô</SelectItem>
-                                    <SelectItem value="Anexo">Anexo</SelectItem>
-                                    <SelectItem value="Programação">Programação</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Tipo de Teste</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione o tipo" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="Robô">Robô</SelectItem>
+                                        <SelectItem value="Anexo">Anexo</SelectItem>
+                                        <SelectItem value="Programação">Programação</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="testedBy"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Testado por</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Selecione o membro" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {USERS.map(user => <SelectItem key={user} value={user}>{user}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                      <FormField

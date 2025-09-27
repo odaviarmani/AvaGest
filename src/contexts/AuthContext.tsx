@@ -31,10 +31,29 @@ const validUsers: Record<string, string> = {
 export const USERS = Object.keys(validUsers);
 export const ADMIN_USERS = ["Davi", "Leandro", "Valquíria", "Sthefany", "Avalon"];
 
-const addActivityLog = (username: string, action: 'login' | 'logout') => {
-    // This function is now a no-op but is kept to avoid breaking other parts of the app that might call it.
-    // The activity log functionality is removed.
-}
+export const legoAvatars: Record<string, string> = {
+  "Davi": "https://fll-wro.github.io/assets/images/lego_avatars/davi.png",
+  "Carol": "https://fll-wro.github.io/assets/images/lego_avatars/carol.png",
+  "Lorenzo": "https://fll-wro.github.io/assets/images/lego_avatars/lorenzo.png",
+  "Thiago": "https://fll-wro.github.io/assets/images/lego_avatars/thiago.png",
+  "Miguel": "https://fll-wro.github.io/assets/images/lego_avatars/miguel.png",
+  "Italo": "https://fll-wro.github.io/assets/images/lego_avatars/italo.png",
+  "Leandro": "https://fll-wro.github.io/assets/images/lego_avatars/leandro.png",
+  "Valquíria": "https://fll-wro.github.io/assets/images/lego_avatars/valquiria.png",
+  "Sthefany": "https://fll-wro.github.io/assets/images/lego_avatars/sthefany.png",
+  "Avalon": "https://fll-wro.github.io/assets/images/lego_avatars/avalon.png",
+};
+
+const addActivityLog = (logEntry: ActivityLog) => {
+    try {
+        const currentLog = localStorage.getItem('activityLog');
+        const log: ActivityLog[] = currentLog ? JSON.parse(currentLog) : [];
+        log.unshift(logEntry);
+        localStorage.setItem('activityLog', JSON.stringify(log.slice(0, 100))); // Keep last 100 entries
+    } catch (error) {
+        console.error("Failed to write to activity log:", error);
+    }
+};
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -59,7 +78,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('username', user);
       setIsAuthenticated(true);
       setUsername(user);
-      addActivityLog(user, 'login');
+      addActivityLog({
+        id: crypto.randomUUID(),
+        username: user,
+        action: 'login',
+        timestamp: new Date().toISOString()
+      });
       router.push('/kanban');
       return true;
     }
@@ -69,7 +93,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     const currentUser = localStorage.getItem('username');
     if(currentUser) {
-        addActivityLog(currentUser, 'logout');
+        addActivityLog({
+            id: crypto.randomUUID(),
+            username: currentUser,
+            action: 'logout',
+            timestamp: new Date().toISOString()
+        });
     }
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('username');

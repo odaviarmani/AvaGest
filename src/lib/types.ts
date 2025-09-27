@@ -104,6 +104,7 @@ export const robotTestSchema = z.object({
     successes: z.coerce.number().min(0, "O número de acertos não pode ser negativo."),
     objective: z.string().optional(),
     imageUrl: z.string().nullable().optional(),
+    testedBy: z.string().min(1, "É obrigatório informar quem realizou o teste."),
 }).refine(data => data.successes <= data.attempts, {
     message: "O número de acertos não pode ser maior que o de tentativas.",
     path: ["successes"], 
@@ -167,3 +168,10 @@ export const inventoryItemSchema = z.object({
 });
 
 export type InventoryItem = z.infer<typeof inventoryItemSchema>;
+
+export type ActivityLog = {
+    id: string;
+    username: string;
+    action: 'login' | 'logout';
+    timestamp: string;
+}

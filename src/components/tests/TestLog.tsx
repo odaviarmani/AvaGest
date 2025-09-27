@@ -13,6 +13,9 @@ import { Badge } from '../ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { legoAvatars } from '@/contexts/AuthContext';
+
 
 interface TestLogProps {
     tests: RobotTest[];
@@ -52,6 +55,13 @@ export default function TestLog({ tests, onDelete, onClearAll }: TestLogProps) {
                                 return (
                                 <div key={test.id} className="flex items-start justify-between p-3 bg-secondary/50 rounded-lg">
                                     <div className="flex-1 overflow-hidden space-y-1">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Avatar className="h-6 w-6">
+                                                <AvatarImage src={legoAvatars[test.testedBy]} />
+                                                <AvatarFallback>{test.testedBy.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <span className="font-semibold text-sm">{test.testedBy}</span>
+                                        </div>
                                         <p className="font-semibold truncate" title={test.name}>{test.name}</p>
                                         <p className="text-sm text-muted-foreground italic">"{test.objective || 'Nenhum objetivo definido.'}"</p>
                                         <p className="text-xs text-muted-foreground">
