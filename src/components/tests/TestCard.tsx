@@ -42,7 +42,7 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
     const COLORS = ['#22c55e', '#ef4444'];
 
     return (
-        <Card className="flex flex-col transition-all duration-200 hover:shadow-lg h-full">
+        <Card className="flex flex-col transition-all duration-200 hover:shadow-lg aspect-square">
              <CardHeader className="flex-row items-start justify-between">
                 <div className="flex-1">
                     <CardTitle className="leading-tight">{name}</CardTitle>
