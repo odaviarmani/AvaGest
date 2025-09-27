@@ -88,7 +88,9 @@ export default function TestsPage() {
     };
 
     const handleSaveTest = (data: Omit<RobotTest, 'id' | 'date'>) => {
-        if (editingTest) {
+        const isEditing = tests.some(t => t.id === editingTest?.id);
+
+        if (isEditing && editingTest) {
             const testWithDate = { ...data, id: editingTest.id, date: editingTest.date };
             setTests(prev => prev.map(t => (t.id === testWithDate.id ? testWithDate : t)));
             toast({ title: "Teste atualizado!", description: `O teste "${data.name}" foi atualizado.` });
@@ -150,7 +152,7 @@ export default function TestsPage() {
                     Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
                         <div key={category}>
                              <h2 className="text-2xl font-bold tracking-tight mb-4 border-b pb-2">{category}</h2>
-                             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
                                 {items.map(test => (
                                     <TestCard
                                         key={test.id}
