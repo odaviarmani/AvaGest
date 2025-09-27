@@ -13,6 +13,7 @@ import { legoAvatars } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { cn } from '@/lib/utils';
 
 interface TestCardProps {
     test: RobotTest;
@@ -40,6 +41,8 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
     ];
 
     const COLORS = ['#22c55e', '#ef4444'];
+
+    const isSuccess = successPercentage >= 70;
 
     return (
         <Card className="flex flex-col transition-all duration-200 hover:shadow-lg aspect-square">
@@ -107,7 +110,10 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
                     </div>
                     <div className="flex flex-wrap items-center gap-1 pl-2">
                         {testedBy.map(user => (
-                             <span key={user} className="text-sm font-medium text-white bg-red-500 px-2 py-0.5 rounded">
+                             <span key={user} className={cn(
+                                "text-sm font-medium text-white px-2 py-0.5 rounded",
+                                isSuccess ? "bg-green-500" : "bg-red-500"
+                             )}>
                                 {user}
                             </span>
                         ))}
