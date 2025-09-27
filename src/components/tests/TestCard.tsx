@@ -105,7 +105,13 @@ export default function TestCard({ test, onEdit, onDelete }: TestCardProps) {
                             </Avatar>
                         ))}
                     </div>
-                     <span className="text-sm font-medium text-foreground pl-2">{testedBy.join(', ')}</span>
+                    <div className="flex flex-wrap items-center gap-1 pl-2">
+                        {testedBy.map(user => (
+                             <span key={user} className="text-sm font-medium text-accent-foreground bg-accent/50 px-2 py-0.5 rounded">
+                                {user}
+                            </span>
+                        ))}
+                    </div>
                 </div>
             </CardFooter>
         </Card>
