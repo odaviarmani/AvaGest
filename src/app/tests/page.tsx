@@ -28,7 +28,7 @@ export default function TestsPage() {
         const savedTests = localStorage.getItem('robotTests');
         if (savedTests) {
             try {
-                // Ensure date objects are correctly parsed
+                // Correctly parse date strings back into Date objects
                 const parsedTests = JSON.parse(savedTests).map((test: any) => ({
                     ...test,
                     date: new Date(test.date),
