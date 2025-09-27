@@ -1,14 +1,13 @@
 
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
-import html2camera from 'html2canvas';
+import React, { useState, useMemo } from "react";
 import RoundsTimer, { StageTime, STAGE_NAMES } from "@/components/rounds/RoundsTimer";
 import ScoreCalculator, { MissionState, initialMissionState } from "@/components/rounds/ScoreCalculator";
 import RoundLog, { RoundData } from "@/components/rounds/RoundLog";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BarChart, Download } from "lucide-react";
+import { BarChart } from "lucide-react";
 
 const TOTAL_SECONDS = 150; // 2 minutes and 30 seconds
 
@@ -18,22 +17,6 @@ export default function RoundsPage() {
   const [stageTimings, setStageTimings] = useState<StageTime[]>([]);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [missions, setMissions] = useState<MissionState>(initialMissionState);
-  const printRef = useRef<HTMLDivElement>(null);
-
-  const handleDownloadCroqui = () => {
-    if (printRef.current) {
-      html2camera(printRef.current, {
-        useCORS: true,
-        backgroundColor: null,
-        scale: 2,
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `croqui_rounds_${new Date().toISOString()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      });
-    }
-  };
 
   const calculateScore = (state: MissionState): number => {
     let score = 0;
@@ -97,13 +80,9 @@ export default function RoundsPage() {
                     Ver Estatísticas
                 </Link>
             </Button>
-            <Button onClick={handleDownloadCroqui} variant="outline">
-                <Download className="mr-2" />
-                Download Croqui
-            </Button>
         </div>
       </header>
-      <div ref={printRef}>
+      <div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             <div className="md:col-span-1">
             <RoundsTimer 

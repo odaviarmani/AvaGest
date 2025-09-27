@@ -2,9 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import html2canvas from 'html2canvas';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Download, Copy, TrendingUp, GitCommit } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import { Attachment, EvolutionEntry } from '@/lib/types';
 import AttachmentCard from '@/components/attachments/AttachmentCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -28,7 +27,6 @@ export default function AttachmentsPage() {
     const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
     
     const { toast } = useToast();
-    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsClient(true);
@@ -56,21 +54,6 @@ export default function AttachmentsPage() {
             }
         }
     }, [attachments, isClient, toast]);
-
-    const handleDownloadCroqui = () => {
-        if (printRef.current) {
-            html2canvas(printRef.current, {
-                useCORS: true,
-                backgroundColor: null,
-                scale: 2,
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `croqui_anexos_${new Date().toISOString()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        }
-    };
     
     const groupedAttachments = useMemo(() => {
         const groups: Record<string, Attachment[]> = {};
@@ -199,14 +182,10 @@ export default function AttachmentsPage() {
                         <PlusCircle className="mr-2" />
                         Adicionar Anexo
                     </Button>
-                    <Button onClick={handleDownloadCroqui} variant="outline">
-                        <Download className="mr-2" />
-                        Download Croqui
-                    </Button>
                 </div>
             </header>
 
-            <div ref={printRef} className="space-y-12">
+            <div className="space-y-12">
                 {isClient && attachments.length > 0 ? (
                     Object.entries(groupedAttachments).map(([category, items]) => (
                         <div key={category}>

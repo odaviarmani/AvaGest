@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import html2camera from 'html2canvas';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -52,7 +51,6 @@ export default function EstrelinhasPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [justificationToDelete, setJustificationToDelete] = useState<{member: string, id: string} | null>(null);
 
-  const printRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -73,21 +71,6 @@ export default function EstrelinhasPage() {
       localStorage.setItem(STORAGE_KEY_JUSTIFICATIONS, JSON.stringify(justifications));
     }
   }, [ratings, justifications, isClient]);
-
-  const handleDownloadCroqui = () => {
-    if (printRef.current) {
-      html2camera(printRef.current, {
-        useCORS: true,
-        backgroundColor: null,
-        scale: 2,
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `croqui_estrelinhas_${new Date().toISOString()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      });
-    }
-  };
 
   const handleRatingChange = (member: string, newRating: number) => {
     setCurrentJustification({ member, newRating });
@@ -215,13 +198,9 @@ export default function EstrelinhasPage() {
                   </p>
               </div>
           </div>
-          <Button onClick={handleDownloadCroqui} variant="outline">
-              <Download className="mr-2" />
-              Download Croqui
-          </Button>
       </header>
 
-      <div ref={printRef} className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-6">
           {TEAM_MEMBERS.map(member => (
             <Card key={member}>

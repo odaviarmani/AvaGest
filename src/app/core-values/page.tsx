@@ -1,10 +1,9 @@
 
 "use client";
 
-import React, { useRef } from 'react';
-import html2camera from 'html2canvas';
+import React from 'react';
 import CoreValuesTracker from "@/components/core-values/CoreValuesTracker";
-import { Heart, Gamepad2, Download, Star } from "lucide-react";
+import { Heart, Gamepad2, Star } from "lucide-react";
 import DrawingCanvas from "@/components/core-values/DrawingCanvas";
 import TicTacToe from "@/components/core-values/TicTacToe";
 import { useAuth, ADMIN_USERS } from "@/contexts/AuthContext";
@@ -16,22 +15,6 @@ import Link from 'next/link';
 export default function CoreValuesPage() {
   const { username } = useAuth();
   const isAdmin = username && ADMIN_USERS.includes(username);
-  const printRef = useRef<HTMLDivElement>(null);
-
-  const handleDownloadCroqui = () => {
-    if (printRef.current) {
-      html2camera(printRef.current, {
-        useCORS: true,
-        backgroundColor: null,
-        scale: 2,
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `croqui_core_values_${new Date().toISOString()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      });
-    }
-  };
 
   return (
     <div className="flex-1 p-4 md:p-8 space-y-12">
@@ -45,13 +28,9 @@ export default function CoreValuesPage() {
                     </p>
                 </div>
             </div>
-            <Button onClick={handleDownloadCroqui} variant="outline">
-                <Download className="mr-2" />
-                Download Croqui
-            </Button>
         </header>
 
-      <div ref={printRef}>
+      <div>
         <CoreValuesTracker />
 
         {isAdmin && (

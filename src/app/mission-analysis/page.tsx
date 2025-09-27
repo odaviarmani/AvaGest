@@ -1,30 +1,11 @@
 
 "use client";
 
-import React, { useRef } from 'react';
-import html2camera from 'html2canvas';
-import { NotepadText, Download } from "lucide-react";
+import React from 'react';
+import { NotepadText } from "lucide-react";
 import AnalysisTable from "@/components/mission-analysis/AnalysisTable";
-import { Button } from '@/components/ui/button';
 
 export default function MissionAnalysisPage() {
-  const printRef = useRef<HTMLDivElement>(null);
-
-  const handleDownloadCroqui = () => {
-    if (printRef.current) {
-      html2camera(printRef.current, {
-        useCORS: true,
-        backgroundColor: null,
-        scale: 2,
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `croqui_analise_missoes_${new Date().toISOString()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      });
-    }
-  };
-
   return (
     <div className="flex-1 p-4 md:p-8">
        <header className="mb-8 flex justify-between items-center">
@@ -37,12 +18,8 @@ export default function MissionAnalysisPage() {
                 </p>
             </div>
         </div>
-        <Button onClick={handleDownloadCroqui} variant="outline">
-            <Download className="mr-2" />
-            Download Croqui
-        </Button>
       </header>
-      <div ref={printRef}>
+      <div>
         <AnalysisTable />
       </div>
     </div>

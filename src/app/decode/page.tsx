@@ -1,30 +1,11 @@
 
 "use client";
 
-import React, { useRef } from 'react';
-import html2camera from 'html2canvas';
+import React from 'react';
 import DecodeEvaluation from "@/components/decode/DecodeEvaluation";
-import { Code, Download } from "lucide-react";
-import { Button } from '@/components/ui/button';
+import { Code } from "lucide-react";
 
 export default function DecodePage() {
-  const printRef = useRef<HTMLDivElement>(null);
-
-  const handleDownloadCroqui = () => {
-    if (printRef.current) {
-      html2camera(printRef.current, {
-        useCORS: true,
-        backgroundColor: null,
-        scale: 2,
-      }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `croqui_decode_${new Date().toISOString()}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      });
-    }
-  };
-
   return (
     <div className="flex-1 p-4 md:p-8">
       <header className="mb-8 flex justify-between items-center">
@@ -37,12 +18,8 @@ export default function DecodePage() {
             </p>
             </div>
         </div>
-        <Button onClick={handleDownloadCroqui} variant="outline">
-            <Download className="mr-2" />
-            Download Croqui
-        </Button>
       </header>
-      <div ref={printRef}>
+      <div>
         <DecodeEvaluation />
       </div>
     </div>

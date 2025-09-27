@@ -1,8 +1,7 @@
 
 "use client";
 
-import React, { useState, useRef } from 'react';
-import html2camera from 'html2canvas';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, Upload, AlertTriangle, DatabaseBackup } from 'lucide-react';
@@ -32,7 +31,8 @@ const LOCALSTORAGE_KEYS = [
     'strategySteps',
     'strategyResources',
     'attachments',
-    'missionAnalysisData_v2'
+    'missionAnalysisData_v2',
+    'customApps' // Added customApps key
 ];
 
 const ARRAY_KEYS_TO_MERGE = [
@@ -47,7 +47,8 @@ const ARRAY_KEYS_TO_MERGE = [
     'customNotifications',
     'attachments',
     'missionAnalysisData_v2',
-    'starRatingJustifications'
+    'starRatingJustifications',
+    'customApps' // Added customApps key
 ];
 
 
@@ -55,22 +56,6 @@ export default function BackupPage() {
     const { toast } = useToast();
     const [isImportAlertOpen, setImportAlertOpen] = useState(false);
     const [fileToImport, setFileToImport] = useState<File | null>(null);
-    const printRef = useRef<HTMLDivElement>(null);
-
-    const handleDownloadCroqui = () => {
-        if (printRef.current) {
-            html2camera(printRef.current, {
-                useCORS: true,
-                backgroundColor: null,
-                scale: 2,
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `croqui_backup_${new Date().toISOString()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        }
-    };
 
     const handleExport = () => {
         try {
@@ -209,12 +194,8 @@ export default function BackupPage() {
                         </p>
                     </div>
                 </div>
-                <Button onClick={handleDownloadCroqui} variant="outline">
-                    <Download className="mr-2" />
-                    Download Croqui
-                </Button>
             </header>
-            <div ref={printRef}>
+            <div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <Card>
                         <CardHeader>

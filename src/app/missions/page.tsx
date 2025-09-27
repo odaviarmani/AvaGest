@@ -1,10 +1,9 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
-import html2camera from 'html2canvas';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Target, BrainCircuit, Download } from 'lucide-react';
+import { PlusCircle, Target, BrainCircuit } from 'lucide-react';
 import { Mission } from '@/lib/types';
 import MissionCard from '@/components/missions/MissionCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -22,7 +21,6 @@ export default function MissionsPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [missionToDelete, setMissionToDelete] = useState<string | null>(null);
     const { toast } = useToast();
-    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsClient(true);
@@ -46,21 +44,6 @@ export default function MissionsPage() {
             }
         }
     }, [missions, isClient, toast]);
-
-    const handleDownloadCroqui = () => {
-        if (printRef.current) {
-            html2camera(printRef.current, {
-                useCORS: true,
-                backgroundColor: null,
-                scale: 2,
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `croqui_missoes_${new Date().toISOString()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        }
-    };
 
     const handleOpenDialog = (mission: Mission | null) => {
         setEditingMission(mission);
@@ -121,14 +104,10 @@ export default function MissionsPage() {
                             Iniciar Quiz
                         </Link>
                     </Button>
-                    <Button onClick={handleDownloadCroqui} variant="outline">
-                        <Download className="mr-2" />
-                        Download Croqui
-                    </Button>
                 </div>
             </header>
 
-            <div ref={printRef}>
+            <div>
             {isClient && missions.length > 0 ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {missions.map(mission => (

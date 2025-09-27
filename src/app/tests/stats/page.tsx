@@ -1,16 +1,15 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import html2camera from 'html2canvas';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, LineChart, Pie, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Cell } from 'recharts';
+import { LineChart, Pie, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Cell } from 'recharts';
 import { type RobotTest } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Download } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658'];
@@ -18,7 +17,6 @@ const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658'];
 export default function TestsStatsPage() {
     const [tests, setTests] = useState<RobotTest[]>([]);
     const [isClient, setIsClient] = useState(false);
-    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsClient(true);
@@ -32,23 +30,7 @@ export default function TestsStatsPage() {
         }
     }, []);
 
-    const handleDownloadCroqui = () => {
-        if (printRef.current) {
-        html2camera(printRef.current, {
-            useCORS: true,
-            backgroundColor: null,
-            scale: 2,
-        }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `croqui_estatisticas_testes_${new Date().toISOString()}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        });
-        }
-    };
-
-
-    const chartData = useMemo(() => {
+    const chartData = React.useMemo(() => {
         return tests.map(test => ({
             ...test,
             successPercentage: test.attempts > 0 ? (test.successes / test.attempts) * 100 : 0,
@@ -56,7 +38,7 @@ export default function TestsStatsPage() {
         }));
     }, [tests]);
 
-    const typeDistribution = useMemo(() => {
+    const typeDistribution = React.useMemo(() => {
         const counts = tests.reduce((acc, test) => {
             acc[test.type] = (acc[test.type] || 0) + 1;
             return acc;
@@ -116,12 +98,8 @@ export default function TestsStatsPage() {
                         </p>
                     </div>
                 </div>
-                <Button onClick={handleDownloadCroqui} variant="outline">
-                    <Download className="mr-2" />
-                    Download Croqui
-                </Button>
             </header>
-            <div ref={printRef} className="space-y-8">
+            <div className="space-y-8">
                 <Card>
                     <CardHeader>
                         <CardTitle>Histórico de Sucesso dos Testes</CardTitle>

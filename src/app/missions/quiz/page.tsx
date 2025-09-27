@@ -2,13 +2,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import html2camera from 'html2canvas';
 import { Mission, priorities } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star, Shuffle, HelpCircle, FileText, BookOpen, User, Timer, Download } from 'lucide-react';
+import { Award, Check, X as IconX, BrainCircuit, Users, ShieldQuestion, Star, Shuffle, HelpCircle, FileText, BookOpen, User, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -148,22 +147,6 @@ export default function MissionsQuizPage() {
     const [winner, setWinner] = useState<Team | 'empate' | null>(null);
     const [timeLeft, setTimeLeft] = useState(QUESTION_TIME_LIMIT);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const printRef = useRef<HTMLDivElement>(null);
-
-    const handleDownloadCroqui = () => {
-        if (printRef.current) {
-            html2camera(printRef.current, {
-                useCORS: true,
-                backgroundColor: null,
-                scale: 2,
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `croqui_quiz_${new Date().toISOString()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        }
-    };
 
     const startTimer = useCallback(() => {
         setTimeLeft(QUESTION_TIME_LIMIT);
@@ -523,7 +506,7 @@ export default function MissionsQuizPage() {
 
     if (gameState === 'finished') {
         return (
-            <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center text-center" ref={printRef}>
+            <div className="flex-1 p-4 md:p-8 flex flex-col items-center justify-center text-center">
                  <Card className="w-full max-w-2xl">
                     <CardHeader>
                         <div className="mx-auto bg-primary text-primary-foreground rounded-full p-4 w-fit mb-4 animate-pulse">
@@ -558,10 +541,6 @@ export default function MissionsQuizPage() {
                         <Button variant="outline" asChild className="w-full">
                             <Link href="/missions">Voltar para Missões</Link>
                         </Button>
-                         <Button onClick={handleDownloadCroqui} variant="outline" className="w-full">
-                            <Download className="mr-2" />
-                            Download Placar
-                        </Button>
                     </CardFooter>
                  </Card>
             </div>
@@ -589,13 +568,7 @@ export default function MissionsQuizPage() {
 
     return (
         <div className="flex-1 p-4 md:p-8 flex flex-col items-center">
-            <div className="w-full max-w-6xl mb-4 flex justify-end">
-                 <Button onClick={handleDownloadCroqui} variant="outline">
-                    <Download className="mr-2" />
-                    Download Croqui
-                </Button>
-            </div>
-            <div className="w-full max-w-6xl" ref={printRef}>
+            <div className="w-full max-w-6xl">
                 {/* Scoreboard */}
                 <div className="grid grid-cols-2 gap-4 mb-8">
                     <Card className={cn("text-center p-6 transition-all ring-4 ring-transparent", currentTurn === 'azul' && teamConfig.azul.ring)}>

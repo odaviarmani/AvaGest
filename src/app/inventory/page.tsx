@@ -1,10 +1,9 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import html2camera from 'html2canvas';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Archive, Download } from 'lucide-react';
+import { PlusCircle, Archive } from 'lucide-react';
 import { InventoryItem } from '@/lib/types';
 import InventoryItemCard from '@/components/inventory/InventoryItemCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -20,7 +19,6 @@ export default function InventoryPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [itemToDelete, setItemToDelete] = useState<string | null>(null);
     const { toast } = useToast();
-    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsClient(true);
@@ -44,21 +42,6 @@ export default function InventoryPage() {
             }
         }
     }, [inventoryItems, isClient, toast]);
-
-    const handleDownloadCroqui = () => {
-        if (printRef.current) {
-            html2camera(printRef.current, {
-                useCORS: true,
-                backgroundColor: null,
-                scale: 2,
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `croqui_inventario_${new Date().toISOString()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        }
-    };
 
     const groupedItems = useMemo(() => {
         return inventoryItems.reduce((acc, item) => {
@@ -130,14 +113,10 @@ export default function InventoryPage() {
                         <PlusCircle className="mr-2" />
                         Adicionar Item
                     </Button>
-                    <Button onClick={handleDownloadCroqui} variant="outline">
-                        <Download className="mr-2" />
-                        Download Croqui
-                    </Button>
                 </div>
             </header>
 
-            <div ref={printRef}>
+            <div>
             {isClient && inventoryItems.length > 0 ? (
                 <div className="space-y-8">
                     {Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (

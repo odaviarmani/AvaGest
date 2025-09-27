@@ -1,10 +1,9 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import html2canvas from 'html2canvas';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FlaskConical, BarChart, Download } from 'lucide-react';
+import { PlusCircle, FlaskConical, BarChart } from 'lucide-react';
 import { RobotTest } from '@/lib/types';
 import TestForm from '@/components/tests/TestForm';
 import TestCard from '@/components/tests/TestCard';
@@ -21,14 +20,12 @@ export default function TestsPage() {
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [testToDelete, setTestToDelete] = useState<string | null>(null);
     const { toast } = useToast();
-    const printRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsClient(true);
         const savedTests = localStorage.getItem('robotTests');
         if (savedTests) {
             try {
-                // Correctly parse date strings back into Date objects
                 const parsedTests = JSON.parse(savedTests).map((test: any) => ({
                     ...test,
                     date: new Date(test.date),
@@ -51,21 +48,6 @@ export default function TestsPage() {
         }
     }, [tests, isClient]);
 
-    const handleDownloadCroqui = () => {
-        if (printRef.current) {
-            html2canvas(printRef.current, {
-                useCORS: true,
-                backgroundColor: null,
-                scale: 2,
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `croqui_testes_${new Date().toISOString()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        }
-    };
-
     const groupedItems = useMemo(() => {
         return tests.reduce((acc, item) => {
             const category = item.type || 'Sem Categoria';
@@ -87,12 +69,11 @@ export default function TestsPage() {
         setIsDialogOpen(false);
     };
 
-    const handleSaveTest = (data: Omit<RobotTest, 'id' | 'date'>) => {
-        const isEditing = tests.some(t => t.id === editingTest?.id);
+    const handleSaveTest = (data: RobotTest) => {
+        const isEditing = tests.some(t => t.id === data.id);
 
-        if (isEditing && editingTest) {
-            const testWithDate = { ...data, id: editingTest.id, date: editingTest.date };
-            setTests(prev => prev.map(t => (t.id === testWithDate.id ? testWithDate : t)));
+        if (isEditing) {
+            setTests(prev => prev.map(t => (t.id === data.id ? data : t)));
             toast({ title: "Teste atualizado!", description: `O teste "${data.name}" foi atualizado.` });
         } else {
             const newTest = { ...data, id: crypto.randomUUID(), date: new Date() };
@@ -140,14 +121,10 @@ export default function TestsPage() {
                             Ver Estatísticas
                         </Link>
                     </Button>
-                    <Button onClick={handleDownloadCroqui} variant="outline">
-                        <Download className="mr-2" />
-                        Download Croqui
-                    </Button>
                 </div>
             </header>
 
-            <div ref={printRef} className="space-y-12">
+            <div className="space-y-12">
                  {isClient && tests.length > 0 ? (
                     Object.entries(groupedItems).sort(([a], [b]) => a.localeCompare(b)).map(([category, items]) => (
                         <div key={category}>

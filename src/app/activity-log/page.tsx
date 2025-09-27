@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import html2camera from 'html2canvas';
 import { useAuth, ADMIN_USERS } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -23,7 +22,6 @@ export default function ActivityLogPage() {
     const [logToDelete, setLogToDelete] = useState<string | null>(null);
     const [isClearAllDialogOpen, setIsClearAllDialogOpen] = useState(false);
     const { toast } = useToast();
-    const printRef = useRef<HTMLDivElement>(null);
 
     const isAdmin = username && ADMIN_USERS.includes(username);
 
@@ -48,21 +46,6 @@ export default function ActivityLogPage() {
             });
         }
     }, [isAdmin, router, toast]);
-
-    const handleDownloadCroqui = () => {
-        if (printRef.current) {
-            html2camera(printRef.current, {
-                useCORS: true,
-                backgroundColor: null,
-                scale: 2,
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `croqui_log_atividade_${new Date().toISOString()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        }
-    };
 
     const updateLog = (newLog: ActivityLog[]) => {
         setLog(newLog);
@@ -104,7 +87,7 @@ export default function ActivityLogPage() {
     
     return (
         <div className="flex-1 p-4 md:p-8">
-            <Card ref={printRef}>
+            <Card>
                 <CardHeader>
                     <div className="flex justify-between items-start">
                         <div>
@@ -123,10 +106,6 @@ export default function ActivityLogPage() {
                                     Limpar Histórico
                                 </Button>
                             )}
-                            <Button onClick={handleDownloadCroqui} variant="outline">
-                                <Download className="mr-2" />
-                                Download Croqui
-                            </Button>
                         </div>
                     </div>
                 </CardHeader>
