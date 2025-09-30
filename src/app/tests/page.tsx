@@ -3,10 +3,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, FlaskConical, BarChart } from 'lucide-react';
+import { PlusCircle, FlaskConical, BarChart, Copy, GitCompare } from 'lucide-react';
 import { RobotTest } from '@/lib/types';
 import TestForm from '@/components/tests/TestForm';
 import TestCard from '@/components/tests/TestCard';
+import TestComparisonDialog from '@/components/tests/TestComparisonDialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -19,6 +20,8 @@ export default function TestsPage() {
     const [editingTest, setEditingTest] = useState<RobotTest | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [testToDelete, setTestToDelete] = useState<string | null>(null);
+    const [selectedForComparison, setSelectedForComparison] = useState<string[]>([]);
+    const [isComparisonOpen, setIsComparisonOpen] = useState(false);
     const { toast } = useToast();
 
     useEffect(() => {
@@ -49,7 +52,8 @@ export default function TestsPage() {
     }, [tests, isClient]);
 
     const groupedItems = useMemo(() => {
-        return tests.reduce((acc, item) => {
+        const sortedTests = [...tests].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return sortedTests.reduce((acc, item) => {
             const category = item.type || 'Sem Categoria';
             if (!acc[category]) {
                 acc[category] = [];
@@ -64,7 +68,7 @@ export default function TestsPage() {
         setIsDialogOpen(true);
     };
 
-     const handleCloseDialog = () => {
+    const handleCloseDialog = () => {
         setEditingTest(null);
         setIsDialogOpen(false);
     };
@@ -76,8 +80,7 @@ export default function TestsPage() {
             setTests(prev => prev.map(t => (t.id === data.id ? data : t)));
             toast({ title: "Teste atualizado!", description: `O teste "${data.name}" foi atualizado.` });
         } else {
-            const newTest = { ...data, id: crypto.randomUUID(), date: new Date() };
-            setTests(prev => [newTest, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            setTests(prev => [...prev, data]);
             toast({ title: "Teste registrado!", description: `O teste "${data.name}" foi salvo.` });
         }
         handleCloseDialog();
@@ -97,10 +100,50 @@ export default function TestsPage() {
             setIsDeleteDialogOpen(false);
         }
     };
+    
+    const handleDuplicate = (testId: string) => {
+        const original = tests.find(t => t.id === testId);
+        if (!original) return;
+        const newTest: RobotTest = {
+            ...original,
+            id: crypto.randomUUID(),
+            name: `${original.name} (Cópia)`,
+            date: new Date(),
+        };
+        setTests(prev => [newTest, ...prev]);
+        toast({ title: "Teste duplicado!", description: `Uma cópia de "${original.name}" foi criada.`});
+    };
+
+    const handleSelectForComparison = (testId: string, isSelected: boolean) => {
+        if (isSelected) {
+            if (selectedForComparison.length < 2) {
+                setSelectedForComparison(prev => [...prev, testId]);
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'Limite de seleção atingido',
+                    description: 'Você só pode comparar 2 testes por vez.',
+                });
+                return false; // Prevent checkbox from being checked
+            }
+        } else {
+            setSelectedForComparison(prev => prev.filter(id => id !== testId));
+        }
+        return true;
+    };
+
+    const comparisonTests = useMemo(() => {
+        if (selectedForComparison.length !== 2) return null;
+        const testA = tests.find(t => t.id === selectedForComparison[0]);
+        const testB = tests.find(t => t.id === selectedForComparison[1]);
+        if (!testA || !testB) return null;
+        return { testA, testB };
+    }, [selectedForComparison, tests]);
+
 
     return (
         <div className="flex-1 p-4 md:p-8">
-            <header className="mb-8 flex justify-between items-center">
+            <header className="mb-8 flex justify-between items-center flex-wrap gap-4">
                 <div className="flex items-center gap-4">
                     <FlaskConical className="w-8 h-8 text-primary"/>
                     <div>
@@ -111,6 +154,11 @@ export default function TestsPage() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {comparisonTests && (
+                         <Button onClick={() => setIsComparisonOpen(true)}>
+                            <GitCompare className="mr-2"/> Comparar Selecionados
+                        </Button>
+                    )}
                     <Button onClick={() => handleOpenDialog(null)}>
                         <PlusCircle className="mr-2" />
                         Registrar Teste
@@ -136,6 +184,9 @@ export default function TestsPage() {
                                         test={test}
                                         onEdit={() => handleOpenDialog(test)}
                                         onDelete={() => handleDeleteRequest(test.id)}
+                                        onDuplicate={() => handleDuplicate(test.id)}
+                                        onSelectForComparison={handleSelectForComparison}
+                                        isSelectedForComparison={selectedForComparison.includes(test.id)}
                                     />
                                 ))}
                             </div>
@@ -185,6 +236,19 @@ export default function TestsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            
+            {comparisonTests && (
+                <Dialog open={isComparisonOpen} onOpenChange={setIsComparisonOpen}>
+                    <DialogContent className="max-w-4xl">
+                        <DialogHeader>
+                             <DialogTitle>Comparativo de Testes</DialogTitle>
+                             <DialogDescription>Análise comparativa entre os dois testes selecionados.</DialogDescription>
+                        </DialogHeader>
+                        <TestComparisonDialog testA={comparisonTests.testA} testB={comparisonTests.testB} />
+                    </DialogContent>
+                </Dialog>
+            )}
         </div>
     );
 }
+
