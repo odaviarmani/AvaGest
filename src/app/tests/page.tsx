@@ -53,8 +53,21 @@ export default function TestsPage() {
 
     const groupedItems = useMemo(() => {
         const sortedTests = [...tests].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
         return sortedTests.reduce((acc, item) => {
-            const category = item.type || 'Sem Categoria';
+            let category = item.type || 'Sem Categoria';
+
+            if (item.type === 'Robô') {
+                const nameLower = item.name.toLowerCase();
+                if (nameLower.includes('merlin 2.0') && nameLower.includes('genebra 2.0')) {
+                    category = 'Merlin 2.0 x Genebra 2.0';
+                } else if (nameLower.includes('merlin 3.0') && nameLower.includes('genebra 2.0')) {
+                    category = 'Merlin 3.0 x Genebra 2.0';
+                } else if (nameLower.includes('merlin 4.0') && nameLower.includes('merlin 3.0')) {
+                    category = 'Merlin 4.0 x Merlin 3.0';
+                }
+            }
+            
             if (!acc[category]) {
                 acc[category] = [];
             }
@@ -252,3 +265,6 @@ export default function TestsPage() {
     );
 }
 
+
+
+    
