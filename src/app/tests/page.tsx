@@ -31,7 +31,7 @@ export default function TestsPage() {
             try {
                 const parsedTests = JSON.parse(savedTests).map((test: any) => ({
                     ...test,
-                    date: new Date(test.date),
+                    date: test.date ? new Date(test.date) : new Date(),
                 }));
                 setTests(parsedTests);
             } catch (error) {
@@ -67,9 +67,9 @@ export default function TestsPage() {
                     category = 'Merlin 4.0 x Merlin 3.0';
                 }
             } else if (item.type === 'Anexo') {
-                const versionMatch = nameLower.match(/v(\d+(\.\d+)?)/);
+                const versionMatch = nameLower.match(/versão\s*(\d+(\.\d+)?)/);
                 if (versionMatch) {
-                    category = `Anexo ${versionMatch[0]}`;
+                    category = `Anexo Versão ${versionMatch[1]}`;
                 }
             }
     
