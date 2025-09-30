@@ -38,7 +38,7 @@ export default function TestComparisonDialog({ testA, testB }: TestComparisonDia
                 {isWinner && <div className="absolute top-4 right-4 bg-primary text-primary-foreground p-2 rounded-full"><Award className="w-5 h-5"/></div>}
             </CardHeader>
             <CardContent className="space-y-4">
-                <StatCard title="Precisão" value={`${getPrecision(test).toFixed(0)}%`} icon={<Target className="w-6 h-6"/>} className="text-blue-500" />
+                <StatCard title="Taxa de Acerto" value={`${getPrecision(test).toFixed(0)}%`} icon={<Target className="w-6 h-6"/>} className="text-blue-500" />
                 <StatCard title="Acertos" value={test.successes} icon={<CheckCircle className="w-6 h-6"/>} className="text-green-500" />
                 <StatCard title="Erros" value={test.attempts - test.successes} icon={<XCircle className="w-6 h-6"/>} className="text-red-500" />
                 <StatCard title="Testadores" icon={<Users className="w-6 h-6" />} value={
@@ -64,9 +64,9 @@ export default function TestComparisonDialog({ testA, testB }: TestComparisonDia
             <div className="text-center p-4 rounded-lg bg-accent text-accent-foreground">
                 <h3 className="font-bold text-lg">Conclusão</h3>
                 {winner ? (
-                    <p>O teste <span className="font-bold">"{winner.name}"</span> foi superior com <span className="font-bold">{Math.max(precisionA, precisionB).toFixed(0)}%</span> de precisão.</p>
+                    <p>O teste <span className="font-bold">"{winner.name}"</span> foi superior com <span className="font-bold">{Math.max(precisionA, precisionB).toFixed(0)}%</span> de taxa de acerto.</p>
                 ) : (
-                    <p>Ambos os testes tiveram um desempenho de precisão idêntico.</p>
+                    <p>Ambos os testes tiveram um desempenho de taxa de acerto idêntico.</p>
                 )}
             </div>
         </div>

@@ -36,9 +36,9 @@ const getTypeBadgeVariant = (type: RobotTest['type']) => {
 
 const getBackgroundColorClasses = (percentage: number) => {
     if (percentage < 70) {
-        return 'bg-red-100 dark:bg-red-900/40'; // Bad
+        return 'bg-red-100 dark:bg-red-900/40';
     }
-    return 'bg-green-100 dark:bg-green-900/40'; // Good
+    return 'bg-green-100 dark:bg-green-900/40';
 };
 
 
@@ -109,7 +109,7 @@ export default function TestCard({ test, onEdit, onDelete, onDuplicate, onSelect
                     <div className="space-y-1 text-sm">
                         <p className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500"/> <strong>{successes}</strong> Acertos</p>
                         <p className="flex items-center gap-2"><XCircle className="w-4 h-4 text-red-500"/> <strong>{failures}</strong> Erros</p>
-                        <p className="flex items-center gap-2"><Target className="w-4 h-4 text-blue-500"/> <strong>{successPercentage.toFixed(0)}%</strong> de Precisão</p>
+                        <p className="flex items-center gap-2"><Target className="w-4 h-4 text-blue-500"/> <strong>{successPercentage.toFixed(0)}%</strong> de Taxa de Acerto</p>
                     </div>
                 </div>
             </CardContent>

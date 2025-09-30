@@ -102,7 +102,7 @@ export default function TestsStatsPage() {
             <div className="space-y-8">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Histórico de Sucesso dos Testes</CardTitle>
+                        <CardTitle>Histórico de Taxa de Acerto dos Testes</CardTitle>
                         <CardDescription>Evolução da porcentagem de acerto ao longo do tempo.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[350px]">
@@ -117,10 +117,10 @@ export default function TestsStatsPage() {
                                         borderColor: 'hsl(var(--border))'
                                     }}
                                     labelFormatter={(label, payload) => `${payload?.[0]?.payload.name || ''} - ${label}`}
-                                    formatter={(value: number) => [`${value.toFixed(0)}%`, 'Sucesso']}
+                                    formatter={(value: number) => [`${value.toFixed(0)}%`, 'Taxa de Acerto']}
                                 />
                                 <Legend />
-                                <Line type="monotone" dataKey="successPercentage" name="Taxa de Sucesso" stroke="hsl(var(--primary))" strokeWidth={2} />
+                                <Line type="monotone" dataKey="successPercentage" name="Taxa de Acerto" stroke="hsl(var(--primary))" strokeWidth={2} />
                             </LineChart>
                         </ResponsiveContainer>
                     </CardContent>
