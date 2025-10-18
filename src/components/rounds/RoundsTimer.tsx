@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -8,15 +9,6 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '../ui/separator';
-
-export const STAGE_NAMES = [
-    "Saída 1", "Troca de anexo 1-2",
-    "Saída 2", "Troca de anexo 2-3",
-    "Saída 3", "Troca de anexo 3-4",
-    "Saída 4", "Troca de anexo 4-5",
-    "Saída 5", "Troca de anexo 5-6",
-    "Saída 6"
-];
 
 export interface StageTime {
     name: string;
@@ -80,11 +72,12 @@ interface RoundsTimerProps {
     currentStageIndex: number;
     setCurrentStageIndex: React.Dispatch<React.SetStateAction<number>>;
     totalSeconds: number;
+    stageNames: string[];
 }
 
 export default function RoundsTimer({
     seconds, setSeconds, isActive, setIsActive, stageTimings, setStageTimings,
-    currentStageIndex, setCurrentStageIndex, totalSeconds
+    currentStageIndex, setCurrentStageIndex, totalSeconds, stageNames
 }: RoundsTimerProps) {
   const [showAnimation, setShowAnimation] = useState(false);
   
@@ -147,13 +140,13 @@ export default function RoundsTimer({
     }, 1000);
 
     if (stageTimings.length === 0) {
-        const initialTimings = STAGE_NAMES.map(name => ({name, duration: null}));
+        const initialTimings = stageNames.map(name => ({name, duration: null}));
         setStageTimings(initialTimings);
         setCurrentStageIndex(0);
     }
     
     stageStartTimeRef.current = performance.now();
-  }, [stageTimings.length, setIsActive, setSeconds, setStageTimings, setCurrentStageIndex]);
+  }, [stageTimings.length, setIsActive, setSeconds, setStageTimings, setCurrentStageIndex, stageNames]);
 
   const handleStart = () => {
     if (seconds > 0) {
@@ -184,8 +177,8 @@ export default function RoundsTimer({
   };
 
   const handleNextStage = () => {
-      if (!isActive || currentStageIndex >= STAGE_NAMES.length - 1) {
-        if(isActive && currentStageIndex === STAGE_NAMES.length -1) {
+      if (!isActive || currentStageIndex >= stageNames.length - 1) {
+        if(isActive && currentStageIndex === stageNames.length -1) {
             const now = performance.now();
             if (stageStartTimeRef.current !== null) {
                 const elapsed = now - stageStartTimeRef.current;
@@ -220,7 +213,7 @@ export default function RoundsTimer({
 
 
   const progress = (seconds / totalSeconds) * 100;
-  const isFinished = currentStageIndex === STAGE_NAMES.length - 1 && stageTimings[STAGE_NAMES.length - 1]?.duration !== null && !isActive;
+  const isFinished = currentStageIndex === stageNames.length - 1 && stageTimings[stageNames.length - 1]?.duration !== null && !isActive;
 
   return (
     <>
@@ -267,7 +260,7 @@ export default function RoundsTimer({
             {stageTimings.length > 0 && (
                 <div className="w-full text-center">
                     <p className="text-sm text-muted-foreground">Etapa Atual:</p>
-                    <p className="font-semibold text-lg">{STAGE_NAMES[currentStageIndex]}</p>
+                    <p className="font-semibold text-lg">{stageNames[currentStageIndex]}</p>
                 </div>
             )}
 

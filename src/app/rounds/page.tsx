@@ -1,22 +1,36 @@
 
 "use client";
 
-import React, { useState, useMemo } from "react";
-import RoundsTimer, { StageTime, STAGE_NAMES } from "@/components/rounds/RoundsTimer";
+import React, { useState, useMemo, useCallback } from "react";
+import RoundsTimer, { StageTime } from "@/components/rounds/RoundsTimer";
 import ScoreCalculator, { MissionState, initialMissionState } from "@/components/rounds/ScoreCalculator";
 import RoundLog, { RoundData } from "@/components/rounds/RoundLog";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BarChart } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 const TOTAL_SECONDS = 150; // 2 minutes and 30 seconds
 
 export default function RoundsPage() {
   const [timerSeconds, setTimerSeconds] = useState(TOTAL_SECONDS);
-  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [isActive, setIsActive] = useState(false);
   const [stageTimings, setStageTimings] = useState<StageTime[]>([]);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [missions, setMissions] = useState<MissionState>(initialMissionState);
+  const [numberOfSaidas, setNumberOfSaidas] = useState(6);
+
+  const stageNames = useMemo(() => {
+    const names = [];
+    for (let i = 1; i <= numberOfSaidas; i++) {
+        names.push(`Saída ${i}`);
+        if (i < numberOfSaidas) {
+            names.push(`Troca de anexo ${i}-${i + 1}`);
+        }
+    }
+    return names;
+  }, [numberOfSaidas]);
 
   const calculateScore = (state: MissionState): number => {
     let score = 0;
@@ -54,15 +68,15 @@ export default function RoundsPage() {
 
   const totalScore = useMemo(() => calculateScore(missions), [missions]);
 
-  const handleResetAll = () => {
-    setIsTimerActive(false);
+  const handleResetAll = useCallback(() => {
+    setIsActive(false);
     setTimerSeconds(TOTAL_SECONDS);
     setStageTimings([]);
     setCurrentStageIndex(0);
     setMissions(initialMissionState);
-  };
-  
-  const isRoundFinished = currentStageIndex === STAGE_NAMES.length - 1 && stageTimings[STAGE_NAMES.length - 1]?.duration !== null && !isTimerActive;
+  }, []);
+
+  const isRoundFinished = currentStageIndex === stageNames.length - 1 && stageTimings[stageNames.length - 1]?.duration !== null && !isActive;
 
   return (
     <div className="flex-1 p-4 md:p-8">
@@ -84,18 +98,39 @@ export default function RoundsPage() {
       </header>
       <div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-            <div className="md:col-span-1">
-            <RoundsTimer 
-                seconds={timerSeconds}
-                setSeconds={setTimerSeconds}
-                isActive={isTimerActive}
-                setIsActive={setIsTimerActive}
-                stageTimings={stageTimings}
-                setStageTimings={setStageTimings}
-                currentStageIndex={currentStageIndex}
-                setCurrentStageIndex={setCurrentStageIndex}
-                totalSeconds={TOTAL_SECONDS}
-            />
+            <div className="md:col-span-1 space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="num-saidas">Quantidade de Saídas</Label>
+                    <Select
+                        value={String(numberOfSaidas)}
+                        onValueChange={(val) => {
+                            setNumberOfSaidas(Number(val));
+                            handleResetAll();
+                        }}
+                        disabled={isActive || stageTimings.length > 0}
+                    >
+                        <SelectTrigger id="num-saidas">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {Array.from({ length: 10 }, (_, i) => i + 1).map(num => (
+                                <SelectItem key={num} value={String(num)}>{num} Saídas</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <RoundsTimer 
+                    seconds={timerSeconds}
+                    setSeconds={setTimerSeconds}
+                    isActive={isActive}
+                    setIsActive={setIsActive}
+                    stageTimings={stageTimings}
+                    setStageTimings={setStageTimings}
+                    currentStageIndex={currentStageIndex}
+                    setCurrentStageIndex={setCurrentStageIndex}
+                    totalSeconds={TOTAL_SECONDS}
+                    stageNames={stageNames}
+                />
             </div>
             <div className="md:col-span-1">
             <ScoreCalculator 
