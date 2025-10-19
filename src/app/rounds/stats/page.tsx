@@ -45,7 +45,7 @@ const isMissionCompleted = (missionKey: keyof MissionState, missionState?: Missi
     if (!missionState) {
         return false;
     }
-    const value = missionState[missionKey] as any;
+    const value = missionState[missionKey];
     if (value === undefined) return false;
 
     if (typeof value === 'boolean') {
@@ -89,7 +89,7 @@ const isMissionCompleted = (missionKey: keyof MissionState, missionState?: Missi
 const SaidaAnalysisCard = ({ saidaNum, data }: { saidaNum: number, data: any }) => {
     if (!data) return null;
 
-    const { missions, totalPrecision, averageTime, commonErrors } = data;
+    const { missions, averagePrecision, averageTime, commonErrors } = data;
 
     return (
         <Card className="shadow-lg">
@@ -108,7 +108,7 @@ const SaidaAnalysisCard = ({ saidaNum, data }: { saidaNum: number, data: any }) 
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <StatDisplay icon={<Clock className="text-blue-500" />} title="Tempo Médio" value={`${averageTime.toFixed(2)}s`} />
-                    <StatDisplay icon={<Target className="text-green-500" />} title="Precisão Total" value={`${totalPrecision.toFixed(1)}%`} />
+                    <StatDisplay icon={<Target className="text-green-500" />} title="Precisão Média" value={`${averagePrecision.toFixed(1)}%`} />
                 </div>
                 <div>
                      <h4 className="font-semibold text-sm">Erros Mais Comuns:</h4>
@@ -247,6 +247,7 @@ export default function RoundsStatsPage() {
             if (saidaMissions.length > 0) {
 
                 const totalPrecision = saidaMissions.reduce((acc, m) => acc + m.consistency, 0);
+                const averagePrecision = totalPrecision / saidaMissions.length;
                 
                 const saidaTiming = averageTimingsData.find(t => t.name === `Saída ${i}`);
                 const averageTime = saidaTiming ? saidaTiming.averageTime : 0;
@@ -261,7 +262,7 @@ export default function RoundsStatsPage() {
 
                 saidasAnalysis[i] = {
                     missions: saidaMissions,
-                    totalPrecision,
+                    averagePrecision,
                     averageTime,
                     commonErrors,
                 };
@@ -551,31 +552,6 @@ export default function RoundsStatsPage() {
                             </CardContent>
                         </Card>
                     </div>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Média de Tempo por Etapa</CardTitle>
-                            <CardDescription>Tempo médio em segundos para cada etapa do round.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Etapa</TableHead>
-                                        <TableHead className="text-right">Tempo Médio (s)</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {stats.averageTimingsData.map((item) => (
-                                        <TableRow key={item.name}>
-                                            <TableCell className="font-medium">{item.name}</TableCell>
-                                            <TableCell className="text-right font-mono">{item.averageTime.toFixed(3)}s</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
                 </div>
             )}
         </div>
