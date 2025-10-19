@@ -31,7 +31,6 @@ const LOCALSTORAGE_KEYS = [
     'strategySteps',
     'strategyResources',
     'attachments',
-    'missionAnalysisData_v2',
     'customApps' // Added customApps key
 ];
 
@@ -46,7 +45,6 @@ const ARRAY_KEYS_TO_MERGE = [
     'roundsHistory',
     'customNotifications',
     'attachments',
-    'missionAnalysisData_v2',
     'starRatingJustifications',
     'customApps' // Added customApps key
 ];
