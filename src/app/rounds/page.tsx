@@ -50,37 +50,78 @@ export default function RoundsPage() {
     return names;
   }, [numberOfSaidas]);
   
-  const calculateScore = useCallback((state: MissionState): number => {
+ const calculateScore = useCallback((state: MissionState): number => {
     let score = 0;
+    
+    // M00 - Inspeção de Equipamentos
     if (state.m00_equipment_inspection) score += 20;
 
-    const m = state.missionsPerSaida.saida1; // Always use saida1 for calculation
-
-    if (m) {
-        score += m.m01_surface_brushing.soil_deposits_cleaned * 10;
-        if (m.m01_surface_brushing.brush_not_touching) score += 10;
-        if (m.m02_map_reveal) score += 30;
-        if (m.m03_mine_shaft_explorer) score += 40;
-        if (m.m04_careful_retrieval) score += 40;
-        if (m.m05_who_lived_here) score += 30;
-        if (m.m06_forge) score += 30;
-        if (m.m07_heavy_lifting) score += 30;
-        if (m.m08_silo) score += 30;
-        if (m.m09_whats_on_sale) score += 30;
-        if (m.m10_tip_the_scales) score += 30;
-        if (m.m11_fisher_artifacts) score += 30;
-        if (m.m12_salvage_operation) score += 30;
-        if (m.m13_statue_reconstruction) score += 30;
-        score += m.m14_forum.artifacts * 5;
-        score += m.m15_site_marking.locations * 10;
-    }
+    // M01 - Escovação de Superfícies
+    score += state.m01_surface_brushing.soil_deposits_cleaned * 10;
+    if (state.m01_surface_brushing.brush_not_touching) score += 10;
     
+    // M02 - Revelação do Mapa
+    if(state.m02_map_reveal.part1) score += 10;
+    if(state.m02_map_reveal.part2) score += 10;
+    if(state.m02_map_reveal.part3) score += 10;
+    
+    // M03 - Explorador do Poço da Mina
+    if(state.m03_mine_shaft_explorer.explored) score += 30;
+    if(state.m03_mine_shaft_explorer.gold_retrieved) score += 10;
+    
+    // M04 - Recuperação Cuidadosa
+    if(state.m04_careful_retrieval.retrieved) score += 30;
+    if(state.m04_careful_retrieval.not_broken) score += 10;
+
+    // M05 - Quem Morava Aqui?
+    if (state.m05_who_lived_here) score += 30;
+    
+    // M06 - Forja
+    if(state.m06_forge.part1) score += 10;
+    if(state.m06_forge.part2) score += 10;
+    if(state.m06_forge.part3) score += 10;
+
+    // M07 - Levantamento de Peso
+    if (state.m07_heavy_lifting) score += 30;
+    
+    // M08 - Silo
+    if(state.m08_silo.part1) score += 10;
+    if(state.m08_silo.part2) score += 10;
+    if(state.m08_silo.part3) score += 10;
+    
+    // M09 - O que Está à Venda
+    if(state.m09_whats_on_sale.store_open) score += 20;
+    if(state.m09_whats_on_sale.item_on_pedestal) score += 10;
+    
+    // M10 - Virar a Balança
+    if(state.m10_tip_the_scales.tipped) score += 20;
+    if(state.m10_tip_the_scales.both_sides_down) score += 10;
+    
+    // M11 - Artefatos de Fisher
+    if(state.m11_fisher_artifacts.retrieved) score += 20;
+    if(state.m11_fisher_artifacts.on_pedestal) score += 10;
+    
+    // M12 - Operação de Resgate
+    if(state.m12_salvage_operation.raised) score += 20;
+    if(state.m12_salvage_operation.animals_moved) score += 10;
+
+    // M13 - Reconstrução da Estátua
+    if (state.m13_statue_reconstruction) score += 30;
+
+    // M14 - Fórum
+    score += state.m14_forum.artifacts * 5;
+    
+    // M15 - Marcação de Local
+    score += state.m15_site_marking.locations * 10;
+
+    // Fichas de Precisão
     const tokens = state.precision_tokens;
     if (tokens >= 5) score += 50;
     else if (tokens === 4) score += 35;
     else if (tokens === 3) score += 25;
     else if (tokens === 2) score += 15;
     else if (tokens === 1) score += 10;
+
     return score;
   }, []);
 
@@ -170,5 +211,3 @@ export default function RoundsPage() {
     </div>
   );
 }
-
-    

@@ -4,11 +4,11 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Mission, MissionAnalysisData, missionStepDetails, MissionStepDetail, MissionSelection } from '@/lib/types';
 import { Button } from '../ui/button';
-import { PlusCircle, Trash2, Save } from 'lucide-react';
+import { PlusCircle, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { ScrollArea } from '../ui/scroll-area';
 import { Slider } from '../ui/slider';
 import { Label } from '../ui/label';
@@ -28,17 +28,11 @@ export default function AnalysisTable() {
             const savedData = localStorage.getItem(STORAGE_KEY_ANALYSIS);
             if (savedData) {
                 const parsedData = JSON.parse(savedData);
-                // Ensure data has the correct structure and missionIds is always an array
-                if (Array.isArray(parsedData) && parsedData.every(item => 'id' in item && 'saidaName' in item)) {
-                     const validatedData = parsedData.map(item => ({
-                         ...item,
-                         missions: item.missions || [],
-                         missionIds: item.missionIds || [], // Legacy support
-                     }));
-                     setAnalysisData(validatedData);
-                } else {
-                    setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
-                }
+                 const validatedData = parsedData.map((item: any) => ({
+                    ...item,
+                    missions: item.missions || [],
+                }));
+                 setAnalysisData(validatedData);
             } else {
                  setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
             }
@@ -53,23 +47,21 @@ export default function AnalysisTable() {
             setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
         }
     }, []);
-
-    const handleSave = () => {
-        try {
-            localStorage.setItem(STORAGE_KEY_ANALYSIS, JSON.stringify(analysisData));
-            toast({
-                title: "Configuração Salva!",
-                description: "A associação de missões por saída foi salva com sucesso.",
-            });
-        } catch (error) {
-            console.error("Failed to save data to localStorage", error);
-            toast({
-                variant: 'destructive',
-                title: "Erro ao Salvar",
-                description: "Não foi possível salvar a configuração.",
-            });
+    
+    // Auto-save on change
+    useEffect(() => {
+        if (isClient) {
+            try {
+                localStorage.setItem(STORAGE_KEY_ANALYSIS, JSON.stringify(analysisData));
+            } catch (error) {
+                 toast({
+                    variant: 'destructive',
+                    title: "Erro ao Salvar",
+                    description: "Não foi possível salvar a configuração automaticamente.",
+                });
+            }
         }
-    };
+    }, [analysisData, isClient, toast]);
     
     const handleAddSaida = () => {
         const nextSaidaNumber = analysisData.length + 1;
@@ -125,10 +117,6 @@ export default function AnalysisTable() {
                     <PlusCircle className="mr-2" />
                     Adicionar Saída
                 </Button>
-                <Button onClick={handleSave}>
-                    <Save className="mr-2"/>
-                    Salvar Configuração
-                </Button>
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {analysisData.map((saida, index) => {
@@ -164,7 +152,7 @@ export default function AnalysisTable() {
                                 <div className="space-y-4 pr-4">
                                 {allMissions.length > 0 ? allMissions.map(mission => {
                                     const isSelected = missionConfig.some(m => m.missionId === mission.id);
-                                    const missionKey = mission.name.split(" ")[0].toLowerCase().replace('m', 'm');
+                                    const missionKey = mission.name.split(" ")[0].toLowerCase();
                                     const stepDetail = missionStepDetails[missionKey as keyof typeof missionStepDetails];
                                     const currentSteps = missionConfig.find(m => m.missionId === mission.id)?.steps;
 
@@ -209,5 +197,3 @@ export default function AnalysisTable() {
         </div>
     );
 }
-
-    

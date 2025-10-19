@@ -162,49 +162,40 @@ export type InventoryItem = z.infer<typeof inventoryItemSchema>;
 
 export interface MissionState {
     m00_equipment_inspection: boolean;
-    missionsPerSaida: {
-        saida1: {
-            m01_surface_brushing: { soil_deposits_cleaned: number; brush_not_touching: boolean };
-            m02_map_reveal: boolean;
-            m03_mine_shaft_explorer: boolean;
-            m04_careful_retrieval: boolean;
-            m05_who_lived_here: boolean;
-            m06_forge: boolean;
-            m07_heavy_lifting: boolean;
-            m08_silo: boolean;
-            m09_whats_on_sale: boolean;
-            m10_tip_the_scales: boolean;
-            m11_fisher_artifacts: boolean;
-            m12_salvage_operation: boolean;
-            m13_statue_reconstruction: boolean;
-            m14_forum: { artifacts: number };
-            m15_site_marking: { locations: number };
-        },
-        [key: `saida${number}`]: Partial<MissionState['missionsPerSaida']['saida1']>
-    },
+    m01_surface_brushing: { soil_deposits_cleaned: number; brush_not_touching: boolean };
+    m02_map_reveal: { part1: boolean; part2: boolean; part3: boolean };
+    m03_mine_shaft_explorer: { explored: boolean; gold_retrieved: boolean };
+    m04_careful_retrieval: { retrieved: boolean; not_broken: boolean };
+    m05_who_lived_here: boolean;
+    m06_forge: { part1: boolean; part2: boolean; part3: boolean };
+    m07_heavy_lifting: boolean;
+    m08_silo: { part1: boolean; part2: boolean; part3: boolean };
+    m09_whats_on_sale: { store_open: boolean; item_on_pedestal: boolean };
+    m10_tip_the_scales: { tipped: boolean; both_sides_down: boolean };
+    m11_fisher_artifacts: { retrieved: boolean; on_pedestal: boolean };
+    m12_salvage_operation: { raised: boolean; animals_moved: boolean };
+    m13_statue_reconstruction: boolean;
+    m14_forum: { artifacts: number };
+    m15_site_marking: { locations: number };
     precision_tokens: number;
 }
 
 export const initialMissionState: MissionState = {
     m00_equipment_inspection: false,
-    missionsPerSaida: {
-        saida1: {
-            m01_surface_brushing: { soil_deposits_cleaned: 0, brush_not_touching: false },
-            m02_map_reveal: false,
-            m03_mine_shaft_explorer: false,
-            m04_careful_retrieval: false,
-            m05_who_lived_here: false,
-            m06_forge: false,
-            m07_heavy_lifting: false,
-            m08_silo: false,
-            m09_whats_on_sale: false,
-            m10_tip_the_scales: false,
-            m11_fisher_artifacts: false,
-            m12_salvage_operation: false,
-            m13_statue_reconstruction: false,
-            m14_forum: { artifacts: 0 },
-            m15_site_marking: { locations: 0 },
-        }
-    },
+    m01_surface_brushing: { soil_deposits_cleaned: 0, brush_not_touching: false },
+    m02_map_reveal: { part1: false, part2: false, part3: false },
+    m03_mine_shaft_explorer: { explored: false, gold_retrieved: false },
+    m04_careful_retrieval: { retrieved: false, not_broken: false },
+    m05_who_lived_here: false,
+    m06_forge: { part1: false, part2: false, part3: false },
+    m07_heavy_lifting: false,
+    m08_silo: { part1: false, part2: false, part3: false },
+    m09_whats_on_sale: { store_open: false, item_on_pedestal: false },
+    m10_tip_the_scales: { tipped: false, both_sides_down: false },
+    m11_fisher_artifacts: { retrieved: false, on_pedestal: false },
+    m12_salvage_operation: { raised: false, animals_moved: false },
+    m13_statue_reconstruction: false,
+    m14_forum: { artifacts: 0 },
+    m15_site_marking: { locations: 0 },
     precision_tokens: 6,
 };
