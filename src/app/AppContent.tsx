@@ -121,7 +121,7 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
               <footer className="p-4 border-t shrink-0 flex items-center justify-center">
               <iframe
                   style={{ borderRadius: '12px' }}
-                  src="https://open.spotify.com/embed/station/playlist/6WtYenVtygxXxY9h3LdOav?utm_source=generator&theme=0"
+                  src="https://open.spotify.com/embed/station/playlist/37i9dQZF1DXcBWXoPEoRv3?utm_source=generator&theme=0"
                   width="80%"
                   height="80"
                   allowFullScreen={false}
