@@ -18,9 +18,8 @@ import { Progress } from '@/components/ui/progress';
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
 
-const isMissionCompleted = (missionKey: string, missionState: MissionState): boolean => {
-    const key = missionKey as keyof MissionState;
-    const state = missionState[key];
+const isMissionCompleted = (missionKey: keyof MissionState, missionState: MissionState): boolean => {
+    const state = missionState[missionKey];
 
     if (typeof state === 'boolean') {
         return state;
@@ -28,6 +27,7 @@ const isMissionCompleted = (missionKey: string, missionState: MissionState): boo
     if (typeof state === 'object' && state !== null) {
         if ('artifacts' in state) return state.artifacts > 0;
         if ('locations' in state) return state.locations > 0;
+        if ('soil_deposits_cleaned' in state) return state.soil_deposits_cleaned > 0;
         
         return Object.values(state).some(v => {
             if (typeof v === 'boolean') return v;
@@ -59,7 +59,7 @@ const SaidaAnalysisCard = ({
                 const stepDetail = missionStepDetails[missionKey as keyof typeof missionStepDetails];
                 
                 let details = '';
-                if (stepDetail && missionConfig.steps) {
+                if (stepDetail && missionConfig.steps && stepDetail.max > 1) {
                     details = `(${missionConfig.steps} de ${stepDetail.max} etapas)`;
                 }
 
@@ -456,8 +456,3 @@ export default function RoundsStatsPage() {
         </div>
     );
 }
-
-    
-
-    
-

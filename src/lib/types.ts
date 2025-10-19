@@ -126,8 +126,9 @@ export interface MissionAnalysisData {
 export type MissionStepDetail = { label: string; max: number };
 
 export const missionStepDetails: Record<string, MissionStepDetail> = {
-    m14: { label: "Artefatos no fórum", max: 7 },
-    m15: { label: "Locais marcados", max: 3 }
+    'm01_surface_brushing': { label: "Depósitos de solo limpos", max: 2 },
+    'm14': { label: "Artefatos no fórum", max: 7 },
+    'm15': { label: "Locais marcados", max: 3 }
 };
 
 
