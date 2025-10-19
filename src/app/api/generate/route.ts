@@ -1,4 +1,5 @@
 export const runtime = 'nodejs';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { configureGenkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
