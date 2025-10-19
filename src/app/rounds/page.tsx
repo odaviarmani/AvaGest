@@ -1,15 +1,16 @@
 
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import RoundsTimer, { StageTime } from "@/components/rounds/RoundsTimer";
-import ScoreCalculator, { MissionState, initialMissionState } from "@/components/rounds/ScoreCalculator";
+import ScoreCalculator, { initialMissionState } from "@/components/rounds/ScoreCalculator";
 import RoundLog, { RoundData } from "@/components/rounds/RoundLog";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BarChart } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { MissionState } from "@/lib/types";
 
 const TOTAL_SECONDS = 150; // 2 minutes and 30 seconds
 
@@ -31,32 +32,75 @@ export default function RoundsPage() {
     }
     return names;
   }, [numberOfSaidas]);
+  
+  useEffect(() => {
+    setMissions(prev => {
+        const newMissionsPerSaida: MissionState['missionsPerSaida'] = {};
+        for(let i = 1; i <= numberOfSaidas; i++) {
+            const saidaKey = `saida${i}` as const;
+            newMissionsPerSaida[saidaKey] = prev.missionsPerSaida[saidaKey] || {
+                m01_surface_brushing: { soil_deposits_cleaned: 0, brush_not_touching: false },
+                m02_map_reveal: false,
+                m03_mine_shaft_explorer: false,
+                m04_careful_retrieval: false,
+                m05_who_lived_here: false,
+                m06_forge: false,
+                m07_heavy_lifting: false,
+                m08_silo: false,
+                m09_whats_on_sale: false,
+                m10_tip_the_scales: false,
+                m11_fisher_artifacts: false,
+                m12_salvage_operation: false,
+                m13_statue_reconstruction: false,
+                m14_forum: { artifacts: 0 },
+                m15_site_marking: false,
+            };
+        }
+        return { ...prev, missionsPerSaida: newMissionsPerSaida };
+    });
+  }, [numberOfSaidas]);
 
-  const calculateScore = (state: MissionState): number => {
+
+  const calculateScore = useCallback((state: MissionState): number => {
     let score = 0;
     if (state.m00_equipment_inspection) score += 20;
-    score += state.m01_surface_brushing.soil_deposits_cleaned * 10;
-    if (state.m01_surface_brushing.brush_not_touching) score += 10;
-    score += state.m02_map_reveal * 10;
-    if (state.m03_mine_shaft_explorer.team_cart_reaches_opponent) score += 30;
-    if (state.m03_mine_shaft_explorer.opponent_cart_in_your_field) score += 10;
-    if (state.m04_careful_retrieval.artifact_not_touching_mine) score += 30;
-    if (state.m04_careful_retrieval.support_structures_standing) score += 10;
-    if (state.m05_who_lived_here) score += 30;
-    score += state.m06_forge * 10;
-    if (state.m07_heavy_lifting) score += 30;
-    score += state.m08_silo * 10;
-    if (state.m09_whats_on_sale.roof_lifted) score += 20;
-    if (state.m09_whats_on_sale.market_goods_lifted) score += 10;
-    if (state.m10_tip_the_scales.scales_tipped) score += 20;
-    if (state.m10_tip_the_scales.pan_removed) score += 10;
-    if (state.m11_fisher_artifacts.artifacts_elevated) score += 20;
-    if (state.m11_fisher_artifacts.crane_flag_raised) score += 10;
-    if (state.m12_salvage_operation.sand_cleared) score += 20;
-    if (state.m12_salvage_operation.ship_lifted) score += 10;
-    if (state.m13_statue_reconstruction) score += 30;
-    score += state.m14_forum.artifacts * 5;
-    score += state.m15_site_marking * 10;
+
+    const completedMissions = new Set();
+    const soilDepositsCleaned = { total: 0 };
+    const forumArtifacts = { total: 0 };
+
+    for (const saidaKey in state.missionsPerSaida) {
+        const saida = state.missionsPerSaida[saidaKey as keyof typeof state.missionsPerSaida];
+        if(!saida) continue;
+
+        if (saida.m01_surface_brushing) {
+            soilDepositsCleaned.total = Math.max(soilDepositsCleaned.total, saida.m01_surface_brushing.soil_deposits_cleaned);
+            if(saida.m01_surface_brushing.brush_not_touching && !completedMissions.has('m01_brush')) {
+                score += 10;
+                completedMissions.add('m01_brush');
+            }
+        }
+        if (saida.m02_map_reveal && !completedMissions.has('m02')) { score += 30; completedMissions.add('m02'); }
+        if (saida.m03_mine_shaft_explorer && !completedMissions.has('m03')) { score += 40; completedMissions.add('m03'); }
+        if (saida.m04_careful_retrieval && !completedMissions.has('m04')) { score += 40; completedMissions.add('m04'); }
+        if (saida.m05_who_lived_here && !completedMissions.has('m05')) { score += 30; completedMissions.add('m05'); }
+        if (saida.m06_forge && !completedMissions.has('m06')) { score += 30; completedMissions.add('m06'); }
+        if (saida.m07_heavy_lifting && !completedMissions.has('m07')) { score += 30; completedMissions.add('m07'); }
+        if (saida.m08_silo && !completedMissions.has('m08')) { score += 30; completedMissions.add('m08'); }
+        if (saida.m09_whats_on_sale && !completedMissions.has('m09')) { score += 30; completedMissions.add('m09'); }
+        if (saida.m10_tip_the_scales && !completedMissions.has('m10')) { score += 30; completedMissions.add('m10'); }
+        if (saida.m11_fisher_artifacts && !completedMissions.has('m11')) { score += 30; completedMissions.add('m11'); }
+        if (saida.m12_salvage_operation && !completedMissions.has('m12')) { score += 30; completedMissions.add('m12'); }
+        if (saida.m13_statue_reconstruction && !completedMissions.has('m13')) { score += 30; completedMissions.add('m13'); }
+        if (saida.m14_forum) {
+            forumArtifacts.total = Math.max(forumArtifacts.total, saida.m14_forum.artifacts);
+        }
+        if (saida.m15_site_marking && !completedMissions.has('m15')) { score += 30; completedMissions.add('m15'); }
+    }
+    
+    score += soilDepositsCleaned.total * 10;
+    score += forumArtifacts.total * 5;
+
     const tokens = state.precision_tokens;
     if (tokens >= 5) score += 50;
     else if (tokens === 4) score += 35;
@@ -64,9 +108,9 @@ export default function RoundsPage() {
     else if (tokens === 2) score += 15;
     else if (tokens === 1) score += 10;
     return score;
-  };
+  }, []);
 
-  const totalScore = useMemo(() => calculateScore(missions), [missions]);
+  const totalScore = useMemo(() => calculateScore(missions), [missions, calculateScore]);
 
   const handleResetAll = useCallback(() => {
     setIsActive(false);
@@ -105,7 +149,6 @@ export default function RoundsPage() {
                         value={String(numberOfSaidas)}
                         onValueChange={(val) => {
                             setNumberOfSaidas(Number(val));
-                            handleResetAll();
                         }}
                         disabled={isActive || stageTimings.length > 0}
                     >
@@ -137,6 +180,7 @@ export default function RoundsPage() {
                 missions={missions}
                 setMissions={setMissions}
                 totalScore={totalScore}
+                stageNames={stageNames}
             />
             </div>
             <div className="md:col-span-1">
@@ -145,6 +189,7 @@ export default function RoundsPage() {
                 timings={stageTimings}
                 isRoundFinished={isRoundFinished}
                 onRegisterNewRound={handleResetAll}
+                missionsState={missions}
             />
             </div>
         </div>
@@ -152,3 +197,5 @@ export default function RoundsPage() {
     </div>
   );
 }
+
+    

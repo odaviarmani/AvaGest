@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -8,82 +9,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Trash2 } from 'lucide-react';
+import { MissionState, initialMissionState } from '@/lib/types';
 
-export interface MissionState {
-    // Pré-jogo
-    m00_equipment_inspection: boolean;
-    // Missões
-    m01_surface_brushing: {
-        soil_deposits_cleaned: number;
-        brush_not_touching: boolean;
-    };
-    m02_map_reveal: number;
-    m03_mine_shaft_explorer: {
-        team_cart_reaches_opponent: boolean;
-        opponent_cart_in_your_field: boolean;
-    };
-    m04_careful_retrieval: {
-        artifact_not_touching_mine: boolean;
-        support_structures_standing: boolean;
-    };
-    m05_who_lived_here: boolean;
-    m06_forge: number;
-    m07_heavy_lifting: boolean;
-    m08_silo: number;
-    m09_whats_on_sale: {
-        roof_lifted: boolean;
-        market_goods_lifted: boolean;
-    };
-    m10_tip_the_scales: {
-        scales_tipped: boolean;
-        pan_removed: boolean;
-    };
-    m11_fisher_artifacts: {
-        artifacts_elevated: boolean;
-        crane_flag_raised: boolean;
-    };
-    m12_salvage_operation: {
-        sand_cleared: boolean;
-        ship_lifted: boolean;
-    };
-    m13_statue_reconstruction: boolean;
-    m14_forum: {
-        artifacts: number;
-    };
-    m15_site_marking: number;
-    // Bônus
-    precision_tokens: number;
-}
-
-
-export const initialMissionState: MissionState = {
-    m00_equipment_inspection: false,
-    m01_surface_brushing: { soil_deposits_cleaned: 0, brush_not_touching: false },
-    m02_map_reveal: 0,
-    m03_mine_shaft_explorer: { team_cart_reaches_opponent: false, opponent_cart_in_your_field: false },
-    m04_careful_retrieval: { artifact_not_touching_mine: false, support_structures_standing: false },
-    m05_who_lived_here: false,
-    m06_forge: 0,
-    m07_heavy_lifting: false,
-    m08_silo: 0,
-    m09_whats_on_sale: { roof_lifted: false, market_goods_lifted: false },
-    m10_tip_the_scales: { scales_tipped: false, pan_removed: false },
-    m11_fisher_artifacts: { artifacts_elevated: false, crane_flag_raised: false },
-    m12_salvage_operation: { sand_cleared: false, ship_lifted: false },
-    m13_statue_reconstruction: false,
-    m14_forum: { artifacts: 0 },
-    m15_site_marking: 0,
-    precision_tokens: 6,
-};
 
 interface ScoreCalculatorProps {
     missions: MissionState;
     setMissions: React.Dispatch<React.SetStateAction<MissionState>>;
     totalScore: number;
+    stageNames: string[];
 }
 
 
-export default function ScoreCalculator({ missions, setMissions, totalScore }: ScoreCalculatorProps) {
+export default function ScoreCalculator({ missions, setMissions, totalScore, stageNames }: ScoreCalculatorProps) {
 
   const handleReset = () => {
     setMissions(initialMissionState);
@@ -100,6 +37,8 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
       <Label htmlFor={id} className={`cursor-pointer ${disabled ? 'text-muted-foreground' : ''}`}>{label}</Label>
     </div>
   );
+  
+  const saidaStages = stageNames.filter(name => name.startsWith("Saída"));
 
   return (
     <Card className="w-full">
@@ -110,124 +49,85 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
         </CardTitle>
       </CardHeader>
       <CardContent className="max-h-[600px] overflow-y-auto pr-2">
-        <Accordion type="multiple" className="w-full" defaultValue={['m00']}>
+        <Accordion type="multiple" className="w-full" defaultValue={['saida-1', 'm00', 'precision']}>
             <AccordionItem value="m00">
                 <AccordionTrigger>Inspeção de Equipamentos (20)</AccordionTrigger>
                 <AccordionContent>
                     <MissionCheckbox id="m00" label="Robô + equipamentos cabem na área" checked={missions.m00_equipment_inspection} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m00_equipment_inspection: checked }))} />
                 </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="m01">
-                <AccordionTrigger>M01 – Escovação de Superfícies (30)</AccordionTrigger>
-                <AccordionContent className="space-y-4">
-                    <div>
-                        <Label>Depósitos de solo limpos: {missions.m01_surface_brushing.soil_deposits_cleaned}</Label>
-                        <Slider value={[missions.m01_surface_brushing.soil_deposits_cleaned]} onValueChange={([val]) => setMissions(prev => ({...prev, m01_surface_brushing: {...prev.m01_surface_brushing, soil_deposits_cleaned: val}}))} max={2} step={1} />
-                        <p className="text-sm text-muted-foreground">+10 pontos por depósito</p>
-                    </div>
-                    <MissionCheckbox id="m01_brush" label="Escova não toca o local da escavação (10)" checked={missions.m01_surface_brushing.brush_not_touching} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m01_surface_brushing: {...prev.m01_surface_brushing, brush_not_touching: checked} }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m02">
-                <AccordionTrigger>M02 – Revelação do Mapa (30)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <Label>Seções de solo superficial limpas: {missions.m02_map_reveal}</Label>
-                    <Slider value={[missions.m02_map_reveal]} onValueChange={([val]) => setMissions(prev => ({...prev, m02_map_reveal: val}))} max={3} step={1} />
-                    <p className="text-sm text-muted-foreground">+10 pontos por seção</p>
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m03">
-                <AccordionTrigger>M03 – Explorador de Poços de Minas (40)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <MissionCheckbox id="m03_team_cart" label="Seu carrinho chega ao campo adversário (30)" checked={missions.m03_mine_shaft_explorer.team_cart_reaches_opponent} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m03_mine_shaft_explorer: {...prev.m03_mine_shaft_explorer, team_cart_reaches_opponent: checked} }))} />
-                    <MissionCheckbox id="m03_opponent_cart" label="Carrinho adversário no seu campo (10)" checked={missions.m03_mine_shaft_explorer.opponent_cart_in_your_field} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m03_mine_shaft_explorer: {...prev.m03_mine_shaft_explorer, opponent_cart_in_your_field: checked} }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m04">
-                <AccordionTrigger>M04 – Recuperação Cuidadosa (40)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <MissionCheckbox id="m04_artifact" label="Artefato precioso não toca a mina (30)" checked={missions.m04_careful_retrieval.artifact_not_touching_mine} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m04_careful_retrieval: {...prev.m04_careful_retrieval, artifact_not_touching_mine: checked} }))} />
-                    <MissionCheckbox id="m04_support" label="Ambas as estruturas de suporte de pé (10)" checked={missions.m04_careful_retrieval.support_structures_standing} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m04_careful_retrieval: {...prev.m04_careful_retrieval, support_structures_standing: checked} }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m05">
-                <AccordionTrigger>M05 – Quem Morou Aqui? (30)</AccordionTrigger>
-                <AccordionContent>
-                    <MissionCheckbox id="m05" label="Piso da estrutura completamente vertical (30)" checked={missions.m05_who_lived_here} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m05_who_lived_here: checked }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m06">
-                <AccordionTrigger>M06 – Forja (30)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <Label>Blocos de minério fora da forja: {missions.m06_forge}</Label>
-                    <Slider value={[missions.m06_forge]} onValueChange={([val]) => setMissions(prev => ({...prev, m06_forge: val}))} max={3} step={1} />
-                    <p className="text-sm text-muted-foreground">+10 pontos por bloco</p>
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m07">
-                <AccordionTrigger>M07 – Trabalho Pesado (30)</AccordionTrigger>
-                <AccordionContent>
-                    <MissionCheckbox id="m07" label="Pedra de moinho não toca a base (30)" checked={missions.m07_heavy_lifting} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m07_heavy_lifting: checked }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m08">
-                <AccordionTrigger>M08 – Silo (30)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <Label>Peças preservadas fora do silo: {missions.m08_silo}</Label>
-                    <Slider value={[missions.m08_silo]} onValueChange={([val]) => setMissions(prev => ({...prev, m08_silo: val}))} max={3} step={1} />
-                    <p className="text-sm text-muted-foreground">+10 pontos por peça</p>
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m09">
-                <AccordionTrigger>M09 – O que está à venda? (30)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <MissionCheckbox id="m09_roof" label="Teto completamente levantado (20)" checked={missions.m09_whats_on_sale.roof_lifted} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m09_whats_on_sale: {...prev.m09_whats_on_sale, roof_lifted: checked} }))} />
-                    <MissionCheckbox id="m09_goods" label="Produtos do mercado levantados (10)" checked={missions.m09_whats_on_sale.market_goods_lifted} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m09_whats_on_sale: {...prev.m09_whats_on_sale, market_goods_lifted: checked} }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m10">
-                <AccordionTrigger>M10 – Inclinar a Balança (30)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <MissionCheckbox id="m10_scales" label="Balança inclinada (20)" checked={missions.m10_tip_the_scales.scales_tipped} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m10_tip_the_scales: {...prev.m10_tip_the_scales, scales_tipped: checked} }))} />
-                    <MissionCheckbox id="m10_pan" label="Prato da balança removido (10)" checked={missions.m10_tip_the_scales.pan_removed} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m10_tip_the_scales: {...prev.m10_tip_the_scales, pan_removed: checked} }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m11">
-                <AccordionTrigger>M11 – Artefatos de Pescadores (30)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <MissionCheckbox id="m11_artifacts" label="Artefatos elevados (20)" checked={missions.m11_fisher_artifacts.artifacts_elevated} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m11_fisher_artifacts: {...prev.m11_fisher_artifacts, artifacts_elevated: checked} }))} />
-                    <MissionCheckbox id="m11_flag" label="Bandeira do guindaste levantada (10)" checked={missions.m11_fisher_artifacts.crane_flag_raised} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m11_fisher_artifacts: {...prev.m11_fisher_artifacts, crane_flag_raised: checked} }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m12">
-                <AccordionTrigger>M12 – Operação de Salvamento (30)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <MissionCheckbox id="m12_sand" label="Areia completamente limpa (20)" checked={missions.m12_salvage_operation.sand_cleared} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m12_salvage_operation: {...prev.m12_salvage_operation, sand_cleared: checked} }))} />
-                    <MissionCheckbox id="m12_ship" label="Navio completamente levantado (10)" checked={missions.m12_salvage_operation.ship_lifted} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m12_salvage_operation: {...prev.m12_salvage_operation, ship_lifted: checked} }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m13">
-                <AccordionTrigger>M13 – Reconstrução da Estátua (30)</AccordionTrigger>
-                <AccordionContent>
-                    <MissionCheckbox id="m13" label="Estátua completamente levantada (30)" checked={missions.m13_statue_reconstruction} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m13_statue_reconstruction: checked }))} />
-                </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="m14">
-                <AccordionTrigger>M14 – Fórum (35)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <Label>Artefatos no fórum: {missions.m14_forum.artifacts}</Label>
-                    <Slider value={[missions.m14_forum.artifacts]} onValueChange={([val]) => setMissions(prev => ({...prev, m14_forum: { artifacts: val }}))} max={7} step={1} />
-                    <p className="text-sm text-muted-foreground">+5 pontos por artefato</p>
-                </AccordionContent>
-            </AccordionItem>
-             <AccordionItem value="m15">
-                <AccordionTrigger>M15 – Marcação de Local (30)</AccordionTrigger>
-                <AccordionContent className="space-y-2">
-                    <Label>Bandeiras no local: {missions.m15_site_marking}</Label>
-                    <Slider value={[missions.m15_site_marking]} onValueChange={([val]) => setMissions(prev => ({...prev, m15_site_marking: val}))} max={3} step={1} />
-                    <p className="text-sm text-muted-foreground">+10 pontos por bandeira</p>
-                </AccordionContent>
-            </AccordionItem>
+            
+            {saidaStages.map((saidaName, saidaIndex) => {
+                const saidaKey = `saida${saidaIndex + 1}` as keyof MissionState['missionsPerSaida'];
+                const saidaMissions = missions.missionsPerSaida[saidaKey];
+                
+                if (!saidaMissions) return null;
+
+                return (
+                    <AccordionItem key={saidaKey} value={saidaKey}>
+                        <AccordionTrigger>{saidaName}</AccordionTrigger>
+                        <AccordionContent className="space-y-4">
+                           <h4 className="font-semibold text-center text-muted-foreground -mt-2">Missões da {saidaName}</h4>
+                           
+                            {Object.keys(saidaMissions).map(missionKey => {
+                                const missionId = missionKey as keyof typeof saidaMissions;
+                                
+                                // Render simple checkbox for boolean missions
+                                if (typeof saidaMissions[missionId] === 'boolean') {
+                                    return (
+                                        <MissionCheckbox 
+                                            key={missionId}
+                                            id={`${saidaKey}-${missionId}`}
+                                            label={`Completou ${missionId}?`} 
+                                            checked={saidaMissions[missionId] as boolean}
+                                            onCheckedChange={(checked) => setMissions(prev => ({
+                                                ...prev,
+                                                missionsPerSaida: {
+                                                    ...prev.missionsPerSaida,
+                                                    [saidaKey]: {
+                                                        ...prev.missionsPerSaida[saidaKey],
+                                                        [missionId]: checked,
+                                                    }
+                                                }
+                                            }))}
+                                        />
+                                    );
+                                }
+                                
+                                // Special rendering for complex missions
+                                if (missionId === 'm01_surface_brushing') {
+                                    const m = saidaMissions[missionId];
+                                    return (
+                                         <div key={missionId} className="p-2 border rounded space-y-2">
+                                            <p className="font-medium text-sm">M01 – Escovação de Superfícies</p>
+                                            <div>
+                                                <Label>Depósitos de solo limpos: {m.soil_deposits_cleaned}</Label>
+                                                <Slider value={[m.soil_deposits_cleaned]} onValueChange={([val]) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m01_surface_brushing: {...m, soil_deposits_cleaned: val}}}}))} max={2} step={1} />
+                                            </div>
+                                            <MissionCheckbox id={`${saidaKey}-m01_brush`} label="Escova não toca o local" checked={m.brush_not_touching} onCheckedChange={(checked) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m01_surface_brushing: {...m, brush_not_touching: checked}}}}))} />
+                                        </div>
+                                    )
+                                }
+                                 if (missionId === 'm14_forum') {
+                                    const m = saidaMissions[missionId];
+                                    return (
+                                         <div key={missionId} className="p-2 border rounded space-y-2">
+                                            <p className="font-medium text-sm">M14 – Fórum</p>
+                                            <div>
+                                                <Label>Artefatos no fórum: {m.artifacts}</Label>
+                                                <Slider value={[m.artifacts]} onValueChange={([val]) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m14_forum: {...m, artifacts: val}}}}))} max={7} step={1} />
+                                            </div>
+                                        </div>
+                                    )
+                                }
+                                return null;
+                            })}
+                        </AccordionContent>
+                    </AccordionItem>
+                )
+            })}
+
+
             <AccordionItem value="precision">
                 <AccordionTrigger>Fichas de Precisão (50)</AccordionTrigger>
                 <AccordionContent className="space-y-4">
@@ -260,3 +160,5 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
     </Card>
   );
 }
+
+    

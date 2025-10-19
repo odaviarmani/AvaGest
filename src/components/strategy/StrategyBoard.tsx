@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle, File } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Undo, Trash2, Redo, Upload, Download, MousePointer, Circle, File, BrainCircuit, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import Image from 'next/image';
 import StrategySteps from './StrategySteps';
 import type { Instruction } from './StrategySteps';
@@ -208,6 +208,9 @@ export default function StrategyBoard() {
   const [mapImage, setMapImage] = useState<string | null>(null);
   const [isClient, setIsClient] = useState(false);
   const [_, setForceRender] = useState(0); // Helper to force re-render on history change
+  const [aiAnalysis, setAiAnalysis] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -241,6 +244,7 @@ export default function StrategyBoard() {
   // Reset view when strategy changes
   useEffect(() => {
       setActiveView('strategy');
+      setAiAnalysis(null);
   }, [activeStrategy]);
   
   const forceUpdate = () => setForceRender(v => v + 1);
@@ -658,6 +662,35 @@ export default function StrategyBoard() {
 
         return result;
     }, [activeKey, isClient, _]);
+    
+    const handleAnalyzeStrategy = async () => {
+        if (instructions.length === 0) {
+            alert('Desenhe uma estratégia antes de analisar.');
+            return;
+        }
+        setIsAnalyzing(true);
+        setAiAnalysis(null);
+        try {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ instructions }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Falha ao buscar análise da IA.');
+            }
+
+            const data = await response.json();
+            setAiAnalysis(data.analysis);
+        } catch (error: any) {
+            console.error('Erro ao analisar estratégia:', error);
+            setAiAnalysis(`Erro ao analisar: ${error.message}`);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
 
 
   return (
@@ -813,7 +846,34 @@ export default function StrategyBoard() {
         
         <div className="mt-8 grid grid-cols-1 xl:grid-cols-2 gap-8 flex-1">
              <StrategySteps instructions={instructions} />
-             <StrategyFlowchart instructions={instructions} />
+             <div className="flex flex-col gap-8">
+                <StrategyFlowchart instructions={instructions} />
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            Análise da Estratégia (IA)
+                            <Button onClick={handleAnalyzeStrategy} disabled={isAnalyzing || instructions.length === 0} size="sm">
+                                {isAnalyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                Analisar com IA
+                            </Button>
+                        </CardTitle>
+                        <CardDescription>Uma descrição da estratégia gerada por Inteligência Artificial.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="min-h-[150px]">
+                        {isAnalyzing ? (
+                             <div className="space-y-2">
+                                <div className="h-4 bg-muted rounded w-3/4 animate-pulse"></div>
+                                <div className="h-4 bg-muted rounded w-full animate-pulse"></div>
+                                <div className="h-4 bg-muted rounded w-5/6 animate-pulse"></div>
+                             </div>
+                        ) : aiAnalysis ? (
+                            <p className="text-sm whitespace-pre-wrap">{aiAnalysis}</p>
+                        ) : (
+                            <p className="text-sm text-muted-foreground text-center">Clique em "Analisar com IA" para gerar uma descrição da estratégia desenhada.</p>
+                        )}
+                    </CardContent>
+                </Card>
+             </div>
         </div>
 
 

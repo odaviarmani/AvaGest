@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -10,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Save, History, Trash2 } from 'lucide-react';
 import type { StageTime } from './RoundsTimer';
+import type { MissionState } from '@/lib/types';
+
 
 const programmingTypes = ["Blocos", "Python", "Pybricks"] as const;
 const errorCauses = ["Nenhuma", "Humana", "Código", "Mecânica"] as const;
@@ -24,6 +27,7 @@ export interface RoundData {
     errors: ErrorCause[];
     score: number;
     timings: StageTime[];
+    missions: MissionState;
 }
 
 interface RoundLogProps {
@@ -31,6 +35,7 @@ interface RoundLogProps {
     timings: StageTime[];
     isRoundFinished: boolean;
     onRegisterNewRound: () => void;
+    missionsState: MissionState;
 }
 
 const formatSubTime = (ms: number | null) => {
@@ -39,7 +44,7 @@ const formatSubTime = (ms: number | null) => {
     return `${totalSeconds.toFixed(3)}s`;
 };
 
-export default function RoundLog({ score, timings, isRoundFinished, onRegisterNewRound }: RoundLogProps) {
+export default function RoundLog({ score, timings, isRoundFinished, onRegisterNewRound, missionsState }: RoundLogProps) {
     const [selectedProgramming, setSelectedProgramming] = useState<ProgrammingType[]>([]);
     const [selectedErrors, setSelectedErrors] = useState<ErrorCause[]>([]);
     const [history, setHistory] = useState<RoundData[]>([]);
@@ -62,11 +67,12 @@ export default function RoundLog({ score, timings, isRoundFinished, onRegisterNe
     const handleRegister = () => {
         const newRound: RoundData = {
             id: crypto.randomUUID(),
-            date: new Date().toLocaleString('pt-BR'),
+            date: new Date().toISOString(),
             programming: selectedProgramming,
             errors: selectedErrors,
             score,
             timings,
+            missions: missionsState,
         };
         setHistory(prev => [newRound, ...prev]);
         
@@ -179,7 +185,7 @@ export default function RoundLog({ score, timings, isRoundFinished, onRegisterNe
                                     <div key={round.id} className="p-4 border rounded-lg bg-secondary/30">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <p className="text-sm font-medium text-muted-foreground">{round.date}</p>
+                                                <p className="text-sm font-medium text-muted-foreground">{new Date(round.date).toLocaleString('pt-BR')}</p>
                                                 <p className="text-lg font-bold text-primary">{round.score} pontos</p>
                                                 <div className="mt-2 space-y-1">
                                                     <p><span className="font-semibold">Programação:</span> {round.programming.join(', ')}</p>
@@ -201,3 +207,5 @@ export default function RoundLog({ score, timings, isRoundFinished, onRegisterNe
         </div>
     );
 }
+
+    
