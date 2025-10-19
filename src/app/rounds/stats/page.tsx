@@ -117,6 +117,11 @@ export default function RoundsStatsPage() {
         const missionSuccess: Record<string, number> = {};
         
         filteredHistory.forEach(round => {
+            // Check if round.missions and round.missions.missionsPerSaida exist
+            if (!round.missions || !round.missions.missionsPerSaida) {
+                return; // Skip rounds with old data structure
+            }
+
             const saidaData = round.missions.missionsPerSaida[selectedSaida as keyof typeof round.missions.missionsPerSaida];
             if (saidaData) {
                 totalRunsForSaida++;
@@ -149,7 +154,9 @@ export default function RoundsStatsPage() {
         if (history.length === 0) return [];
         const saidaKeys = new Set<string>();
         history.forEach(round => {
-            Object.keys(round.missions.missionsPerSaida).forEach(key => saidaKeys.add(key));
+            if (round.missions && round.missions.missionsPerSaida) {
+                Object.keys(round.missions.missionsPerSaida).forEach(key => saidaKeys.add(key));
+            }
         });
         return Array.from(saidaKeys).sort();
     }, [history]);
