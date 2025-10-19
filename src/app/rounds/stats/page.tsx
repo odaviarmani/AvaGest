@@ -13,7 +13,7 @@ import Link from "next/link";
 import { ArrowLeft, BarChart, Clock, Target } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Mission, MissionAnalysisData } from '@/lib/types';
+import { Mission, MissionAnalysisData, missionStepDetails } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
@@ -30,56 +30,60 @@ const SaidaAnalysisCard = ({
     const safeMissionIds = saidaConfig.missionIds || [];
 
     const saidaStats = useMemo(() => {
-        let totalRunsForSaida = 0;
+        const totalRounds = roundsHistory.length;
+        if (totalRounds === 0) {
+            return { missionConsistency: [], overallConsistency: 0, totalRunsForSaida: 0 };
+        }
+
         const missionSuccessCount: Record<string, number> = {};
-        let totalMissionsInSaidaRuns = 0;
+        safeMissionIds.forEach(id => { missionSuccessCount[id] = 0 });
 
+        // Iterate through each round in history
         roundsHistory.forEach(round => {
-            if (!round.missions || !round.missions.missionsPerSaida) return;
+            if (!round.missions) return;
 
-            const saidaKey = Object.keys(round.missions.missionsPerSaida).find(
-                k => k.replace('a', 'a ') === saidaConfig.saidaName.replace('a', 'a ')
-            );
-            
-            if (!saidaKey) return;
-            
-            totalRunsForSaida++;
-            
-            const saidaData = round.missions.missionsPerSaida[saidaKey as keyof typeof round.missions.missionsPerSaida];
-            if (!saidaData) return;
-
+            // Check each mission configured for this "Saída"
             safeMissionIds.forEach(missionId => {
-                totalMissionsInSaidaRuns++;
-                const mission = allMissions.find(m => m.id === missionId);
-                if (!mission) return;
+                const missionInfo = allMissions.find(m => m.id === missionId);
+                if (!missionInfo) return;
 
-                // Find corresponding key in mission state (e.g., from 'M01 - Name' to 'm01_surface_brushing')
-                 const missionStateKey = Object.keys(saidaData).find(k => k.startsWith(mission.name.split(' ')[0].toLowerCase()));
-                if (!missionStateKey) return;
+                const missionKey = missionInfo.name.split(' ')[0].toLowerCase() as keyof typeof missionStepDetails;
+                const roundMissionState = (round.missions as any)[missionKey];
+                if (roundMissionState === undefined) return;
 
-                const missionValue = saidaData[missionStateKey as keyof typeof saidaData];
-                const isCompleted = typeof missionValue === 'boolean' ? missionValue : 
-                                    (typeof missionValue === 'object' && missionValue !== null ? 
-                                     Object.values(missionValue).some(v => (typeof v === 'number' && v > 0) || v === true) : 
-                                     false);
+                const missionConfig = saidaConfig.missions?.find(m => m.missionId === missionId);
                 
+                let isCompleted = false;
+                if (typeof roundMissionState === 'boolean') {
+                    isCompleted = roundMissionState;
+                } else if (typeof roundMissionState === 'object' && roundMissionState !== null) {
+                    if (missionKey === 'm14' || missionKey === 'm15') { // Missions with steps
+                        const stepsDone = Object.values(roundMissionState)[0] as number;
+                        const stepsRequired = missionConfig?.steps ?? 0;
+                        isCompleted = stepsDone >= stepsRequired;
+                    } else { // Missions with boolean sub-parts
+                        isCompleted = Object.values(roundMissionState).some(v => v === true);
+                    }
+                }
+
                 if (isCompleted) {
-                    missionSuccessCount[missionId] = (missionSuccessCount[missionId] || 0) + 1;
+                    missionSuccessCount[missionId]++;
                 }
             });
         });
 
+        let totalConsistency = 0;
         const missionConsistency = safeMissionIds.map(missionId => {
              const missionName = allMissions.find(m => m.id === missionId)?.name || "Desconhecida";
              const successCount = missionSuccessCount[missionId] || 0;
-             const consistency = totalRunsForSaida > 0 ? (successCount / totalRunsForSaida) * 100 : 0;
+             const consistency = totalRounds > 0 ? (successCount / totalRounds) * 100 : 0;
+             totalConsistency += consistency;
              return { name: missionName, consistency: parseFloat(consistency.toFixed(1)) };
         });
 
-        const overallSuccessCount = Object.values(missionSuccessCount).reduce((sum, count) => sum + count, 0);
-        const overallConsistency = totalMissionsInSaidaRuns > 0 ? (overallSuccessCount / totalMissionsInSaidaRuns) * 100 : 0;
+        const overallConsistency = safeMissionIds.length > 0 ? totalConsistency / safeMissionIds.length : 0;
 
-        return { missionConsistency, overallConsistency, totalRunsForSaida };
+        return { missionConsistency, overallConsistency, totalRunsForSaida: totalRounds };
 
     }, [saidaConfig, roundsHistory, allMissions, safeMissionIds]);
     
@@ -461,3 +465,5 @@ export default function RoundsStatsPage() {
         </div>
     );
 }
+
+    
