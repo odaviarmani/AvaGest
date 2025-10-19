@@ -49,7 +49,7 @@ export default function ScoreCalculator({ missions, setMissions, totalScore, sta
         </CardTitle>
       </CardHeader>
       <CardContent className="max-h-[600px] overflow-y-auto pr-2">
-        <Accordion type="multiple" className="w-full" defaultValue={['saida-1', 'm00', 'precision']}>
+        <Accordion type="multiple" className="w-full" defaultValue={['saida1', 'm00', 'precision']}>
             <AccordionItem value="m00">
                 <AccordionTrigger>Inspeção de Equipamentos (20)</AccordionTrigger>
                 <AccordionContent>
@@ -95,27 +95,39 @@ export default function ScoreCalculator({ missions, setMissions, totalScore, sta
                                 }
                                 
                                 // Special rendering for complex missions
-                                if (missionId === 'm01_surface_brushing') {
-                                    const m = saidaMissions[missionId];
+                                if (missionId === 'm01_surface_brushing' && saidaMissions.m01_surface_brushing) {
+                                    const m = saidaMissions.m01_surface_brushing;
                                     return (
                                          <div key={missionId} className="p-2 border rounded space-y-2">
                                             <p className="font-medium text-sm">M01 – Escovação de Superfícies</p>
                                             <div>
-                                                <Label>Depósitos de solo limpos: {m.soil_deposits_cleaned}</Label>
+                                                <Label>Depósitos de solo limpos (10 pts/cada): {m.soil_deposits_cleaned}</Label>
                                                 <Slider value={[m.soil_deposits_cleaned]} onValueChange={([val]) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m01_surface_brushing: {...m, soil_deposits_cleaned: val}}}}))} max={2} step={1} />
                                             </div>
-                                            <MissionCheckbox id={`${saidaKey}-m01_brush`} label="Escova não toca o local" checked={m.brush_not_touching} onCheckedChange={(checked) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m01_surface_brushing: {...m, brush_not_touching: checked}}}}))} />
+                                            <MissionCheckbox id={`${saidaKey}-m01_brush`} label="Escova não toca o local (+10 pts)" checked={m.brush_not_touching} onCheckedChange={(checked) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m01_surface_brushing: {...m, brush_not_touching: checked}}}}))} />
                                         </div>
                                     )
                                 }
-                                 if (missionId === 'm14_forum') {
-                                    const m = saidaMissions[missionId];
+                                 if (missionId === 'm14_forum' && saidaMissions.m14_forum) {
+                                    const m = saidaMissions.m14_forum;
                                     return (
                                          <div key={missionId} className="p-2 border rounded space-y-2">
                                             <p className="font-medium text-sm">M14 – Fórum</p>
                                             <div>
-                                                <Label>Artefatos no fórum: {m.artifacts}</Label>
+                                                <Label>Artefatos no fórum (5 pts/cada): {m.artifacts}</Label>
                                                 <Slider value={[m.artifacts]} onValueChange={([val]) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m14_forum: {...m, artifacts: val}}}}))} max={7} step={1} />
+                                            </div>
+                                        </div>
+                                    )
+                                }
+                                if (missionId === 'm15_site_marking' && saidaMissions.m15_site_marking) {
+                                    const m = saidaMissions.m15_site_marking;
+                                    return (
+                                         <div key={missionId} className="p-2 border rounded space-y-2">
+                                            <p className="font-medium text-sm">M15 – Marcação de Local</p>
+                                            <div>
+                                                <Label>Locais marcados (10 pts/cada): {m.locations}</Label>
+                                                <Slider value={[m.locations]} onValueChange={([val]) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m15_site_marking: {...m, locations: val}}}}))} max={3} step={1} />
                                             </div>
                                         </div>
                                     )
@@ -160,5 +172,3 @@ export default function ScoreCalculator({ missions, setMissions, totalScore, sta
     </Card>
   );
 }
-
-    

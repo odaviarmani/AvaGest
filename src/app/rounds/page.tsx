@@ -70,9 +70,14 @@ export default function RoundsPage() {
                 m12_salvage_operation: false,
                 m13_statue_reconstruction: false,
                 m14_forum: { artifacts: 0 },
-                m15_site_marking: false,
+                m15_site_marking: { locations: 0 },
             };
         }
+        // Ensure initial state has the correct structure if it's the very first load
+        if (!newMissionsPerSaida.saida1) {
+             newMissionsPerSaida.saida1 = initialMissionState.missionsPerSaida.saida1;
+        }
+
         return { ...prev, missionsPerSaida: newMissionsPerSaida };
     });
   }, [numberOfSaidas]);
@@ -85,7 +90,8 @@ export default function RoundsPage() {
     const completedMissions = new Set();
     const soilDepositsCleaned = { total: 0 };
     const forumArtifacts = { total: 0 };
-
+    const siteMarkingLocations = { total: 0 };
+    
     for (const saidaKey in state.missionsPerSaida) {
         const saida = state.missionsPerSaida[saidaKey as keyof typeof state.missionsPerSaida];
         if(!saida) continue;
@@ -112,11 +118,14 @@ export default function RoundsPage() {
         if (saida.m14_forum) {
             forumArtifacts.total = Math.max(forumArtifacts.total, saida.m14_forum.artifacts);
         }
-        if (saida.m15_site_marking && !completedMissions.has('m15')) { score += 30; completedMissions.add('m15'); }
+        if (saida.m15_site_marking) {
+             siteMarkingLocations.total = Math.max(siteMarkingLocations.total, saida.m15_site_marking.locations);
+        }
     }
     
     score += soilDepositsCleaned.total * 10;
     score += forumArtifacts.total * 5;
+    score += siteMarkingLocations.total * 10;
 
     const tokens = state.precision_tokens;
     if (tokens >= 5) score += 50;

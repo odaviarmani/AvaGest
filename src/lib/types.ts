@@ -164,7 +164,7 @@ export interface MissionState {
             m12_salvage_operation: boolean;
             m13_statue_reconstruction: boolean;
             m14_forum: { artifacts: number };
-            m15_site_marking: boolean;
+            m15_site_marking: { locations: number };
         },
         [key: `saida${number}`]: Partial<MissionState['missionsPerSaida']['saida1']>
     },
@@ -189,7 +189,7 @@ export const initialMissionState: MissionState = {
             m12_salvage_operation: false,
             m13_statue_reconstruction: false,
             m14_forum: { artifacts: 0 },
-            m15_site_marking: false,
+            m15_site_marking: { locations: 0 },
         }
     },
     precision_tokens: 6,
