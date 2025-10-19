@@ -132,9 +132,8 @@ export default function ProjectGanttChart() {
                                 <BarChart
                                     data={chartTasks}
                                     layout="vertical"
-                                    margin={{ top: 5, right: 30, left: 100, bottom: 20 }}
-                                    barCategoryGap={0}
-                                    barGap={0}
+                                    margin={{ top: 5, right: 30, left: 200, bottom: 20 }}
+                                    barCategoryGap="20%"
                                 >
                                      <XAxis 
                                         type="number" 
