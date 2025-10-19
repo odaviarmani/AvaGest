@@ -132,7 +132,7 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
               <iframe
                   ref={spotifyPlayerRef}
                   style={{ borderRadius: '12px' }}
-                  src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWXoPEoRv3?utm_source=generator&theme=0"
+                  src="https://open.spotify.com/embed/playlist/4mSIYnwHQKR9uzPNE4TPJ4?utm_source=generator&theme=0"
                   width="80%"
                   height="80"
                   allowFullScreen={false}

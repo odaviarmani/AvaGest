@@ -81,12 +81,16 @@ export default function ProjectGanttChart() {
     
     const CustomBar = (props: any) => {
         const { x, y, width, height, payload } = props;
+        // Make the bar thinner by reducing its height and adjusting the y position
+        const barHeight = height * 0.5; // 50% of the original height
+        const yPos = y + barHeight / 2;
+
         return (
             <Rectangle
                 x={x}
-                y={y}
+                y={yPos}
                 width={width}
-                height={height}
+                height={barHeight}
                 radius={4}
                 fill="hsl(var(--primary))"
             />
@@ -127,13 +131,13 @@ export default function ProjectGanttChart() {
                         <CardHeader>
                             <CardTitle>{project.name}</CardTitle>
                         </CardHeader>
-                        <CardContent style={{ height: `${project.tasks.length * 50 + 60}px` }}>
+                        <CardContent style={{ height: `${project.tasks.length * 70 + 60}px` }}>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart
                                     data={chartTasks}
                                     layout="vertical"
                                     margin={{ top: 5, right: 30, left: 200, bottom: 20 }}
-                                    barCategoryGap="20%"
+                                    barCategoryGap="40%"
                                 >
                                      <XAxis 
                                         type="number" 
@@ -145,7 +149,7 @@ export default function ProjectGanttChart() {
                                     <YAxis
                                         type="category"
                                         dataKey="name"
-                                        width={150}
+                                        width={200}
                                         tickLine={false}
                                         axisLine={false}
                                     />
