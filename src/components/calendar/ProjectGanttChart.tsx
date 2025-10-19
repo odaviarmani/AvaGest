@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Task } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, LabelList } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, LabelList, Rectangle } from 'recharts';
 import { addDays, differenceInDays, format, min, max } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '../ui/skeleton';
@@ -38,14 +38,17 @@ export default function ProjectGanttChart() {
         }
     }, []);
 
-    const { projectData, overallStartDate } = useMemo(() => {
-        if (!isClient) return { projectData: [], overallStartDate: new Date() };
+    const { projectData, overallStartDate, maxDay } = useMemo(() => {
+        if (!isClient) return { projectData: [], overallStartDate: new Date(), maxDay: 0 };
 
         const tasksWithProjects = tasks.filter(task => task.project && task.startDate && task.dueDate);
-        if(tasksWithProjects.length === 0) return { projectData: [], overallStartDate: new Date() };
+        if(tasksWithProjects.length === 0) return { projectData: [], overallStartDate: new Date(), maxDay: 0 };
 
         const allDates = tasksWithProjects.flatMap(t => [t.startDate!, t.dueDate!]);
         const overallStartDate = min(allDates);
+        const overallEndDate = max(allDates);
+        const maxDay = differenceInDays(overallEndDate, overallStartDate) + 2;
+
 
         const projects: Record<string, ProjectData> = {};
 
@@ -58,23 +61,36 @@ export default function ProjectGanttChart() {
             projects[task.project!].tasks.push({ ...task, startDay, duration, ganttLabel: task.name });
         });
 
-        return { projectData: Object.values(projects), overallStartDate };
+        return { projectData: Object.values(projects), overallStartDate, maxDay };
     }, [tasks, isClient]);
 
     const CustomTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
-            const data = payload[0].payload;
-            const task = data.task as Task;
+            const data = payload[0].payload.task as Task;
             return (
                 <div className="bg-background border rounded-lg p-3 shadow-lg">
-                    <p className="font-bold">{task.name}</p>
+                    <p className="font-bold">{data.name}</p>
                     <p className="text-sm text-muted-foreground">
-                        {format(task.startDate!, 'dd/MM/yy')} - {format(task.dueDate!, 'dd/MM/yy')}
+                        {format(data.startDate!, 'dd/MM/yy')} - {format(data.dueDate!, 'dd/MM/yy')}
                     </p>
                 </div>
             );
         }
         return null;
+    };
+    
+    const CustomBar = (props: any) => {
+        const { x, y, width, height, payload } = props;
+        return (
+            <Rectangle
+                x={x}
+                y={y}
+                width={width}
+                height={height}
+                radius={4}
+                fill="hsl(var(--primary))"
+            />
+        );
     };
 
 
@@ -100,12 +116,10 @@ export default function ProjectGanttChart() {
     return (
         <div className="space-y-8">
             {projectData.map(project => {
-                const chartTasks = project.tasks.map((task, index) => ({
-                    name: task.name,
+                 const chartTasks = project.tasks.map((task, index) => ({
+                    name: task.ganttLabel,
                     range: [task.startDay, task.startDay + task.duration],
-                    task,
-                    ganttLabel: task.ganttLabel,
-                    y: project.tasks.length - 1 - index,
+                    task: task,
                 }));
 
                 return (
@@ -124,35 +138,20 @@ export default function ProjectGanttChart() {
                                 >
                                      <XAxis 
                                         type="number" 
-                                        domain={['dataMin', 'dataMax + 2']}
+                                        domain={[0, maxDay]}
                                         tickFormatter={(tick) => format(addDays(overallStartDate, tick), 'dd/MM')}
                                         axisLine={false}
                                         tickLine={false}
                                         />
                                     <YAxis
                                         type="category"
-                                        dataKey="ganttLabel"
-                                        scale="point"
-                                        padding={{ top: 20, bottom: 20 }}
+                                        dataKey="name"
+                                        width={150}
                                         tickLine={false}
                                         axisLine={false}
                                     />
-                                    <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(200,200,200,0.1)'}}/>
-                                    <Bar dataKey="range" shape={<div />} isAnimationActive={false}>
-                                         {chartTasks.map((entry, index) => {
-                                            const x = (entry.range[0] / (chartTasks.reduce((max, d) => Math.max(max, d.range[1]), 0) + 2)) * 100 + '%';
-                                            const width = ((entry.range[1] - entry.range[0]) / (chartTasks.reduce((max, d) => Math.max(max, d.range[1]), 0) + 2)) * 100 + '%';
-                                            
-                                            return <rect 
-                                                key={`bar-${index}`} 
-                                                x={x}
-                                                y={entry.y * 40 + 20}
-                                                width={width}
-                                                height={20}
-                                                fill="hsl(var(--primary))"
-                                                radius={4}
-                                            />
-                                         })}
+                                    <Tooltip content={<CustomTooltip />} cursor={{fill: 'hsl(var(--secondary))'}}/>
+                                    <Bar dataKey="range" shape={<CustomBar />} isAnimationActive={false}>
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
