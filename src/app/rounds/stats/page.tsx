@@ -27,7 +27,7 @@ const SaidaAnalysisCard = ({
     roundsHistory: RoundData[],
     allMissions: Mission[],
 }) => {
-    const safeMissionIds = saidaConfig.missionIds || [];
+    const safeMissionIds = saidaConfig.missions || [];
     
     const configuredMissions = useMemo(() => {
         return safeMissionIds
