@@ -16,11 +16,10 @@ interface ScoreCalculatorProps {
     missions: MissionState;
     setMissions: React.Dispatch<React.SetStateAction<MissionState>>;
     totalScore: number;
-    stageNames: string[];
 }
 
 
-export default function ScoreCalculator({ missions, setMissions, totalScore, stageNames }: ScoreCalculatorProps) {
+export default function ScoreCalculator({ missions, setMissions, totalScore }: ScoreCalculatorProps) {
 
   const handleReset = () => {
     setMissions(initialMissionState);
@@ -38,7 +37,22 @@ export default function ScoreCalculator({ missions, setMissions, totalScore, sta
     </div>
   );
   
-  const saidaStages = stageNames.filter(name => name.startsWith("Saída"));
+  // A helper function to update the single `saida1` object, abstracting the structure from the UI
+  const updateMission = (missionKey: keyof MissionState['missionsPerSaida']['saida1'], value: any) => {
+      setMissions(prev => {
+          const saida1 = prev.missionsPerSaida.saida1;
+          const updatedSaida1 = { ...saida1, [missionKey]: value };
+          return {
+              ...prev,
+              missionsPerSaida: {
+                  ...prev.missionsPerSaida,
+                  saida1: updatedSaida1,
+              }
+          }
+      })
+  }
+  
+  const m = missions.missionsPerSaida.saida1;
 
   return (
     <Card className="w-full">
@@ -49,7 +63,7 @@ export default function ScoreCalculator({ missions, setMissions, totalScore, sta
         </CardTitle>
       </CardHeader>
       <CardContent className="max-h-[600px] overflow-y-auto pr-2">
-        <Accordion type="multiple" className="w-full" defaultValue={['saida1', 'm00', 'precision']}>
+        <Accordion type="multiple" className="w-full" defaultValue={['all-missions', 'm00', 'precision']}>
             <AccordionItem value="m00">
                 <AccordionTrigger>Inspeção de Equipamentos (20)</AccordionTrigger>
                 <AccordionContent>
@@ -57,88 +71,48 @@ export default function ScoreCalculator({ missions, setMissions, totalScore, sta
                 </AccordionContent>
             </AccordionItem>
             
-            {saidaStages.map((saidaName, saidaIndex) => {
-                const saidaKey = `saida${saidaIndex + 1}` as keyof MissionState['missionsPerSaida'];
-                const saidaMissions = missions.missionsPerSaida[saidaKey];
-                
-                if (!saidaMissions) return null;
+            <AccordionItem value="all-missions">
+                <AccordionTrigger>Missões</AccordionTrigger>
+                <AccordionContent className="space-y-4">
+                    <div className="p-2 border rounded space-y-2">
+                        <p className="font-medium text-sm">M01 – Escovação de Superfícies</p>
+                        <div>
+                            <Label>Depósitos de solo limpos (10 pts/cada): {m.m01_surface_brushing.soil_deposits_cleaned}</Label>
+                            <Slider value={[m.m01_surface_brushing.soil_deposits_cleaned]} onValueChange={([val]) => updateMission('m01_surface_brushing', {...m.m01_surface_brushing, soil_deposits_cleaned: val})} max={2} step={1} />
+                        </div>
+                        <MissionCheckbox id={`m01_brush`} label="Escova não toca o local (+10 pts)" checked={m.m01_surface_brushing.brush_not_touching} onCheckedChange={(checked) => updateMission('m01_surface_brushing', {...m.m01_surface_brushing, brush_not_touching: checked})} />
+                    </div>
+                    
+                    <MissionCheckbox id="m02" label="M02 – Revelação do Mapa (30)" checked={m.m02_map_reveal} onCheckedChange={(checked) => updateMission('m02_map_reveal', checked)} />
+                    <MissionCheckbox id="m03" label="M03 – Explorador do Poço da Mina (40)" checked={m.m03_mine_shaft_explorer} onCheckedChange={(checked) => updateMission('m03_mine_shaft_explorer', checked)} />
+                    <MissionCheckbox id="m04" label="M04 – Recuperação Cuidadosa (40)" checked={m.m04_careful_retrieval} onCheckedChange={(checked) => updateMission('m04_careful_retrieval', checked)} />
+                    <MissionCheckbox id="m05" label="M05 – Quem Morava Aqui? (30)" checked={m.m05_who_lived_here} onCheckedChange={(checked) => updateMission('m05_who_lived_here', checked)} />
+                    <MissionCheckbox id="m06" label="M06 – Forja (30)" checked={m.m06_forge} onCheckedChange={(checked) => updateMission('m06_forge', checked)} />
+                    <MissionCheckbox id="m07" label="M07 – Levantamento de Peso (30)" checked={m.m07_heavy_lifting} onCheckedChange={(checked) => updateMission('m07_heavy_lifting', checked)} />
+                    <MissionCheckbox id="m08" label="M08 – Silo (30)" checked={m.m08_silo} onCheckedChange={(checked) => updateMission('m08_silo', checked)} />
+                    <MissionCheckbox id="m09" label="M09 – O que Está à Venda (30)" checked={m.m09_whats_on_sale} onCheckedChange={(checked) => updateMission('m09_whats_on_sale', checked)} />
+                    <MissionCheckbox id="m10" label="M10 – Virar a Balança (30)" checked={m.m10_tip_the_scales} onCheckedChange={(checked) => updateMission('m10_tip_the_scales', checked)} />
+                    <MissionCheckbox id="m11" label="M11 – Artefatos de Fisher (30)" checked={m.m11_fisher_artifacts} onCheckedChange={(checked) => updateMission('m11_fisher_artifacts', checked)} />
+                    <MissionCheckbox id="m12" label="M12 – Operação de Resgate (30)" checked={m.m12_salvage_operation} onCheckedChange={(checked) => updateMission('m12_salvage_operation', checked)} />
+                    <MissionCheckbox id="m13" label="M13 – Reconstrução da Estátua (30)" checked={m.m13_statue_reconstruction} onCheckedChange={(checked) => updateMission('m13_statue_reconstruction', checked)} />
 
-                return (
-                    <AccordionItem key={saidaKey} value={saidaKey}>
-                        <AccordionTrigger>{saidaName}</AccordionTrigger>
-                        <AccordionContent className="space-y-4">
-                           <h4 className="font-semibold text-center text-muted-foreground -mt-2">Missões da {saidaName}</h4>
-                           
-                            {Object.keys(saidaMissions).map(missionKey => {
-                                const missionId = missionKey as keyof typeof saidaMissions;
-                                
-                                // Render simple checkbox for boolean missions
-                                if (typeof saidaMissions[missionId] === 'boolean') {
-                                    return (
-                                        <MissionCheckbox 
-                                            key={missionId}
-                                            id={`${saidaKey}-${missionId}`}
-                                            label={`Completou ${missionId}?`} 
-                                            checked={saidaMissions[missionId] as boolean}
-                                            onCheckedChange={(checked) => setMissions(prev => ({
-                                                ...prev,
-                                                missionsPerSaida: {
-                                                    ...prev.missionsPerSaida,
-                                                    [saidaKey]: {
-                                                        ...prev.missionsPerSaida[saidaKey],
-                                                        [missionId]: checked,
-                                                    }
-                                                }
-                                            }))}
-                                        />
-                                    );
-                                }
-                                
-                                // Special rendering for complex missions
-                                if (missionId === 'm01_surface_brushing' && saidaMissions.m01_surface_brushing) {
-                                    const m = saidaMissions.m01_surface_brushing;
-                                    return (
-                                         <div key={missionId} className="p-2 border rounded space-y-2">
-                                            <p className="font-medium text-sm">M01 – Escovação de Superfícies</p>
-                                            <div>
-                                                <Label>Depósitos de solo limpos (10 pts/cada): {m.soil_deposits_cleaned}</Label>
-                                                <Slider value={[m.soil_deposits_cleaned]} onValueChange={([val]) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m01_surface_brushing: {...m, soil_deposits_cleaned: val}}}}))} max={2} step={1} />
-                                            </div>
-                                            <MissionCheckbox id={`${saidaKey}-m01_brush`} label="Escova não toca o local (+10 pts)" checked={m.brush_not_touching} onCheckedChange={(checked) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m01_surface_brushing: {...m, brush_not_touching: checked}}}}))} />
-                                        </div>
-                                    )
-                                }
-                                 if (missionId === 'm14_forum' && saidaMissions.m14_forum) {
-                                    const m = saidaMissions.m14_forum;
-                                    return (
-                                         <div key={missionId} className="p-2 border rounded space-y-2">
-                                            <p className="font-medium text-sm">M14 – Fórum</p>
-                                            <div>
-                                                <Label>Artefatos no fórum (5 pts/cada): {m.artifacts}</Label>
-                                                <Slider value={[m.artifacts]} onValueChange={([val]) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m14_forum: {...m, artifacts: val}}}}))} max={7} step={1} />
-                                            </div>
-                                        </div>
-                                    )
-                                }
-                                if (missionId === 'm15_site_marking' && saidaMissions.m15_site_marking) {
-                                    const m = saidaMissions.m15_site_marking;
-                                    return (
-                                         <div key={missionId} className="p-2 border rounded space-y-2">
-                                            <p className="font-medium text-sm">M15 – Marcação de Local</p>
-                                            <div>
-                                                <Label>Locais marcados (10 pts/cada): {m.locations}</Label>
-                                                <Slider value={[m.locations]} onValueChange={([val]) => setMissions(prev => ({...prev, missionsPerSaida: { ...prev.missionsPerSaida, [saidaKey]: {...prev.missionsPerSaida[saidaKey], m15_site_marking: {...m, locations: val}}}}))} max={3} step={1} />
-                                            </div>
-                                        </div>
-                                    )
-                                }
-                                return null;
-                            })}
-                        </AccordionContent>
-                    </AccordionItem>
-                )
-            })}
+                    <div className="p-2 border rounded space-y-2">
+                        <p className="font-medium text-sm">M14 – Fórum</p>
+                        <div>
+                            <Label>Artefatos no fórum (5 pts/cada): {m.m14_forum.artifacts}</Label>
+                            <Slider value={[m.m14_forum.artifacts]} onValueChange={([val]) => updateMission('m14_forum', { artifacts: val })} max={7} step={1} />
+                        </div>
+                    </div>
+                     <div className="p-2 border rounded space-y-2">
+                        <p className="font-medium text-sm">M15 – Marcação de Local</p>
+                        <div>
+                            <Label>Locais marcados (10 pts/cada): {m.m15_site_marking.locations}</Label>
+                            <Slider value={[m.m15_site_marking.locations]} onValueChange={([val]) => updateMission('m15_site_marking', { locations: val })} max={3} step={1} />
+                        </div>
+                    </div>
 
+                </AccordionContent>
+            </AccordionItem>
 
             <AccordionItem value="precision">
                 <AccordionTrigger>Fichas de Precisão (50)</AccordionTrigger>

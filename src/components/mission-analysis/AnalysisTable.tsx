@@ -28,12 +28,14 @@ export default function AnalysisTable() {
             const savedData = localStorage.getItem(STORAGE_KEY_ANALYSIS);
             if (savedData) {
                 const parsedData = JSON.parse(savedData);
-                const validatedData = parsedData.map((item: MissionAnalysisData) => ({
+                 // Ensure missions array exists and is an array
+                const validatedData = parsedData.map((item: any) => ({
                     ...item,
                     missions: Array.isArray(item.missions) ? item.missions : [],
                 }));
                 setAnalysisData(validatedData);
             } else {
+                 // Initialize with one default "Saída" if no data is found
                  setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
             }
 
@@ -98,7 +100,7 @@ export default function AnalysisTable() {
          setAnalysisData(prevData =>
             prevData.map(saida => {
                 if (saida.id === saidaId) {
-                    const newMissions = saida.missions.map(m => 
+                    const newMissions = (saida.missions || []).map(m => 
                         m.missionId === missionId ? { ...m, steps } : m
                     );
                     return { ...saida, missions: newMissions };
@@ -158,7 +160,8 @@ export default function AnalysisTable() {
                                 <div className="space-y-4 pr-4">
                                 {allMissions.length > 0 ? allMissions.map(mission => {
                                     const isSelected = missionConfig.some(m => m.missionId === mission.id);
-                                    const stepDetail = missionStepDetails[mission.name.split(" ")[0].toLowerCase() as keyof typeof missionStepDetails];
+                                    const missionKey = mission.name.split(" ")[0].toLowerCase().replace('m', 'm');
+                                    const stepDetail = missionStepDetails[missionKey as keyof typeof missionStepDetails];
                                     const currentSteps = missionConfig.find(m => m.missionId === mission.id)?.steps;
 
                                     return (
