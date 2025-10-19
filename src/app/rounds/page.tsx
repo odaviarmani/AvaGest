@@ -149,10 +149,8 @@ export default function RoundsPage({ spotifyPlayerRef }: RoundsPageProps) {
   const isRoundFinished = currentStageIndex === stageNames.length - 1 && stageTimings[stageNames.length - 1]?.duration !== null && !isActive;
 
    const handleAnimationFinish = useCallback(() => {
-    if (autoPlayMusic) {
-      spotifyPlayerRef?.current?.contentWindow?.postMessage({ command: 'play' }, '*');
-      const playButton = (spotifyPlayerRef?.current?.contentDocument || spotifyPlayerRef?.current?.contentWindow?.document)?.querySelector('[data-testid="play-button"]');
-      (playButton as HTMLElement)?.click();
+    if (autoPlayMusic && spotifyPlayerRef?.current?.contentWindow) {
+      spotifyPlayerRef.current.contentWindow.postMessage({ command: 'play' }, 'https://open.spotify.com');
     }
   }, [autoPlayMusic, spotifyPlayerRef]);
 
