@@ -60,32 +60,24 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
         <ScrollArea className="h-[600px] pr-2">
         <Accordion type="multiple" className="w-full space-y-2">
             
-            {/* Single Stage Missions */}
+            {/* M00 */}
             <div className="p-2 rounded-lg border">
                 <MissionCheckbox id="m00" label="M00 – Inspeção de Equipamentos (20 pts)" checked={missions.m00_equipment_inspection} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m00_equipment_inspection: checked }))} />
             </div>
-            <div className="p-2 rounded-lg border">
-                 <MissionCheckbox id="m05" label="M05 – Quem Morava Aqui? (30 pts)" checked={missions.m05_who_lived_here} onCheckedChange={(checked) => setMissions(prev => ({...prev, m05_who_lived_here: checked}))} />
-            </div>
-             <div className="p-2 rounded-lg border">
-                <MissionCheckbox id="m07" label="M07 – Levantamento de Peso (30 pts)" checked={missions.m07_heavy_lifting} onCheckedChange={(checked) => setMissions(prev => ({...prev, m07_heavy_lifting: checked}))} />
-            </div>
-            <div className="p-2 rounded-lg border">
-                <MissionCheckbox id="m13" label="M13 – Reconstrução da Estátua (30 pts)" checked={missions.m13_statue_reconstruction} onCheckedChange={(checked) => setMissions(prev => ({...prev, m13_statue_reconstruction: checked}))} />
-            </div>
-            
-            {/* Multi Stage Missions */}
+
+            {/* M01 */}
             <AccordionItem value="m01">
                 <AccordionTrigger>M01 – Escovação de Superfícies (30)</AccordionTrigger>
                 <AccordionContent className="space-y-4">
                     <div>
-                        <Label>Depósitos de solo limpos (10 pts/cada): {missions.m01_surface_brushing.soil_deposits_cleaned}</Label>
+                        <Label>Etapa 1 (10 pts/cada): {missions.m01_surface_brushing.soil_deposits_cleaned}</Label>
                         <Slider value={[missions.m01_surface_brushing.soil_deposits_cleaned]} onValueChange={([val]) => setMissions(prev => ({ ...prev, m01_surface_brushing: {...prev.m01_surface_brushing, soil_deposits_cleaned: val}}))} max={2} step={1} />
                     </div>
                     <MissionCheckbox id="m01_brush" label="Etapa 2 (10 pts)" checked={missions.m01_surface_brushing.brush_not_touching} onCheckedChange={(checked) => setMissions(prev => ({ ...prev, m01_surface_brushing: {...prev.m01_surface_brushing, brush_not_touching: checked}}))} />
                 </AccordionContent>
             </AccordionItem>
             
+            {/* M02 */}
             <AccordionItem value="m02">
                 <AccordionTrigger>M02 – Revelação do Mapa (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
@@ -95,7 +87,8 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
                 </AccordionContent>
             </AccordionItem>
             
-             <AccordionItem value="m03">
+            {/* M03 */}
+            <AccordionItem value="m03">
                 <AccordionTrigger>M03 – Explorador do Poço da Mina (40)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
                     <MissionCheckbox id="m03_explored" label="Etapa 1 (30 pts)" checked={missions.m03_mine_shaft_explorer.explored} onCheckedChange={(checked) => updateMissionStep('m03_mine_shaft_explorer', 'explored', checked)} />
@@ -103,6 +96,7 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
                 </AccordionContent>
             </AccordionItem>
             
+            {/* M04 */}
             <AccordionItem value="m04">
                 <AccordionTrigger>M04 – Recuperação Cuidadosa (40)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
@@ -111,6 +105,12 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
                 </AccordionContent>
             </AccordionItem>
 
+            {/* M05 */}
+            <div className="p-2 rounded-lg border">
+                 <MissionCheckbox id="m05" label="M05 – Quem Morava Aqui? (30 pts)" checked={missions.m05_who_lived_here} onCheckedChange={(checked) => setMissions(prev => ({...prev, m05_who_lived_here: checked}))} />
+            </div>
+            
+            {/* M06 */}
             <AccordionItem value="m06">
                 <AccordionTrigger>M06 – Forja (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
@@ -120,6 +120,12 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
                 </AccordionContent>
             </AccordionItem>
             
+            {/* M07 */}
+            <div className="p-2 rounded-lg border">
+                <MissionCheckbox id="m07" label="M07 – Levantamento de Peso (30 pts)" checked={missions.m07_heavy_lifting} onCheckedChange={(checked) => setMissions(prev => ({...prev, m07_heavy_lifting: checked}))} />
+            </div>
+
+            {/* M08 */}
             <AccordionItem value="m08">
                 <AccordionTrigger>M08 – Silo (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
@@ -129,6 +135,7 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
                 </AccordionContent>
             </AccordionItem>
             
+            {/* M09 */}
             <AccordionItem value="m09">
                 <AccordionTrigger>M09 – O que Está à Venda (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
@@ -137,6 +144,7 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
                 </AccordionContent>
             </AccordionItem>
             
+            {/* M10 */}
             <AccordionItem value="m10">
                 <AccordionTrigger>M10 – Virar a Balança (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
@@ -145,6 +153,7 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
                 </AccordionContent>
             </AccordionItem>
             
+            {/* M11 */}
             <AccordionItem value="m11">
                 <AccordionTrigger>M11 – Artefatos de Fisher (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
@@ -153,6 +162,7 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
                 </AccordionContent>
             </AccordionItem>
             
+            {/* M12 */}
             <AccordionItem value="m12">
                 <AccordionTrigger>M12 – Operação de Resgate (30)</AccordionTrigger>
                 <AccordionContent className="space-y-2">
@@ -160,27 +170,35 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
                     <MissionCheckbox id="m12_animals" label="Etapa 2 (10 pts)" checked={missions.m12_salvage_operation.animals_moved} onCheckedChange={(checked) => updateMissionStep('m12_salvage_operation', 'animals_moved', checked)} />
                 </AccordionContent>
             </AccordionItem>
+            
+            {/* M13 */}
+            <div className="p-2 rounded-lg border">
+                <MissionCheckbox id="m13" label="M13 – Reconstrução da Estátua (30 pts)" checked={missions.m13_statue_reconstruction} onCheckedChange={(checked) => setMissions(prev => ({...prev, m13_statue_reconstruction: checked}))} />
+            </div>
 
+            {/* M14 */}
             <AccordionItem value="m14">
                 <AccordionTrigger>M14 – Fórum (35)</AccordionTrigger>
                 <AccordionContent className="space-y-4">
                     <div>
-                        <Label>Artefatos no fórum (5 pts/cada): {missions.m14_forum.artifacts}</Label>
+                        <Label>Etapa 1 (5 pts/cada): {missions.m14_forum.artifacts}</Label>
                         <Slider value={[missions.m14_forum.artifacts]} onValueChange={([val]) => setMissions(prev => ({...prev, m14_forum: { artifacts: val }}))} max={7} step={1} />
                     </div>
                 </AccordionContent>
             </AccordionItem>
             
+            {/* M15 */}
             <AccordionItem value="m15">
                 <AccordionTrigger>M15 – Marcação de Local (30)</AccordionTrigger>
                 <AccordionContent className="space-y-4">
                     <div>
-                        <Label>Locais marcados (10 pts/cada): {missions.m15_site_marking.locations}</Label>
+                        <Label>Etapa 1 (10 pts/cada): {missions.m15_site_marking.locations}</Label>
                         <Slider value={[missions.m15_site_marking.locations]} onValueChange={([val]) => setMissions(prev => ({...prev, m15_site_marking: { locations: val }}))} max={3} step={1} />
                     </div>
                 </AccordionContent>
             </AccordionItem>
 
+            {/* Precision Tokens */}
             <AccordionItem value="precision">
                 <AccordionTrigger>Fichas de Precisão (50)</AccordionTrigger>
                 <AccordionContent className="space-y-4">
@@ -214,5 +232,3 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
     </Card>
   );
 }
-
-    
