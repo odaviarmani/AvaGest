@@ -10,7 +10,7 @@ import { type RoundData } from '@/components/rounds/RoundLog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, BarChart, Clock, Target } from "lucide-react";
+import { ArrowLeft, BarChart, Clock, Target, ListTree } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Mission, MissionAnalysisData, missionStepDetails } from '@/lib/types';
@@ -28,64 +28,28 @@ const SaidaAnalysisCard = ({
     allMissions: Mission[],
 }) => {
     const safeMissionIds = saidaConfig.missionIds || [];
+    
+    const configuredMissions = useMemo(() => {
+        return safeMissionIds
+            .map(missionConfig => {
+                const missionDetails = allMissions.find(m => m.id === missionConfig.missionId);
+                if (!missionDetails) return null;
 
-    const saidaStats = useMemo(() => {
-        const totalRounds = roundsHistory.length;
-        if (totalRounds === 0) {
-            return { missionConsistency: [], overallConsistency: 0, totalRunsForSaida: 0 };
-        }
-
-        const missionSuccessCount: Record<string, number> = {};
-        safeMissionIds.forEach(id => { missionSuccessCount[id] = 0 });
-
-        // Iterate through each round in history
-        roundsHistory.forEach(round => {
-            if (!round.missions) return;
-
-            // Check each mission configured for this "Saída"
-            safeMissionIds.forEach(missionId => {
-                const missionInfo = allMissions.find(m => m.id === missionId);
-                if (!missionInfo) return;
-
-                const missionKey = missionInfo.name.split(' ')[0].toLowerCase() as keyof typeof missionStepDetails;
-                const roundMissionState = (round.missions as any)[missionKey];
-                if (roundMissionState === undefined) return;
-
-                const missionConfig = saidaConfig.missions?.find(m => m.missionId === missionId);
+                const missionKey = missionDetails.name.split(' ')[0].toLowerCase();
+                const stepDetail = missionStepDetails[missionKey as keyof typeof missionStepDetails];
                 
-                let isCompleted = false;
-                if (typeof roundMissionState === 'boolean') {
-                    isCompleted = roundMissionState;
-                } else if (typeof roundMissionState === 'object' && roundMissionState !== null) {
-                    if (missionKey === 'm14' || missionKey === 'm15') { // Missions with steps
-                        const stepsDone = Object.values(roundMissionState)[0] as number;
-                        const stepsRequired = missionConfig?.steps ?? 0;
-                        isCompleted = stepsDone >= stepsRequired;
-                    } else { // Missions with boolean sub-parts
-                        isCompleted = Object.values(roundMissionState).some(v => v === true);
-                    }
+                let details = '';
+                if (stepDetail && missionConfig.steps) {
+                    details = `(${missionConfig.steps} de ${stepDetail.max} etapas)`;
                 }
 
-                if (isCompleted) {
-                    missionSuccessCount[missionId]++;
-                }
-            });
-        });
-
-        let totalConsistency = 0;
-        const missionConsistency = safeMissionIds.map(missionId => {
-             const missionName = allMissions.find(m => m.id === missionId)?.name || "Desconhecida";
-             const successCount = missionSuccessCount[missionId] || 0;
-             const consistency = totalRounds > 0 ? (successCount / totalRounds) * 100 : 0;
-             totalConsistency += consistency;
-             return { name: missionName, consistency: parseFloat(consistency.toFixed(1)) };
-        });
-
-        const overallConsistency = safeMissionIds.length > 0 ? totalConsistency / safeMissionIds.length : 0;
-
-        return { missionConsistency, overallConsistency, totalRunsForSaida: totalRounds };
-
-    }, [saidaConfig, roundsHistory, allMissions, safeMissionIds]);
+                return {
+                    name: missionDetails.name,
+                    details: details
+                };
+            })
+            .filter(Boolean) as { name: string; details: string }[];
+    }, [safeMissionIds, allMissions]);
     
     const timings = useMemo(() => {
         const saidaTimings: number[] = [];
@@ -110,48 +74,37 @@ const SaidaAnalysisCard = ({
         
         return { avgSaidaTime, avgTrocaTime };
 
-    }, [saidaConfig, roundsHistory]);
+    }, [saidaConfig.saidaName, roundsHistory]);
+
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>{saidaConfig.saidaName}</CardTitle>
-                <CardDescription>Análise de {saidaStats.totalRunsForSaida} rounds registrados.</CardDescription>
+                <CardDescription>Análise de {roundsHistory.length} rounds registrados.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
-                <div className="flex items-center gap-4">
-                     <div className="relative w-24 h-24">
-                        <Progress value={saidaStats.overallConsistency} className="absolute w-full h-full rounded-full" />
-                        <div className="absolute inset-[10%] bg-card rounded-full flex items-center justify-center">
-                            <span className="text-2xl font-bold">{saidaStats.overallConsistency.toFixed(0)}%</span>
-                        </div>
+            <CardContent className="space-y-4">
+                 <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                        <Clock className="w-4 h-4 text-muted-foreground"/> 
+                        <span>Saída: <strong>{(timings.avgSaidaTime / 1000).toFixed(2)}s</strong> (média)</span>
                     </div>
-                     <div className="space-y-2">
-                        <p className="font-semibold">Taxa de Acerto Geral da Saída</p>
-                        <div className="flex items-center gap-2 text-sm">
-                            <Clock className="w-4 h-4 text-muted-foreground"/> 
-                            <span>Saída: <strong>{(timings.avgSaidaTime / 1000).toFixed(2)}s</strong> (média)</span>
-                        </div>
-                         <div className="flex items-center gap-2 text-sm">
-                            <Clock className="w-4 h-4 text-muted-foreground"/> 
-                            <span>Troca: <strong>{(timings.avgTrocaTime / 1000).toFixed(2)}s</strong> (média)</span>
-                        </div>
+                     <div className="flex items-center gap-2 text-sm">
+                        <Clock className="w-4 h-4 text-muted-foreground"/> 
+                        <span>Troca: <strong>{(timings.avgTrocaTime / 1000).toFixed(2)}s</strong> (média)</span>
                     </div>
                 </div>
-
                 <div>
-                    <h4 className="font-semibold mb-2">Consistência por Missão</h4>
-                    <div className="space-y-3">
-                        {saidaStats.missionConsistency.map(mission => (
-                            <div key={mission.name}>
-                                <div className="flex justify-between text-sm mb-1">
-                                    <span className="font-medium">{mission.name}</span>
-                                    <span className="text-muted-foreground">{mission.consistency}%</span>
-                                </div>
-                                <Progress value={mission.consistency} />
-                            </div>
-                        ))}
-                    </div>
+                    <h4 className="font-semibold mb-2 flex items-center gap-2"><ListTree className="w-5 h-5"/> Missões Realizadas</h4>
+                     {configuredMissions.length > 0 ? (
+                        <div className="space-y-1 text-sm text-muted-foreground pl-2">
+                            {configuredMissions.map(mission => (
+                                <p key={mission.name}>- {mission.name} <span className="text-xs">{mission.details}</span></p>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-muted-foreground text-center p-4 bg-muted/50 rounded-md">Nenhuma missão configurada para esta saída.</p>
+                    )}
                 </div>
             </CardContent>
         </Card>
@@ -411,7 +364,7 @@ export default function RoundsStatsPage() {
                     </div>
                      <Card>
                         <CardHeader>
-                             <CardTitle>Análise de Consistência por Saída</CardTitle>
+                             <CardTitle>Análise de Saídas</CardTitle>
                              <CardDescription>
                                 Configure as missões de cada saída na aba "Análise e Aprimoramento" para ver os dados.
                              </CardDescription>
@@ -465,5 +418,7 @@ export default function RoundsStatsPage() {
         </div>
     );
 }
+
+    
 
     
