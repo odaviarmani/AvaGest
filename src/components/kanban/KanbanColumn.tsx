@@ -17,9 +17,20 @@ interface KanbanColumnProps {
   onEditTask: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   isDoneColumn?: boolean;
+  isBulkSelectMode?: boolean;
+  selectedTaskIds?: string[];
+  onTaskSelect?: (taskId: string) => void;
 }
 
-export default function KanbanColumn({ column, onEditTask, onDeleteTask, isDoneColumn = false }: KanbanColumnProps) {
+export default function KanbanColumn({ 
+  column, 
+  onEditTask, 
+  onDeleteTask, 
+  isDoneColumn = false,
+  isBulkSelectMode = false,
+  selectedTaskIds = [],
+  onTaskSelect = () => {}
+}: KanbanColumnProps) {
 
   return (
     <div className={cn(
@@ -50,13 +61,14 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask, isDoneC
                     : "space-y-4"
              )}>
               {column.tasks.map((task, index) => (
-                <Draggable key={task.id} draggableId={task.id} index={index}>
+                <Draggable key={task.id} draggableId={task.id} index={index} isDragDisabled={isBulkSelectMode}>
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
                       style={{ ...provided.draggableProps.style }}
+                       onClick={() => isBulkSelectMode && onTaskSelect(task.id)}
                     >
                       <TaskCard
                         task={task}
@@ -64,6 +76,8 @@ export default function KanbanColumn({ column, onEditTask, onDeleteTask, isDoneC
                         onEdit={() => onEditTask(task)}
                         onDelete={() => onDeleteTask(task.id)}
                         isCompact={isDoneColumn}
+                        isBulkSelectMode={isBulkSelectMode}
+                        isSelected={selectedTaskIds.includes(task.id)}
                       />
                     </div>
                   )}

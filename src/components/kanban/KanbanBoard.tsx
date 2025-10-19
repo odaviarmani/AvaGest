@@ -11,7 +11,7 @@ import { statuses, Task, areaNames } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Search, ListFilter, Download, CheckCircle } from 'lucide-react';
+import { PlusCircle, Search, ListFilter, Download, CheckCircle, Edit, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format } from 'date-fns';
@@ -40,6 +40,10 @@ export default function KanbanBoard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
   const { toast } = useToast();
+
+  const [isBulkSelectMode, setIsBulkSelectMode] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const [bulkProjectName, setBulkProjectName] = useState('');
 
   useEffect(() => {
     setIsClient(true);
@@ -82,6 +86,43 @@ export default function KanbanBoard() {
       localStorage.setItem('kanbanTasks', JSON.stringify(tasks));
     }
   }, [tasks, isClient]);
+
+  const handleToggleBulkSelectMode = () => {
+    setIsBulkSelectMode(!isBulkSelectMode);
+    setSelectedTaskIds([]); // Reset selection when toggling mode
+  };
+
+  const handleTaskSelection = (taskId: string) => {
+    setSelectedTaskIds(prev =>
+      prev.includes(taskId)
+        ? prev.filter(id => id !== taskId)
+        : [...prev, taskId]
+    );
+  };
+  
+  const handleAssignProjectToSelected = () => {
+    if (selectedTaskIds.length === 0 || !bulkProjectName.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Nenhuma tarefa ou projeto selecionado',
+        description: 'Selecione as tarefas e digite um nome de projeto para atribuir.'
+      });
+      return;
+    }
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        selectedTaskIds.includes(task.id)
+          ? { ...task, project: bulkProjectName.trim() }
+          : task
+      )
+    );
+    toast({
+      title: 'Projeto atribuído!',
+      description: `${selectedTaskIds.length} tarefas foram atribuídas ao projeto "${bulkProjectName.trim()}".`
+    });
+    setBulkProjectName('');
+    setSelectedTaskIds([]);
+  };
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -280,6 +321,10 @@ export default function KanbanBoard() {
                     <Download className="mr-2 h-4 w-4" />
                     Download Tarefas Feitas
                   </Button>
+                  <Button variant={isBulkSelectMode ? "destructive" : "outline"} onClick={handleToggleBulkSelectMode}>
+                    {isBulkSelectMode ? <X className="mr-2 h-4 w-4" /> : <Edit className="mr-2 h-4 w-4" />}
+                    {isBulkSelectMode ? 'Cancelar Seleção' : 'Seleção em Massa'}
+                </Button>
             </div>
             <div className="flex items-center gap-2 flex-1 min-w-[250px] max-w-md">
                 <div className="relative w-full">
@@ -322,6 +367,18 @@ export default function KanbanBoard() {
                 </DropdownMenu>
             </div>
         </div>
+        {isBulkSelectMode && (
+          <div className="p-4 mb-4 border rounded-lg bg-secondary flex items-center gap-4 animate-in fade-in-50">
+            <span className="font-semibold">{selectedTaskIds.length} tarefas selecionadas</span>
+            <Input 
+              placeholder="Nome do Projeto"
+              className="max-w-xs"
+              value={bulkProjectName}
+              onChange={e => setBulkProjectName(e.target.value)}
+            />
+            <Button onClick={handleAssignProjectToSelected} disabled={selectedTaskIds.length === 0 || !bulkProjectName.trim()}>Atribuir Projeto</Button>
+          </div>
+        )}
         <DragDropContext onDragEnd={onDragEnd}>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
                 {progressColumns.map((column) => (
@@ -330,6 +387,9 @@ export default function KanbanBoard() {
                         column={column}
                         onEditTask={handleOpenDialog}
                         onDeleteTask={handleDeleteRequest}
+                        isBulkSelectMode={isBulkSelectMode}
+                        selectedTaskIds={selectedTaskIds}
+                        onTaskSelect={handleTaskSelection}
                     />
                 ))}
             </div>
@@ -342,6 +402,9 @@ export default function KanbanBoard() {
                     onEditTask={handleOpenDialog}
                     onDeleteTask={handleDeleteRequest}
                     isDoneColumn={true}
+                    isBulkSelectMode={isBulkSelectMode}
+                    selectedTaskIds={selectedTaskIds}
+                    onTaskSelect={handleTaskSelection}
                 />
             </div>
         </DragDropContext>
