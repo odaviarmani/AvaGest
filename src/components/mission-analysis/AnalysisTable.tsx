@@ -2,8 +2,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Mission, MissionAnalysisData } from '@/lib/types';
+import { Mission, MissionAnalysisData, missionStepDetails, MissionStepDetail } from '@/lib/types';
 import { Button } from '../ui/button';
 import { PlusCircle, Trash2, Save } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -11,6 +10,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { ScrollArea } from '../ui/scroll-area';
+import { Slider } from '../ui/slider';
+import { Label } from '../ui/label';
 
 const STORAGE_KEY_ANALYSIS = 'missionAnalysisData_v2';
 const STORAGE_KEY_MISSIONS = 'missions';
@@ -27,14 +28,13 @@ export default function AnalysisTable() {
             const savedData = localStorage.getItem(STORAGE_KEY_ANALYSIS);
             if (savedData) {
                 const parsedData = JSON.parse(savedData);
-                // Ensure missionIds is always an array
                 const validatedData = parsedData.map((item: MissionAnalysisData) => ({
                     ...item,
-                    missionIds: Array.isArray(item.missionIds) ? item.missionIds : [],
+                    missions: Array.isArray(item.missions) ? item.missions : [],
                 }));
                 setAnalysisData(validatedData);
             } else {
-                 setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missionIds: [] }]);
+                 setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
             }
 
             const savedMissions = localStorage.getItem(STORAGE_KEY_MISSIONS);
@@ -44,6 +44,8 @@ export default function AnalysisTable() {
 
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
+            // If there's an error, start with a default state
+            setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
         }
     }, []);
 
@@ -69,7 +71,7 @@ export default function AnalysisTable() {
         const newSaida: MissionAnalysisData = {
             id: crypto.randomUUID(),
             saidaName: `Saída ${nextSaidaNumber}`,
-            missionIds: [],
+            missions: [],
         };
         setAnalysisData(prev => [...prev, newSaida]);
     };
@@ -82,20 +84,29 @@ export default function AnalysisTable() {
         setAnalysisData(prevData =>
             prevData.map(saida => {
                 if (saida.id === saidaId) {
-                    const newMissionIds = checked
-                        ? [...(saida.missionIds || []), missionId]
-                        : (saida.missionIds || []).filter(id => id !== missionId);
-                    return { ...saida, missionIds: newMissionIds };
+                    const newMissions = checked
+                        ? [...(saida.missions || []), { missionId }]
+                        : (saida.missions || []).filter(m => m.missionId !== missionId);
+                    return { ...saida, missions: newMissions };
                 }
                 return saida;
             })
         );
     };
 
-    const getMissionNameById = (missionId: string) => {
-        return allMissions.find(m => m.id === missionId)?.name || 'Missão desconhecida';
-    }
-
+    const handleStepChange = (saidaId: string, missionId: string, steps: number) => {
+         setAnalysisData(prevData =>
+            prevData.map(saida => {
+                if (saida.id === saidaId) {
+                    const newMissions = saida.missions.map(m => 
+                        m.missionId === missionId ? { ...m, steps } : m
+                    );
+                    return { ...saida, missions: newMissions };
+                }
+                return saida;
+            })
+        );
+    };
 
     if (!isClient) {
         return <div>Carregando...</div>;
@@ -114,7 +125,9 @@ export default function AnalysisTable() {
                 </Button>
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {analysisData.map((saida, index) => (
+                {analysisData.map((saida, index) => {
+                     const missionConfig = saida.missions || [];
+                    return (
                     <Card key={saida.id}>
                         <CardHeader className="flex-row items-center justify-between">
                             <CardTitle>
@@ -141,23 +154,41 @@ export default function AnalysisTable() {
                             </Button>
                         </CardHeader>
                         <CardContent>
-                             <ScrollArea className="h-64">
-                                <div className="space-y-2 pr-4">
-                                {allMissions.length > 0 ? allMissions.map(mission => (
-                                    <div key={mission.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
-                                        <Checkbox
-                                            id={`${saida.id}-${mission.id}`}
-                                            checked={(saida.missionIds || []).includes(mission.id)}
-                                            onCheckedChange={(checked) => handleMissionSelectionChange(saida.id, mission.id, !!checked)}
-                                        />
-                                        <label
-                                            htmlFor={`${saida.id}-${mission.id}`}
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                            {mission.name}
-                                        </label>
+                             <ScrollArea className="h-72">
+                                <div className="space-y-4 pr-4">
+                                {allMissions.length > 0 ? allMissions.map(mission => {
+                                    const isSelected = missionConfig.some(m => m.missionId === mission.id);
+                                    const stepDetail = missionStepDetails[mission.name.split(" ")[0].toLowerCase() as keyof typeof missionStepDetails];
+                                    const currentSteps = missionConfig.find(m => m.missionId === mission.id)?.steps;
+
+                                    return (
+                                    <div key={mission.id} className="p-2 rounded-md hover:bg-muted/50 border space-y-2">
+                                        <div className="flex items-center space-x-2">
+                                            <Checkbox
+                                                id={`${saida.id}-${mission.id}`}
+                                                checked={isSelected}
+                                                onCheckedChange={(checked) => handleMissionSelectionChange(saida.id, mission.id, !!checked)}
+                                            />
+                                            <label
+                                                htmlFor={`${saida.id}-${mission.id}`}
+                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                            >
+                                                {mission.name}
+                                            </label>
+                                        </div>
+                                        {isSelected && stepDetail && (
+                                            <div className="pl-6 space-y-1">
+                                                <Label className="text-xs">{stepDetail.label}: {currentSteps ?? 0}</Label>
+                                                <Slider
+                                                    value={[currentSteps ?? 0]}
+                                                    max={stepDetail.max}
+                                                    step={1}
+                                                    onValueChange={([val]) => handleStepChange(saida.id, mission.id, val)}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
-                                )) : (
+                                )}) : (
                                     <p className="text-sm text-muted-foreground text-center p-4">
                                         Nenhuma missão cadastrada. Adicione missões na aba "Missões" para começar.
                                     </p>
@@ -166,7 +197,7 @@ export default function AnalysisTable() {
                              </ScrollArea>
                         </CardContent>
                     </Card>
-                ))}
+                )})}
             </div>
         </div>
     );
