@@ -26,7 +26,13 @@ export default function AnalysisTable() {
         try {
             const savedData = localStorage.getItem(STORAGE_KEY_ANALYSIS);
             if (savedData) {
-                setAnalysisData(JSON.parse(savedData));
+                const parsedData = JSON.parse(savedData);
+                // Ensure missionIds is always an array
+                const validatedData = parsedData.map((item: MissionAnalysisData) => ({
+                    ...item,
+                    missionIds: Array.isArray(item.missionIds) ? item.missionIds : [],
+                }));
+                setAnalysisData(validatedData);
             } else {
                  setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missionIds: [] }]);
             }
@@ -77,8 +83,8 @@ export default function AnalysisTable() {
             prevData.map(saida => {
                 if (saida.id === saidaId) {
                     const newMissionIds = checked
-                        ? [...saida.missionIds, missionId]
-                        : saida.missionIds.filter(id => id !== missionId);
+                        ? [...(saida.missionIds || []), missionId]
+                        : (saida.missionIds || []).filter(id => id !== missionId);
                     return { ...saida, missionIds: newMissionIds };
                 }
                 return saida;
@@ -141,7 +147,7 @@ export default function AnalysisTable() {
                                     <div key={mission.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
                                         <Checkbox
                                             id={`${saida.id}-${mission.id}`}
-                                            checked={saida.missionIds.includes(mission.id)}
+                                            checked={(saida.missionIds || []).includes(mission.id)}
                                             onCheckedChange={(checked) => handleMissionSelectionChange(saida.id, mission.id, !!checked)}
                                         />
                                         <label
