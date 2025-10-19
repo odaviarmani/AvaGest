@@ -52,6 +52,7 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
       startDate: null,
       dueDate: null,
       columnId: 'Learning',
+      project: '',
     },
   });
 
@@ -70,6 +71,19 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
               <FormLabel>Nome da Tarefa</FormLabel>
               <FormControl>
                 <Input placeholder="Ex: Desenvolver nova feature" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+         <FormField
+          control={form.control}
+          name="project"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Projeto (Opcional)</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: App de Realidade Aumentada" {...field} value={field.value ?? ''}/>
               </FormControl>
               <FormMessage />
             </FormItem>

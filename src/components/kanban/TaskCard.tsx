@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreVertical, Calendar as CalendarIcon, Pencil, Trash2, ArrowUp, ArrowDown, Minus } from 'lucide-react';
+import { MoreVertical, Calendar as CalendarIcon, Pencil, Trash2, ArrowUp, ArrowDown, Minus, FolderKanban } from 'lucide-react';
 import { Task, Priority, areaNames } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -82,6 +82,12 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete, isCompact
           <CardContent className="p-2 pt-0 flex-1 flex flex-col justify-end">
               <div className="flex flex-wrap gap-1">
                   {taskAreas.map(a => <Badge key={a} variant="outline" className="text-xs px-1.5 py-0 bg-card/80">{a}</Badge>)}
+                   {task.project && (
+                    <Badge variant="secondary" className="text-xs px-1.5 py-0 flex items-center gap-1">
+                        <FolderKanban className="w-3 h-3"/>
+                        {task.project}
+                    </Badge>
+                  )}
               </div>
           </CardContent>
         </div>
@@ -121,12 +127,18 @@ export default function TaskCard({ task, isDragging, onEdit, onDelete, isCompact
             </DropdownMenu>
         </CardHeader>
         <CardContent className="p-4 pt-0 space-y-3">
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-sm flex-wrap gap-2">
                 <Badge variant="outline" className={cn("capitalize", priorityBadgeColor[task.priority])}>
                     {React.cloneElement(priorityIcons[task.priority] as React.ReactElement, { className: "h-4 w-4" })}
                     <span className="ml-1">{task.priority}</span>
                 </Badge>
                 <div className="flex flex-wrap gap-1 justify-end">
+                    {task.project && (
+                        <Badge variant="secondary" className="text-xs flex items-center gap-1">
+                            <FolderKanban className="w-3 h-3"/>
+                            {task.project}
+                        </Badge>
+                    )}
                     {taskAreas.map(a => <Badge key={a} variant="outline" className="bg-card/80">{a}</Badge>)}
                 </div>
             </div>
