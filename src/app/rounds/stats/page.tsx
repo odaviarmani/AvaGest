@@ -86,6 +86,11 @@ const SaidaAnalysisCard = ({
     const timings = useMemo(() => {
         const saidaTimings: number[] = [];
         const trocaTimings: number[] = [];
+
+        if (!saidaConfig.saidaName) {
+            return { avgSaidaTime: 0, avgTrocaTime: 0 };
+        }
+
         const saidaIndex = parseInt(saidaConfig.saidaName.split(' ')[1]);
 
         roundsHistory.forEach(round => {
