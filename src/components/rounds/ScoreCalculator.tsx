@@ -16,6 +16,7 @@ interface ScoreCalculatorProps {
     missions: MissionState;
     setMissions: React.Dispatch<React.SetStateAction<MissionState>>;
     totalScore: number;
+    stageNames: string[]; // This prop is kept for compatibility but the logic will be simplified
 }
 
 
@@ -40,7 +41,7 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
   // A helper function to update the single `saida1` object, abstracting the structure from the UI
   const updateMission = (missionKey: keyof MissionState['missionsPerSaida']['saida1'], value: any) => {
       setMissions(prev => {
-          const saida1 = prev.missionsPerSaida.saida1;
+          const saida1 = prev.missionsPerSaida.saida1 || initialMissionState.missionsPerSaida.saida1;
           const updatedSaida1 = { ...saida1, [missionKey]: value };
           return {
               ...prev,
@@ -52,7 +53,7 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
       })
   }
   
-  const m = missions.missionsPerSaida.saida1;
+  const m = missions.missionsPerSaida.saida1 || initialMissionState.missionsPerSaida.saida1;
 
   return (
     <Card className="w-full">

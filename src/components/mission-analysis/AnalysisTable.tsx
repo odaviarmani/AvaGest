@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Mission, MissionAnalysisData, missionStepDetails, MissionStepDetail } from '@/lib/types';
+import { Mission, MissionAnalysisData, missionStepDetails, MissionStepDetail, MissionSelection } from '@/lib/types';
 import { Button } from '../ui/button';
 import { PlusCircle, Trash2, Save } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,14 +28,13 @@ export default function AnalysisTable() {
             const savedData = localStorage.getItem(STORAGE_KEY_ANALYSIS);
             if (savedData) {
                 const parsedData = JSON.parse(savedData);
-                 // Ensure missions array exists and is an array
-                const validatedData = parsedData.map((item: any) => ({
-                    ...item,
-                    missions: Array.isArray(item.missions) ? item.missions : [],
-                }));
-                setAnalysisData(validatedData);
+                // Ensure data has the correct structure
+                if (Array.isArray(parsedData) && parsedData.every(item => 'id' in item && 'saidaName' in item && 'missions' in item)) {
+                     setAnalysisData(parsedData);
+                } else {
+                    setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
+                }
             } else {
-                 // Initialize with one default "Saída" if no data is found
                  setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
             }
 
@@ -46,7 +45,6 @@ export default function AnalysisTable() {
 
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
-            // If there's an error, start with a default state
             setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
         }
     }, []);
@@ -86,9 +84,10 @@ export default function AnalysisTable() {
         setAnalysisData(prevData =>
             prevData.map(saida => {
                 if (saida.id === saidaId) {
+                    const existingMissions = saida.missions || [];
                     const newMissions = checked
-                        ? [...(saida.missions || []), { missionId }]
-                        : (saida.missions || []).filter(m => m.missionId !== missionId);
+                        ? [...existingMissions, { missionId }]
+                        : existingMissions.filter(m => m.missionId !== missionId);
                     return { ...saida, missions: newMissions };
                 }
                 return saida;
