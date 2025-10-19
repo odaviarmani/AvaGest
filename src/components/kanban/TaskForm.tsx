@@ -83,7 +83,7 @@ export default function TaskForm({ task, onSave, onCancel }: TaskFormProps) {
             <FormItem>
               <FormLabel>Projeto (Opcional)</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: App de Realidade Aumentada" {...field} value={field.value ?? ''}/>
+                <Input placeholder="Ex: Estratilog" {...field} value={field.value ?? ''}/>
               </FormControl>
               <FormMessage />
             </FormItem>
