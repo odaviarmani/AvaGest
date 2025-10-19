@@ -6,7 +6,6 @@ import { googleAI } from '@genkit-ai/google-genai';
 import { generate } from 'genkit/ai';
 import { z } from 'zod';
 
-export const runtime = 'edge';
 
 configureGenkit({
   plugins: [
