@@ -1,13 +1,12 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { configureGenkit } from 'genkit';
+import { Genkit } from '@genkit-ai/core';
 import { googleAI } from '@genkit-ai/google-genai';
-import { generate } from 'genkit/ai';
+import { generate } from '@genkit-ai/ai';
 import { z } from 'zod';
 
-
-configureGenkit({
+Genkit({
   plugins: [
     googleAI({
       apiVersion: 'v1beta',
