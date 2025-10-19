@@ -13,163 +13,19 @@ import Link from "next/link";
 import { ArrowLeft, BarChart, Clock, Target, ListTree } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Mission, MissionAnalysisData, missionStepDetails, MissionState } from '@/lib/types';
-import { Progress } from '@/components/ui/progress';
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
-
-const isMissionCompleted = (missionKey: keyof MissionState, missionState: MissionState): boolean => {
-    const state = missionState[missionKey];
-
-    if (typeof state === 'boolean') {
-        return state;
-    }
-    if (typeof state === 'object' && state !== null) {
-        if ('artifacts' in state) return state.artifacts > 0;
-        if ('locations' in state) return state.locations > 0;
-        if ('soil_deposits_cleaned' in state) return state.soil_deposits_cleaned > 0;
-        
-        return Object.values(state).some(v => {
-            if (typeof v === 'boolean') return v;
-            if (typeof v === 'number') return v > 0;
-            return false;
-        });
-    }
-    return false;
-};
-
-const SaidaAnalysisCard = ({
-    saidaConfig,
-    roundsHistory,
-    allMissions
-}: {
-    saidaConfig: MissionAnalysisData,
-    roundsHistory: RoundData[],
-    allMissions: Mission[],
-}) => {
-    const safeMissionIds = saidaConfig.missions || [];
-    
-    const configuredMissions = useMemo(() => {
-        return safeMissionIds
-            .map(missionConfig => {
-                const missionDetails = allMissions.find(m => m.id === missionConfig.missionId);
-                if (!missionDetails) return null;
-
-                const missionKey = missionDetails.name.split(' ')[0].toLowerCase().replace('–', '') as keyof MissionState;
-                const stepDetail = missionStepDetails[missionKey as keyof typeof missionStepDetails];
-                
-                let details = '';
-                if (stepDetail && missionConfig.steps && stepDetail.max > 1) {
-                    details = `(${missionConfig.steps} de ${stepDetail.max} etapas)`;
-                }
-
-                // Calculate precision
-                const totalRounds = roundsHistory.length;
-                const successCount = roundsHistory.reduce((count, round) => {
-                     if (round.missions && isMissionCompleted(missionKey, round.missions)) {
-                        return count + 1;
-                    }
-                    return count;
-                }, 0);
-                
-                const precision = totalRounds > 0 ? (successCount / totalRounds) * 100 : 0;
-
-                return {
-                    name: missionDetails.name,
-                    details: details,
-                    precision: precision,
-                };
-            })
-            .filter(Boolean) as { name: string; details: string; precision: number }[];
-    }, [safeMissionIds, allMissions, roundsHistory]);
-    
-    const timings = useMemo(() => {
-        const saidaTimings: number[] = [];
-        const trocaTimings: number[] = [];
-
-        if (!saidaConfig.saidaName) {
-            return { avgSaidaTime: 0, avgTrocaTime: 0 };
-        }
-
-        const saidaIndex = parseInt(saidaConfig.saidaName.split(' ')[1]);
-
-        roundsHistory.forEach(round => {
-            const saidaTiming = round.timings.find(t => t.name === `Saída ${saidaIndex}`);
-            if (saidaTiming?.duration) saidaTimings.push(saidaTiming.duration);
-
-            const trocaTiming = round.timings.find(t => t.name === `Troca de anexo ${saidaIndex}-${saidaIndex+1}`);
-            if(trocaTiming?.duration) trocaTimings.push(trocaTiming.duration);
-        });
-
-        const avgSaidaTime = saidaTimings.length > 0 ? saidaTimings.reduce((a,b) => a+b, 0) / saidaTimings.length : 0;
-        const avgTrocaTime = trocaTimings.length > 0 ? trocaTimings.reduce((a,b) => a+b, 0) / trocaTimings.length : 0;
-        
-        return { avgSaidaTime, avgTrocaTime };
-
-    }, [saidaConfig.saidaName, roundsHistory]);
-
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>{saidaConfig.saidaName}</CardTitle>
-                <CardDescription>Análise de {roundsHistory.length} rounds registrados.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4 text-muted-foreground"/> 
-                        <span>Saída: <strong>{(timings.avgSaidaTime / 1000).toFixed(2)}s</strong> (média)</span>
-                    </div>
-                     <div className="flex items-center gap-2 text-sm">
-                        <Clock className="w-4 h-4 text-muted-foreground"/> 
-                        <span>Troca: <strong>{(timings.avgTrocaTime / 1000).toFixed(2)}s</strong> (média)</span>
-                    </div>
-                </div>
-                <div>
-                    <h4 className="font-semibold mb-2 flex items-center gap-2"><ListTree className="w-5 h-5"/> Missões Realizadas e Precisão</h4>
-                     {configuredMissions.length > 0 ? (
-                        <div className="space-y-3 text-sm text-muted-foreground pl-2">
-                            {configuredMissions.map(mission => (
-                                <div key={mission.name}>
-                                    <div className="flex justify-between items-center mb-1">
-                                        <p>- {mission.name} <span className="text-xs">{mission.details}</span></p>
-                                        <span className="font-semibold">{mission.precision.toFixed(0)}%</span>
-                                    </div>
-                                    <Progress value={mission.precision} className="h-2" />
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-sm text-muted-foreground text-center p-4 bg-muted/50 rounded-md">Nenhuma missão configurada para esta saída.</p>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
-    )
-}
-
 
 export default function RoundsStatsPage() {
     const [history, setHistory] = useState<RoundData[]>([]);
     const [isClient, setIsClient] = useState(false);
     const [roundCount, setRoundCount] = useState<number | 'all'>('all');
-    const [missionAnalysisConfig, setMissionAnalysisConfig] = useState<MissionAnalysisData[]>([]);
-    const [allMissions, setAllMissions] = useState<Mission[]>([]);
 
     useEffect(() => {
         setIsClient(true);
         const savedHistory = localStorage.getItem('roundsHistory');
         if (savedHistory) {
             setHistory(JSON.parse(savedHistory));
-        }
-        const savedAnalysisConfig = localStorage.getItem('missionAnalysisData_v2');
-        if(savedAnalysisConfig) {
-            setMissionAnalysisConfig(JSON.parse(savedAnalysisConfig));
-        }
-        const savedMissions = localStorage.getItem('missions');
-        if(savedMissions) {
-            setAllMissions(JSON.parse(savedMissions));
         }
     }, []);
 
@@ -400,32 +256,6 @@ export default function RoundsStatsPage() {
                             </CardContent>
                         </Card>
                     </div>
-                     <Card>
-                        <CardHeader>
-                             <CardTitle>Análise de Saídas</CardTitle>
-                             <CardDescription>
-                                Configure as missões de cada saída na aba "Análise e Aprimoramento" para ver os dados.
-                             </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {missionAnalysisConfig.length > 0 && filteredHistory.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {missionAnalysisConfig.map(config => (
-                                        <SaidaAnalysisCard
-                                            key={config.id}
-                                            saidaConfig={config}
-                                            roundsHistory={filteredHistory}
-                                            allMissions={allMissions}
-                                        />
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-center py-10 text-muted-foreground">
-                                    Nenhuma configuração de análise de missão encontrada ou nenhum round no histórico.
-                                </div>
-                            )}
-                        </CardContent>
-                     </Card>
 
                     <Card>
                         <CardHeader>

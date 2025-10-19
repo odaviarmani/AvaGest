@@ -113,26 +113,6 @@ export const robotTestSchema = z.object({
 
 export type RobotTest = z.infer<typeof robotTestSchema>;
 
-export interface MissionSelection {
-    missionId: string;
-    steps?: number;
-}
-
-export interface MissionAnalysisData {
-  id: string;
-  saidaName: string;
-  missions: MissionSelection[];
-}
-
-export type MissionStepDetail = { label: string; max: number };
-
-export const missionStepDetails: Record<string, MissionStepDetail> = {
-    'm01': { label: "Depósitos de solo limpos", max: 2 },
-    'm14': { label: "Artefatos no fórum", max: 7 },
-    'm15': { label: "Locais marcados", max: 3 }
-};
-
-
 export interface SpinResult {
   id: string;
   pairs: {

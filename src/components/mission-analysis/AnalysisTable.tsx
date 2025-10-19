@@ -2,23 +2,31 @@
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { Mission, MissionAnalysisData, missionStepDetails, MissionStepDetail, MissionSelection } from '@/lib/types';
-import { Button } from '../ui/button';
-import { PlusCircle, Trash2 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Mission } from '@/lib/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { useToast } from '@/hooks/use-toast';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { ScrollArea } from '../ui/scroll-area';
-import { Slider } from '../ui/slider';
-import { Label } from '../ui/label';
 
-const STORAGE_KEY_ANALYSIS = 'missionAnalysisData_v2';
+type AnalysisData = Record<string, {
+    priority: string;
+    consistency: string;
+    avgTime: string;
+    points: string;
+}>;
+
+const STORAGE_KEY_ANALYSIS = 'missionAnalysisData'; // Renamed to avoid conflicts
 const STORAGE_KEY_MISSIONS = 'missions';
 
 export default function AnalysisTable() {
-    const [analysisData, setAnalysisData] = useState<MissionAnalysisData[]>([]);
-    const [allMissions, setAllMissions] = useState<Mission[]>([]);
+    const [analysisData, setAnalysisData] = useState<AnalysisData>({});
+    const [missions, setMissions] = useState<Mission[]>([]);
     const [isClient, setIsClient] = useState(false);
     const { toast } = useToast();
 
@@ -27,173 +35,97 @@ export default function AnalysisTable() {
         try {
             const savedData = localStorage.getItem(STORAGE_KEY_ANALYSIS);
             if (savedData) {
-                const parsedData = JSON.parse(savedData);
-                 const validatedData = parsedData.map((item: any) => ({
-                    ...item,
-                    missions: item.missions || [],
-                }));
-                 setAnalysisData(validatedData);
-            } else {
-                 setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
+                setAnalysisData(JSON.parse(savedData));
             }
 
             const savedMissions = localStorage.getItem(STORAGE_KEY_MISSIONS);
-            if(savedMissions) {
-                setAllMissions(JSON.parse(savedMissions));
+            if (savedMissions) {
+                setMissions(JSON.parse(savedMissions));
             }
-
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
-            setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
         }
     }, []);
-    
-    // Auto-save on change
-    useEffect(() => {
-        if (isClient) {
-            try {
-                localStorage.setItem(STORAGE_KEY_ANALYSIS, JSON.stringify(analysisData));
-            } catch (error) {
-                 toast({
-                    variant: 'destructive',
-                    title: "Erro ao Salvar",
-                    description: "Não foi possível salvar a configuração automaticamente.",
-                });
-            }
-        }
-    }, [analysisData, isClient, toast]);
-    
-    const handleAddSaida = () => {
-        const nextSaidaNumber = analysisData.length + 1;
-        const newSaida: MissionAnalysisData = {
-            id: crypto.randomUUID(),
-            saidaName: `Saída ${nextSaidaNumber}`,
-            missions: [],
+
+    const handleDataChange = (missionId: string, field: keyof AnalysisData[string], value: string) => {
+        const newData = {
+            ...analysisData,
+            [missionId]: {
+                ...analysisData[missionId],
+                [field]: value,
+            },
         };
-        setAnalysisData(prev => [...prev, newSaida]);
+        setAnalysisData(newData);
+        localStorage.setItem(STORAGE_KEY_ANALYSIS, JSON.stringify(newData));
     };
-
-    const handleDeleteSaida = (id: string) => {
-        setAnalysisData(prev => prev.filter(m => m.id !== id));
-    };
-
-    const handleMissionSelectionChange = (saidaId: string, missionId: string, checked: boolean) => {
-        setAnalysisData(prevData =>
-            prevData.map(saida => {
-                if (saida.id === saidaId) {
-                    const existingMissions = saida.missions || [];
-                    const newMissions = checked
-                        ? [...existingMissions, { missionId }]
-                        : existingMissions.filter(m => m.missionId !== missionId);
-                    return { ...saida, missions: newMissions };
-                }
-                return saida;
-            })
-        );
-    };
-
-    const handleStepChange = (saidaId: string, missionId: string, steps: number) => {
-         setAnalysisData(prevData =>
-            prevData.map(saida => {
-                if (saida.id === saidaId) {
-                    const newMissions = (saida.missions || []).map(m => 
-                        m.missionId === missionId ? { ...m, steps } : m
-                    );
-                    return { ...saida, missions: newMissions };
-                }
-                return saida;
-            })
-        );
-    };
-
+    
     if (!isClient) {
         return <div>Carregando...</div>;
     }
 
-    return (
-        <div className="space-y-6">
-            <div className="flex justify-end gap-2">
-                 <Button onClick={handleAddSaida}>
-                    <PlusCircle className="mr-2" />
-                    Adicionar Saída
-                </Button>
+    if (missions.length === 0) {
+        return (
+             <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed shadow-sm min-h-[40vh]">
+                <div className="flex flex-col items-center gap-1 text-center">
+                    <h3 className="text-2xl font-bold tracking-tight">
+                        Nenhuma missão encontrada
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                        Adicione missões na aba "Missões" para começar a análise.
+                    </p>
+                </div>
             </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {analysisData.map((saida, index) => {
-                     const missionConfig = saida.missions || [];
-                    return (
-                    <Card key={saida.id}>
-                        <CardHeader className="flex-row items-center justify-between">
-                            <CardTitle>
-                                <Select
-                                    value={saida.saidaName}
-                                    onValueChange={(newName) => {
-                                        const newData = [...analysisData];
-                                        newData[index].saidaName = newName;
-                                        setAnalysisData(newData);
-                                    }}
-                                >
-                                    <SelectTrigger className="text-lg font-bold border-0 shadow-none -ml-3 w-[150px]">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Array.from({ length: 10 }, (_, i) => `Saída ${i + 1}`).map(name => (
-                                            <SelectItem key={name} value={name}>{name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </CardTitle>
-                             <Button variant="ghost" size="icon" onClick={() => handleDeleteSaida(saida.id)}>
-                                <Trash2 className="w-5 h-5 text-destructive" />
-                            </Button>
-                        </CardHeader>
-                        <CardContent>
-                             <ScrollArea className="h-72">
-                                <div className="space-y-4 pr-4">
-                                {allMissions.length > 0 ? allMissions.map(mission => {
-                                    const isSelected = missionConfig.some(m => m.missionId === mission.id);
-                                    const missionKey = mission.name.split(" ")[0].toLowerCase();
-                                    const stepDetail = missionStepDetails[missionKey as keyof typeof missionStepDetails];
-                                    const currentSteps = missionConfig.find(m => m.missionId === mission.id)?.steps;
+        )
+    }
 
-                                    return (
-                                    <div key={mission.id} className="p-2 rounded-md hover:bg-muted/50 border space-y-2">
-                                        <div className="flex items-center space-x-2">
-                                            <Checkbox
-                                                id={`${saida.id}-${mission.id}`}
-                                                checked={isSelected}
-                                                onCheckedChange={(checked) => handleMissionSelectionChange(saida.id, mission.id, !!checked)}
-                                            />
-                                            <label
-                                                htmlFor={`${saida.id}-${mission.id}`}
-                                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                            >
-                                                {mission.name}
-                                            </label>
-                                        </div>
-                                        {isSelected && stepDetail && (
-                                            <div className="pl-6 space-y-1">
-                                                <Label className="text-xs">{stepDetail.label}: {currentSteps ?? 0}</Label>
-                                                <Slider
-                                                    value={[currentSteps ?? 0]}
-                                                    max={stepDetail.max}
-                                                    step={1}
-                                                    onValueChange={([val]) => handleStepChange(saida.id, mission.id, val)}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                )}) : (
-                                    <p className="text-sm text-muted-foreground text-center p-4">
-                                        Nenhuma missão cadastrada. Adicione missões na aba "Missões" para começar.
-                                    </p>
-                                )}
-                                </div>
-                             </ScrollArea>
-                        </CardContent>
-                    </Card>
-                )})}
-            </div>
+    return (
+        <div className="border rounded-lg">
+             <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="min-w-[200px]">Missão</TableHead>
+                        <TableHead>Prioridade</TableHead>
+                        <TableHead>Consistência (%)</TableHead>
+                        <TableHead>Tempo Médio (s)</TableHead>
+                        <TableHead>Pontos</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {missions.map(mission => (
+                        <TableRow key={mission.id}>
+                            <TableCell className="font-medium">{mission.name}</TableCell>
+                            <TableCell>
+                                <Input
+                                    value={analysisData[mission.id]?.priority || ''}
+                                    onChange={e => handleDataChange(mission.id, 'priority', e.target.value)}
+                                    className="w-24"
+                                />
+                            </TableCell>
+                            <TableCell>
+                                <Input
+                                    value={analysisData[mission.id]?.consistency || ''}
+                                    onChange={e => handleDataChange(mission.id, 'consistency', e.target.value)}
+                                     className="w-24"
+                                />
+                            </TableCell>
+                            <TableCell>
+                                 <Input
+                                    value={analysisData[mission.id]?.avgTime || ''}
+                                    onChange={e => handleDataChange(mission.id, 'avgTime', e.target.value)}
+                                     className="w-24"
+                                />
+                            </TableCell>
+                            <TableCell>
+                                 <Input
+                                    value={analysisData[mission.id]?.points || mission.points}
+                                    onChange={e => handleDataChange(mission.id, 'points', e.target.value)}
+                                     className="w-24"
+                                />
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         </div>
     );
 }
