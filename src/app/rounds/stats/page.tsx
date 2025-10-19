@@ -43,7 +43,12 @@ const isMissionCompleted = (missionKey: keyof MissionState, missionState: Missio
     if (!missionState) {
         return false;
     }
-    const value = missionState[missionKey];
+    const value = missionState[missionKey] as any;
+    if (!value) return false;
+
+    if (typeof value === 'object' && 'completed' in value) {
+        return value.completed;
+    }
     if (typeof value === 'boolean') {
         return value;
     }
@@ -153,7 +158,7 @@ export default function RoundsStatsPage() {
             
             const errorsInFailedRounds: Record<string, number> = {};
             reversedHistory
-                .filter(round => !isMissionCompleted(key, round.missions))
+                .filter(round => round.missions && !isMissionCompleted(key, round.missions))
                 .forEach(round => {
                     round.errors.forEach(error => {
                          if (error !== "Nenhuma") {

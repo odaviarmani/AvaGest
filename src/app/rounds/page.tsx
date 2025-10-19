@@ -54,7 +54,7 @@ export default function RoundsPage() {
     let score = 0;
     
     // M00 - Inspeção de Equipamentos
-    if (state.m00_equipment_inspection) score += 20;
+    if (state.m00_equipment_inspection.completed) score += 20;
 
     // M01 - Escovação de Superfícies
     score += state.m01_surface_brushing.soil_deposits_cleaned * 10;
@@ -74,7 +74,7 @@ export default function RoundsPage() {
     if(state.m04_careful_retrieval.not_broken) score += 10;
 
     // M05 - Quem Morava Aqui?
-    if (state.m05_who_lived_here) score += 30;
+    if (state.m05_who_lived_here.completed) score += 30;
     
     // M06 - Forja
     if(state.m06_forge.part1) score += 10;
@@ -82,7 +82,7 @@ export default function RoundsPage() {
     if(state.m06_forge.part3) score += 10;
 
     // M07 - Levantamento de Peso
-    if (state.m07_heavy_lifting) score += 30;
+    if (state.m07_heavy_lifting.completed) score += 30;
     
     // M08 - Silo
     if(state.m08_silo.part1) score += 10;
@@ -106,7 +106,7 @@ export default function RoundsPage() {
     if(state.m12_salvage_operation.animals_moved) score += 10;
 
     // M13 - Reconstrução da Estátua
-    if (state.m13_statue_reconstruction) score += 30;
+    if (state.m13_statue_reconstruction.completed) score += 30;
 
     // M14 - Fórum
     score += state.m14_forum.artifacts * 5;
@@ -195,6 +195,7 @@ export default function RoundsPage() {
                 missions={missions}
                 setMissions={setMissions}
                 totalScore={totalScore}
+                numberOfSaidas={numberOfSaidas}
             />
             </div>
             <div className="md:col-span-1">

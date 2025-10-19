@@ -148,42 +148,42 @@ export interface ChatMessage {
   timestamp: string;
 }
 export interface MissionState {
-    m00_equipment_inspection: boolean;
-    m01_surface_brushing: { soil_deposits_cleaned: number; brush_not_touching: boolean };
-    m02_map_reveal: { part1: boolean; part2: boolean; part3: boolean };
-    m03_mine_shaft_explorer: { explored: boolean; gold_retrieved: boolean };
-    m04_careful_retrieval: { retrieved: boolean; not_broken: boolean };
-    m05_who_lived_here: boolean;
-    m06_forge: { part1: boolean; part2: boolean; part3: boolean };
-    m07_heavy_lifting: boolean;
-    m08_silo: { part1: boolean; part2: boolean; part3: boolean };
-    m09_whats_on_sale: { store_open: boolean; item_on_pedestal: boolean };
-    m10_tip_the_scales: { tipped: boolean; both_sides_down: boolean };
-    m11_fisher_artifacts: { retrieved: boolean; on_pedestal: boolean };
-    m12_salvage_operation: { raised: boolean; animals_moved: boolean };
-    m13_statue_reconstruction: boolean;
-    m14_forum: { artifacts: number };
-    m15_site_marking: { locations: number };
+    m00_equipment_inspection: { completed: boolean; saidas: number[] };
+    m01_surface_brushing: { soil_deposits_cleaned: number; brush_not_touching: boolean; saidas: number[] };
+    m02_map_reveal: { part1: boolean; part2: boolean; part3: boolean; saidas: number[] };
+    m03_mine_shaft_explorer: { explored: boolean; gold_retrieved: boolean; saidas: number[] };
+    m04_careful_retrieval: { retrieved: boolean; not_broken: boolean; saidas: number[] };
+    m05_who_lived_here: { completed: boolean; saidas: number[] };
+    m06_forge: { part1: boolean; part2: boolean; part3: boolean; saidas: number[] };
+    m07_heavy_lifting: { completed: boolean; saidas: number[] };
+    m08_silo: { part1: boolean; part2: boolean; part3: boolean; saidas: number[] };
+    m09_whats_on_sale: { store_open: boolean; item_on_pedestal: boolean; saidas: number[] };
+    m10_tip_the_scales: { tipped: boolean; both_sides_down: boolean; saidas: number[] };
+    m11_fisher_artifacts: { retrieved: boolean; on_pedestal: boolean; saidas: number[] };
+    m12_salvage_operation: { raised: boolean; animals_moved: boolean; saidas: number[] };
+    m13_statue_reconstruction: { completed: boolean; saidas: number[] };
+    m14_forum: { artifacts: number; saidas: number[] };
+    m15_site_marking: { locations: number; saidas: number[] };
     precision_tokens: number;
 }
 
 export const initialMissionState: MissionState = {
-    m00_equipment_inspection: false,
-    m01_surface_brushing: { soil_deposits_cleaned: 0, brush_not_touching: false },
-    m02_map_reveal: { part1: false, part2: false, part3: false },
-    m03_mine_shaft_explorer: { explored: false, gold_retrieved: false },
-    m04_careful_retrieval: { retrieved: false, not_broken: false },
-    m05_who_lived_here: false,
-    m06_forge: { part1: false, part2: false, part3: false },
-    m07_heavy_lifting: false,
-    m08_silo: { part1: false, part2: false, part3: false },
-    m09_whats_on_sale: { store_open: false, item_on_pedestal: false },
-    m10_tip_the_scales: { tipped: false, both_sides_down: false },
-    m11_fisher_artifacts: { retrieved: false, on_pedestal: false },
-    m12_salvage_operation: { raised: false, animals_moved: false },
-    m13_statue_reconstruction: false,
-    m14_forum: { artifacts: 0 },
-    m15_site_marking: { locations: 0 },
+    m00_equipment_inspection: { completed: false, saidas: [] },
+    m01_surface_brushing: { soil_deposits_cleaned: 0, brush_not_touching: false, saidas: [] },
+    m02_map_reveal: { part1: false, part2: false, part3: false, saidas: [] },
+    m03_mine_shaft_explorer: { explored: false, gold_retrieved: false, saidas: [] },
+    m04_careful_retrieval: { retrieved: false, not_broken: false, saidas: [] },
+    m05_who_lived_here: { completed: false, saidas: [] },
+    m06_forge: { part1: false, part2: false, part3: false, saidas: [] },
+    m07_heavy_lifting: { completed: false, saidas: [] },
+    m08_silo: { part1: false, part2: false, part3: false, saidas: [] },
+    m09_whats_on_sale: { store_open: false, item_on_pedestal: false, saidas: [] },
+    m10_tip_the_scales: { tipped: false, both_sides_down: false, saidas: [] },
+    m11_fisher_artifacts: { retrieved: false, on_pedestal: false, saidas: [] },
+    m12_salvage_operation: { raised: false, animals_moved: false, saidas: [] },
+    m13_statue_reconstruction: { completed: false, saidas: [] },
+    m14_forum: { artifacts: 0, saidas: [] },
+    m15_site_marking: { locations: 0, saidas: [] },
     precision_tokens: 6,
 };
 
@@ -202,4 +202,11 @@ export interface RoundData {
     score: number;
     timings: StageTime[];
     missions: MissionState;
+}
+
+export interface ActivityLog {
+    id: string;
+    username: string;
+    action: 'login' | 'logout';
+    timestamp: string;
 }
