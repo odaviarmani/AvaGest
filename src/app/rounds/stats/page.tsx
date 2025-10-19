@@ -147,45 +147,29 @@ export default function RoundsStatsPage() {
             averageTime: count > 0 ? parseFloat(((total / count) / 1000).toFixed(2)) : 0,
         }));
         
-        const missionConsistency = (Object.keys(initialMissionState) as Array<keyof MissionState>).map(key => {
+        const missionPerformance = (Object.keys(initialMissionState) as Array<keyof MissionState>).map(key => {
             const completedCount = reversedHistory.filter(round => isMissionCompleted(key, round.missions)).length;
-            const percentage = reversedHistory.length > 0 ? (completedCount / reversedHistory.length) * 100 : 0;
+            const consistency = reversedHistory.length > 0 ? (completedCount / reversedHistory.length) * 100 : 0;
+            
+            const errorsInFailedRounds: Record<string, number> = {};
+            reversedHistory
+                .filter(round => !isMissionCompleted(key, round.missions))
+                .forEach(round => {
+                    round.errors.forEach(error => {
+                         if (error !== "Nenhuma") {
+                            errorsInFailedRounds[error] = (errorsInFailedRounds[error] || 0) + 1;
+                        }
+                    })
+                });
+
+            const mostCommonError = Object.entries(errorsInFailedRounds).sort((a,b) => b[1] - a[1])[0];
+
             return {
                 name: missionLabels[key] || key,
-                consistency: percentage,
+                consistency,
+                mostCommonError: mostCommonError ? mostCommonError[0] : 'N/A',
             };
-        }).filter(item => item.name); // Filter out any undefined names
-
-        const missionErrorCorrelation: Record<string, Record<string, number>> = {};
-        Object.keys(missionLabels).forEach(missionKey => {
-            missionErrorCorrelation[missionKey] = {};
-        });
-
-        reversedHistory.forEach(round => {
-            const failedMissions = (Object.keys(initialMissionState) as Array<keyof MissionState>)
-                .filter(key => round.missions && !isMissionCompleted(key, round.missions));
-            
-            failedMissions.forEach(missionKey => {
-                round.errors.forEach(error => {
-                    if (error !== "Nenhuma") {
-                        if (!missionErrorCorrelation[missionKey][error]) {
-                            missionErrorCorrelation[missionKey][error] = 0;
-                        }
-                        missionErrorCorrelation[missionKey][error]++;
-                    }
-                });
-            });
-        });
-        
-        const errorCorrelationData = Object.entries(missionErrorCorrelation)
-            .map(([missionKey, errors]) => {
-                const mostCommonError = Object.entries(errors).sort((a, b) => b[1] - a[1])[0];
-                return {
-                    name: missionLabels[missionKey],
-                    mostCommonError: mostCommonError ? mostCommonError[0] : 'N/A',
-                    errorCount: mostCommonError ? mostCommonError[1] : 0,
-                }
-            }).filter(item => item.errorCount > 0);
+        }).filter(item => item.name);
 
 
         return {
@@ -195,8 +179,7 @@ export default function RoundsStatsPage() {
             errorCausesData,
             programmingTypesData,
             averageTimingsData,
-            missionConsistency,
-            errorCorrelationData,
+            missionPerformance,
         };
     }, [filteredHistory]);
 
@@ -373,58 +356,31 @@ export default function RoundsStatsPage() {
 
                     <Card>
                         <CardHeader>
-                            <CardTitle>Consistência por Missão</CardTitle>
-                            <CardDescription>Taxa de sucesso para cada missão individualmente em todos os rounds registrados.</CardDescription>
+                            <CardTitle>Análise de Desempenho por Missão</CardTitle>
+                            <CardDescription>Consistência de sucesso e principal causa de falha para cada missão.</CardDescription>
                         </CardHeader>
                         <CardContent>
                              <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-[60%]">Missão</TableHead>
-                                        <TableHead className="text-right">Consistência</TableHead>
+                                        <TableHead className="w-[50%]">Missão</TableHead>
+                                        <TableHead>Consistência</TableHead>
+                                        <TableHead className="text-right">Principal Causa de Falha</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {stats.missionConsistency.map((item) => (
+                                    {stats.missionPerformance.map((item) => (
                                         <TableRow key={item.name}>
                                             <TableCell className="font-medium">{item.name}</TableCell>
-                                            <TableCell className="text-right font-mono">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <span>{item.consistency.toFixed(1)}%</span>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-mono text-sm">{item.consistency.toFixed(1)}%</span>
                                                     <Progress value={item.consistency} className="w-24 h-2" />
                                                 </div>
                                             </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Causas de Falha por Missão</CardTitle>
-                            <CardDescription>Principal tipo de erro associado a falhas em cada missão.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Missão com Falha</TableHead>
-                                        <TableHead className="text-right">Causa Mais Comum</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {stats.errorCorrelationData.length > 0 ? stats.errorCorrelationData.map((item) => (
-                                        <TableRow key={item.name}>
-                                            <TableCell className="font-medium">{item.name}</TableCell>
                                             <TableCell className="text-right">{item.mostCommonError}</TableCell>
                                         </TableRow>
-                                    )) : (
-                                         <TableRow>
-                                            <TableCell colSpan={2} className="h-24 text-center">Nenhuma falha com erro associado registrada.</TableCell>
-                                        </TableRow>
-                                    )}
+                                    ))}
                                 </TableBody>
                             </Table>
                         </CardContent>
