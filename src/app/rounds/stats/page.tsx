@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -10,10 +9,11 @@ import { type RoundData, MissionState, initialMissionState } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, BarChart, Clock, Target, ListTree, AlertCircle, TrendingUp, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, BarChart, Clock, Target, ListTree, AlertCircle, TrendingUp, CheckCircle, XCircle, Settings2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
@@ -44,11 +44,8 @@ const isMissionCompleted = (missionKey: keyof MissionState, missionState: Missio
         return false;
     }
     const value = missionState[missionKey] as any;
-    if (!value) return false;
+    if (value === undefined) return false;
 
-    if (typeof value === 'object' && 'completed' in value) {
-        return value.completed;
-    }
     if (typeof value === 'boolean') {
         return value;
     }
@@ -91,6 +88,8 @@ export default function RoundsStatsPage() {
     const [history, setHistory] = useState<RoundData[]>([]);
     const [isClient, setIsClient] = useState(false);
     const [roundCount, setRoundCount] = useState<number | 'all'>('all');
+    const [numberOfSaidas, setNumberOfSaidas] = useState(6);
+    const [missionExitConfig, setMissionExitConfig] = useState<Record<string, number[]>>({});
 
     useEffect(() => {
         setIsClient(true);
@@ -98,7 +97,21 @@ export default function RoundsStatsPage() {
         if (savedHistory) {
             setHistory(JSON.parse(savedHistory));
         }
+        const savedSaidas = localStorage.getItem('numberOfSaidas');
+        if (savedSaidas) {
+            setNumberOfSaidas(Number(savedSaidas));
+        }
+        const savedConfig = localStorage.getItem('missionExitConfig');
+        if(savedConfig) {
+            setMissionExitConfig(JSON.parse(savedConfig));
+        }
     }, []);
+    
+    useEffect(() => {
+        if(isClient) {
+            localStorage.setItem('missionExitConfig', JSON.stringify(missionExitConfig));
+        }
+    }, [missionExitConfig, isClient]);
 
     const filteredHistory = useMemo(() => {
         if (roundCount === 'all') return history;
@@ -171,6 +184,7 @@ export default function RoundsStatsPage() {
 
             return {
                 name: missionLabels[key] || key,
+                missionKey: key,
                 consistency,
                 mostCommonError: mostCommonError ? mostCommonError[0] : 'N/A',
             };
@@ -187,6 +201,16 @@ export default function RoundsStatsPage() {
             missionPerformance,
         };
     }, [filteredHistory]);
+
+    const handleExitConfigChange = (missionKey: string, exit: number, checked: boolean) => {
+        setMissionExitConfig(prev => {
+            const currentExits = prev[missionKey] || [];
+            const newExits = checked 
+                ? [...currentExits, exit]
+                : currentExits.filter(e => e !== exit);
+            return { ...prev, [missionKey]: newExits.sort((a, b) => a - b) };
+        });
+    }
 
     if (!isClient) {
         return (
@@ -317,6 +341,62 @@ export default function RoundsStatsPage() {
                         </CardContent>
                     </Card>
 
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Análise de Desempenho por Missão</CardTitle>
+                            <CardDescription>Consistência, causa de falha e planejamento de saídas para cada missão.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[40%]">Missão</TableHead>
+                                        <TableHead>Consistência</TableHead>
+                                        <TableHead>Principal Causa de Falha</TableHead>
+                                        <TableHead className="text-right">Saídas Planejadas</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {stats.missionPerformance.map((item) => (
+                                        <TableRow key={item.name}>
+                                            <TableCell className="font-medium">{item.name}</TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-mono text-sm">{item.consistency.toFixed(1)}%</span>
+                                                    <Progress value={item.consistency} className="w-24 h-2" />
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{item.mostCommonError}</TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm">
+                                                            <Settings2 className="mr-2 h-4 w-4" />
+                                                             {missionExitConfig[item.missionKey]?.join(', ') || 'Nenhuma'}
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        <DropdownMenuLabel>Selecione as Saídas</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        {Array.from({length: numberOfSaidas}, (_, i) => i + 1).map(saidaNum => (
+                                                            <DropdownMenuCheckboxItem
+                                                                key={saidaNum}
+                                                                checked={missionExitConfig[item.missionKey]?.includes(saidaNum)}
+                                                                onCheckedChange={(checked) => handleExitConfigChange(item.missionKey, saidaNum, checked)}
+                                                            >
+                                                                Saída {saidaNum}
+                                                            </DropdownMenuCheckboxItem>
+                                                        ))}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+
                     <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                         <Card>
                             <CardHeader>
@@ -358,38 +438,6 @@ export default function RoundsStatsPage() {
                             </CardContent>
                         </Card>
                     </div>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Análise de Desempenho por Missão</CardTitle>
-                            <CardDescription>Consistência de sucesso e principal causa de falha para cada missão.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-[50%]">Missão</TableHead>
-                                        <TableHead>Consistência</TableHead>
-                                        <TableHead className="text-right">Principal Causa de Falha</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {stats.missionPerformance.map((item) => (
-                                        <TableRow key={item.name}>
-                                            <TableCell className="font-medium">{item.name}</TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-mono text-sm">{item.consistency.toFixed(1)}%</span>
-                                                    <Progress value={item.consistency} className="w-24 h-2" />
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right">{item.mostCommonError}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
 
                     <Card>
                         <CardHeader>
