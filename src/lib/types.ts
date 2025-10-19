@@ -1,5 +1,6 @@
 
 import { z } from 'zod';
+import type { StageTime } from '@/components/rounds/RoundsTimer';
 
 export const priorities = ['Baixa', 'Média', 'Alta'] as const;
 export const statuses = ['Learning', 'Action', 'Decode', 'Feito'] as const;
@@ -126,7 +127,7 @@ export interface MissionAnalysisData {
 export type MissionStepDetail = { label: string; max: number };
 
 export const missionStepDetails: Record<string, MissionStepDetail> = {
-    'm01_surface_brushing': { label: "Depósitos de solo limpos", max: 2 },
+    'm01': { label: "Depósitos de solo limpos", max: 2 },
     'm14': { label: "Artefatos no fórum", max: 7 },
     'm15': { label: "Locais marcados", max: 3 }
 };
@@ -205,3 +206,20 @@ export const initialMissionState: MissionState = {
     m15_site_marking: { locations: 0 },
     precision_tokens: 6,
 };
+
+
+const programmingTypes = ["Blocos", "Python", "Pybricks"] as const;
+const errorCauses = ["Nenhuma", "Humana", "Código", "Mecânica"] as const;
+
+type ProgrammingType = typeof programmingTypes[number];
+type ErrorCause = typeof errorCauses[number];
+
+export interface RoundData {
+    id: string;
+    date: string;
+    programming: ProgrammingType[];
+    errors: ErrorCause[];
+    score: number;
+    timings: StageTime[];
+    missions: MissionState;
+}

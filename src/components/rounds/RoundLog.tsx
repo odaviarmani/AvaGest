@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Save, History, Trash2 } from 'lucide-react';
 import type { StageTime } from './RoundsTimer';
-import type { MissionState } from '@/lib/types';
+import type { MissionState, RoundData } from '@/lib/types';
 
 
 const programmingTypes = ["Blocos", "Python", "Pybricks"] as const;
@@ -19,16 +19,6 @@ const errorCauses = ["Nenhuma", "Humana", "Código", "Mecânica"] as const;
 
 type ProgrammingType = typeof programmingTypes[number];
 type ErrorCause = typeof errorCauses[number];
-
-export interface RoundData {
-    id: string;
-    date: string;
-    programming: ProgrammingType[];
-    errors: ErrorCause[];
-    score: number;
-    timings: StageTime[];
-    missions: MissionState;
-}
 
 interface RoundLogProps {
     score: number;
