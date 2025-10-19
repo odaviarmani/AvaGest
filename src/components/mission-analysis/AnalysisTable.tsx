@@ -28,9 +28,14 @@ export default function AnalysisTable() {
             const savedData = localStorage.getItem(STORAGE_KEY_ANALYSIS);
             if (savedData) {
                 const parsedData = JSON.parse(savedData);
-                // Ensure data has the correct structure
-                if (Array.isArray(parsedData) && parsedData.every(item => 'id' in item && 'saidaName' in item && 'missions' in item)) {
-                     setAnalysisData(parsedData);
+                // Ensure data has the correct structure and missionIds is always an array
+                if (Array.isArray(parsedData) && parsedData.every(item => 'id' in item && 'saidaName' in item)) {
+                     const validatedData = parsedData.map(item => ({
+                         ...item,
+                         missions: item.missions || [],
+                         missionIds: item.missionIds || [], // Legacy support
+                     }));
+                     setAnalysisData(validatedData);
                 } else {
                     setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missions: [] }]);
                 }
@@ -204,3 +209,5 @@ export default function AnalysisTable() {
         </div>
     );
 }
+
+    

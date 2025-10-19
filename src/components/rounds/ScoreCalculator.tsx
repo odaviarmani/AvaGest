@@ -16,7 +16,6 @@ interface ScoreCalculatorProps {
     missions: MissionState;
     setMissions: React.Dispatch<React.SetStateAction<MissionState>>;
     totalScore: number;
-    stageNames: string[]; // This prop is kept for compatibility but the logic will be simplified
 }
 
 
@@ -147,3 +146,5 @@ export default function ScoreCalculator({ missions, setMissions, totalScore }: S
     </Card>
   );
 }
+
+    
