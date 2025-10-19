@@ -114,24 +114,9 @@ export type RobotTest = z.infer<typeof robotTestSchema>;
 
 export interface MissionAnalysisData {
   id: string;
-  name: string;
-  area: string;
-  actuator: string;
-  missionPoints: number;
-  proximityBonus: number;
-  similarityBonus: number;
-  similarMission: string;
-  nearbyMissions: string;
+  saidaName: string;
+  missionIds: string[];
 }
-
-export interface InteractiveMissionData extends MissionAnalysisData {
-    driveTrainComplexity: number;
-    actuatorComplexity: number;
-    effort: number;
-    impact: number;
-    priority: number;
-}
-
 
 export interface SpinResult {
   id: string;
@@ -209,5 +194,3 @@ export const initialMissionState: MissionState = {
     },
     precision_tokens: 6,
 };
-
-    

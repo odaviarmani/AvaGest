@@ -2,49 +2,173 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { BarChart, LineChart, Pie, Sector, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Cell } from 'recharts';
+import { BarChart as RechartsBarChart, LineChart, Pie, Sector, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Cell } from 'recharts';
 import { type RoundData } from '@/components/rounds/RoundLog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BarChart, Clock, Target } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Mission, MissionAnalysisData } from '@/lib/types';
+import { Progress } from '@/components/ui/progress';
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
 
-const MISSION_NAMES: Record<string, string> = {
-    m01_surface_brushing: "M01 Escovação",
-    m02_map_reveal: "M02 Revelação Mapa",
-    m03_mine_shaft_explorer: "M03 Explorador Poços",
-    m04_careful_retrieval: "M04 Recuperação",
-    m05_who_lived_here: "M05 Quem Morou Aqui?",
-    m06_forge: "M06 Forja",
-    m07_heavy_lifting: "M07 Trabalho Pesado",
-    m08_silo: "M08 Silo",
-    m09_whats_on_sale: "M09 O que está à venda?",
-    m10_tip_the_scales: "M10 Inclinar Balança",
-    m11_fisher_artifacts: "M11 Artefatos Pescador",
-    m12_salvage_operation: "M12 Operação Salvamento",
-    m13_statue_reconstruction: "M13 Reconstrução Estátua",
-    m14_forum: "M14 Fórum",
-    m15_site_marking: "M15 Marcação Local",
-};
+const SaidaAnalysisCard = ({
+    saidaConfig,
+    roundsHistory,
+    allMissions
+}: {
+    saidaConfig: MissionAnalysisData,
+    roundsHistory: RoundData[],
+    allMissions: Mission[],
+}) => {
+
+    const saidaStats = useMemo(() => {
+        let totalRunsForSaida = 0;
+        const missionSuccessCount: Record<string, number> = {};
+        let totalMissionsInSaidaRuns = 0;
+
+        roundsHistory.forEach(round => {
+            if (!round.missions || !round.missions.missionsPerSaida) return;
+
+            const saidaKey = Object.keys(round.missions.missionsPerSaida).find(
+                k => k.replace('a', 'a ') === saidaConfig.saidaName.replace('a', 'a ')
+            );
+            
+            if (!saidaKey) return;
+            
+            totalRunsForSaida++;
+            
+            const saidaData = round.missions.missionsPerSaida[saidaKey as keyof typeof round.missions.missionsPerSaida];
+            if (!saidaData) return;
+
+            saidaConfig.missionIds.forEach(missionId => {
+                totalMissionsInSaidaRuns++;
+                const mission = allMissions.find(m => m.id === missionId);
+                if (!mission) return;
+
+                // Find corresponding key in mission state (e.g., from 'M01 - Name' to 'm01_surface_brushing')
+                 const missionStateKey = Object.keys(saidaData).find(k => k.startsWith(mission.name.split(' ')[0].toLowerCase()));
+                if (!missionStateKey) return;
+
+                const missionValue = saidaData[missionStateKey as keyof typeof saidaData];
+                const isCompleted = typeof missionValue === 'boolean' ? missionValue : 
+                                    (typeof missionValue === 'object' && missionValue !== null ? 
+                                     Object.values(missionValue).some(v => (typeof v === 'number' && v > 0) || v === true) : 
+                                     false);
+                
+                if (isCompleted) {
+                    missionSuccessCount[missionId] = (missionSuccessCount[missionId] || 0) + 1;
+                }
+            });
+        });
+
+        const missionConsistency = saidaConfig.missionIds.map(missionId => {
+             const missionName = allMissions.find(m => m.id === missionId)?.name || "Desconhecida";
+             const successCount = missionSuccessCount[missionId] || 0;
+             const consistency = totalRunsForSaida > 0 ? (successCount / totalRunsForSaida) * 100 : 0;
+             return { name: missionName, consistency: parseFloat(consistency.toFixed(1)) };
+        });
+
+        const overallSuccessCount = Object.values(missionSuccessCount).reduce((sum, count) => sum + count, 0);
+        const overallConsistency = totalMissionsInSaidaRuns > 0 ? (overallSuccessCount / totalMissionsInSaidaRuns) * 100 : 0;
+
+        return { missionConsistency, overallConsistency, totalRunsForSaida };
+
+    }, [saidaConfig, roundsHistory, allMissions]);
+    
+    const timings = useMemo(() => {
+        const saidaTimings: number[] = [];
+        const trocaTimings: number[] = [];
+        const saidaIndex = parseInt(saidaConfig.saidaName.split(' ')[1]);
+
+        roundsHistory.forEach(round => {
+            const saidaTiming = round.timings.find(t => t.name === `Saída ${saidaIndex}`);
+            if (saidaTiming?.duration) saidaTimings.push(saidaTiming.duration);
+
+            const trocaTiming = round.timings.find(t => t.name === `Troca de anexo ${saidaIndex}-${saidaIndex+1}`);
+            if(trocaTiming?.duration) trocaTimings.push(trocaTiming.duration);
+        });
+
+        const avgSaidaTime = saidaTimings.length > 0 ? saidaTimings.reduce((a,b) => a+b, 0) / saidaTimings.length : 0;
+        const avgTrocaTime = trocaTimings.length > 0 ? trocaTimings.reduce((a,b) => a+b, 0) / trocaTimings.length : 0;
+        
+        return { avgSaidaTime, avgTrocaTime };
+
+    }, [saidaConfig, roundsHistory]);
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{saidaConfig.saidaName}</CardTitle>
+                <CardDescription>Análise de {saidaStats.totalRunsForSaida} rounds registrados.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex items-center gap-4">
+                     <div className="relative w-24 h-24">
+                        <Progress value={saidaStats.overallConsistency} className="absolute w-full h-full rounded-full" />
+                        <div className="absolute inset-[10%] bg-card rounded-full flex items-center justify-center">
+                            <span className="text-2xl font-bold">{saidaStats.overallConsistency.toFixed(0)}%</span>
+                        </div>
+                    </div>
+                     <div className="space-y-2">
+                        <p className="font-semibold">Taxa de Acerto Geral da Saída</p>
+                        <div className="flex items-center gap-2 text-sm">
+                            <Clock className="w-4 h-4 text-muted-foreground"/> 
+                            <span>Saída: <strong>{(timings.avgSaidaTime / 1000).toFixed(2)}s</strong> (média)</span>
+                        </div>
+                         <div className="flex items-center gap-2 text-sm">
+                            <Clock className="w-4 h-4 text-muted-foreground"/> 
+                            <span>Troca: <strong>{(timings.avgTrocaTime / 1000).toFixed(2)}s</strong> (média)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 className="font-semibold mb-2">Consistência por Missão</h4>
+                    <div className="space-y-3">
+                        {saidaStats.missionConsistency.map(mission => (
+                            <div key={mission.name}>
+                                <div className="flex justify-between text-sm mb-1">
+                                    <span className="font-medium">{mission.name}</span>
+                                    <span className="text-muted-foreground">{mission.consistency}%</span>
+                                </div>
+                                <Progress value={mission.consistency} />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 
 export default function RoundsStatsPage() {
     const [history, setHistory] = useState<RoundData[]>([]);
     const [isClient, setIsClient] = useState(false);
     const [roundCount, setRoundCount] = useState<number | 'all'>('all');
-    const [selectedSaida, setSelectedSaida] = useState<string>('saida1');
+    const [missionAnalysisConfig, setMissionAnalysisConfig] = useState<MissionAnalysisData[]>([]);
+    const [allMissions, setAllMissions] = useState<Mission[]>([]);
 
     useEffect(() => {
         setIsClient(true);
         const savedHistory = localStorage.getItem('roundsHistory');
         if (savedHistory) {
             setHistory(JSON.parse(savedHistory));
+        }
+        const savedAnalysisConfig = localStorage.getItem('missionAnalysisData_v2');
+        if(savedAnalysisConfig) {
+            setMissionAnalysisConfig(JSON.parse(savedAnalysisConfig));
+        }
+        const savedMissions = localStorage.getItem('missions');
+        if(savedMissions) {
+            setAllMissions(JSON.parse(savedMissions));
         }
     }, []);
 
@@ -64,7 +188,7 @@ export default function RoundsStatsPage() {
         const scoreHistoryData = reversedHistory.map((round, index) => ({
             name: `Round ${index + 1}`,
             score: round.score,
-            date: new Date(round.date).toLocaleDateString('pt-BR'),
+            date: new Date(round.date).toLocaleString('pt-BR'),
         }));
 
         const errorCausesCount = reversedHistory.flatMap(r => r.errors).reduce((acc, cause) => {
@@ -110,57 +234,6 @@ export default function RoundsStatsPage() {
             averageTimingsData
         };
     }, [filteredHistory]);
-    
-    const saidaStats = useMemo(() => {
-        if (filteredHistory.length === 0) return null;
-        
-        let totalRunsForSaida = 0;
-        const missionSuccess: Record<string, number> = {};
-        
-        filteredHistory.forEach(round => {
-            // Check if round.missions and round.missions.missionsPerSaida exist
-            if (!round.missions || !round.missions.missionsPerSaida) {
-                return; // Skip rounds with old data structure
-            }
-
-            const saidaData = round.missions.missionsPerSaida[selectedSaida as keyof typeof round.missions.missionsPerSaida];
-            if (saidaData) {
-                totalRunsForSaida++;
-                Object.entries(saidaData).forEach(([missionKey, missionValue]) => {
-                     const isCompleted = typeof missionValue === 'boolean' ? missionValue : 
-                                      (typeof missionValue === 'object' && missionValue !== null ? 
-                                       Object.values(missionValue).some(v => (typeof v === 'number' && v > 0) || v === true) : 
-                                       false);
-                    if(isCompleted) {
-                        missionSuccess[missionKey] = (missionSuccess[missionKey] || 0) + 1;
-                    }
-                });
-            }
-        });
-        
-        if (totalRunsForSaida === 0) return { missionConsistencyData: [], avgSaidaScore: 0 };
-
-        const missionConsistencyData = Object.keys(MISSION_NAMES).map(missionKey => ({
-            name: MISSION_NAMES[missionKey] || missionKey,
-            consistency: ((missionSuccess[missionKey] || 0) / totalRunsForSaida) * 100
-        })).filter(d => d.consistency > 0);
-        
-        return {
-            missionConsistencyData,
-        };
-
-    }, [filteredHistory, selectedSaida]);
-
-    const availableSaidas = useMemo(() => {
-        if (history.length === 0) return [];
-        const saidaKeys = new Set<string>();
-        history.forEach(round => {
-            if (round.missions && round.missions.missionsPerSaida) {
-                Object.keys(round.missions.missionsPerSaida).forEach(key => saidaKeys.add(key));
-            }
-        });
-        return Array.from(saidaKeys).sort();
-    }, [history]);
 
     if (!isClient) {
         return (
@@ -310,7 +383,7 @@ export default function RoundsStatsPage() {
                             </CardHeader>
                             <CardContent className="h-[300px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={stats.programmingTypesData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                                    <RechartsBarChart data={stats.programmingTypesData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                                         <CartesianGrid strokeDasharray="3 3" />
                                         <XAxis type="number" />
                                         <YAxis type="category" dataKey="name" width={80}/>
@@ -321,52 +394,37 @@ export default function RoundsStatsPage() {
                                                 <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                             ))}
                                         </Bar>
-                                    </BarChart>
+                                    </RechartsBarChart>
                                 </ResponsiveContainer>
                             </CardContent>
                         </Card>
                     </div>
-
                      <Card>
-                        <CardHeader className="flex-row justify-between items-center">
-                            <div>
-                                <CardTitle>Análise por Saída</CardTitle>
-                                <CardDescription>Consistência das missões em cada saída.</CardDescription>
-                            </div>
-                            <div className="w-48">
-                                <Select value={selectedSaida} onValueChange={setSelectedSaida}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        {availableSaidas.map(saida => (
-                                            <SelectItem key={saida} value={saida}>
-                                                {saida.charAt(0).toUpperCase() + saida.slice(1).replace('a', 'a ')}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                        <CardHeader>
+                             <CardTitle>Análise de Consistência por Saída</CardTitle>
+                             <CardDescription>
+                                Configure as missões de cada saída na aba "Análise e Aprimoramento" para ver os dados.
+                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="h-[400px]">
-                             {saidaStats && saidaStats.missionConsistencyData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={saidaStats.missionConsistencyData} layout="vertical" margin={{ left: 100 }}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis type="number" domain={[0, 100]} unit="%" />
-                                        <YAxis type="category" dataKey="name" width={80} />
-                                        <Tooltip 
-                                            formatter={(value: number) => `${value.toFixed(1)}%`}
-                                            contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
+                        <CardContent>
+                            {missionAnalysisConfig.length > 0 && filteredHistory.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {missionAnalysisConfig.map(config => (
+                                        <SaidaAnalysisCard
+                                            key={config.id}
+                                            saidaConfig={config}
+                                            roundsHistory={filteredHistory}
+                                            allMissions={allMissions}
                                         />
-                                        <Bar dataKey="consistency" name="Consistência" fill="hsl(var(--primary))" />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                             ) : (
-                                <div className="flex items-center justify-center h-full text-muted-foreground">
-                                    Nenhuma missão registrada para esta saída nos rounds selecionados.
+                                    ))}
                                 </div>
-                             )}
+                            ) : (
+                                <div className="text-center py-10 text-muted-foreground">
+                                    Nenhuma configuração de análise de missão encontrada ou nenhum round no histórico.
+                                </div>
+                            )}
                         </CardContent>
-                    </Card>
+                     </Card>
 
                     <Card>
                         <CardHeader>
@@ -397,4 +455,3 @@ export default function RoundsStatsPage() {
         </div>
     );
 }
-

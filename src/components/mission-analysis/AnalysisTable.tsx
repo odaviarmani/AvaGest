@@ -3,229 +3,164 @@
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { MissionAnalysisData, InteractiveMissionData } from '@/lib/types';
-import { Input } from '../ui/input';
+import { Mission, MissionAnalysisData } from '@/lib/types';
 import { Button } from '../ui/button';
-import { PlusCircle, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { PlusCircle, Trash2, Save } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { ScrollArea } from '../ui/scroll-area';
 
-
-const initialMissions: MissionAnalysisData[] = [
-    { id: 'm01', name: 'M01 - Surface Brushing', area: '1A', actuator: 'Empurrar e Pegar', missionPoints: 30, proximityBonus: 1, similarityBonus: 1, similarMission: 'Submerged - M14 (Trident)', nearbyMissions: 'Missão 02' },
-    { id: 'm02', name: 'M02 - Map Reveal', area: '2A', actuator: 'Empurrar, Puxar e Pegar', missionPoints: 30, proximityBonus: 1, similarityBonus: 3, similarMission: 'Masterpiece - M07 e 08', nearbyMissions: 'Missões 01, 03 e 04' },
-    { id: 'm03', name: 'M03 - Mineshaft Explorer', area: '3', actuator: 'Levantar', missionPoints: 40, proximityBonus: 3, similarityBonus: 3, similarMission: 'Submerged - M10', nearbyMissions: 'Missões 02, 04 e 13' },
-    { id: 'm04', name: 'M04 - Careful Recovery', area: '3', actuator: 'Pegar', missionPoints: 40, proximityBonus: 3, similarityBonus: 3, similarMission: 'Submerged - M14 (Seabed Sample)', nearbyMissions: 'Missões 02, 03 e 13' },
-    { id: 'm05', name: 'M05 - Who Lived Here?', area: '2B', actuator: 'Empurrar', missionPoints: 30, proximityBonus: 1, similarityBonus: 2, similarMission: 'Master Piece - M05', nearbyMissions: 'Missões 06 e 07' },
-    { id: 'm06', name: 'M06 - Forge', area: '2B', actuator: 'Abaixar', missionPoints: 30, proximityBonus: 1, similarityBonus: 3, similarMission: 'Master Piece - M12', nearbyMissions: 'Missões 05, 06 e 08' },
-    { id: 'm07', name: 'M07 - Heavy Lifting', area: '2B', actuator: 'Pegar', missionPoints: 30, proximityBonus: 1, similarityBonus: 3, similarMission: 'Submerged - M14 (Seabed Sample)', nearbyMissions: 'Missões 05, 06 e 08' },
-    { id: 'm08', name: 'M08 - Silo', area: '1B', actuator: 'Abaixar', missionPoints: 30, proximityBonus: 1, similarityBonus: 2, similarMission: 'Super Powered - M10', nearbyMissions: 'Missões 06 e 07' },
-    { id: 'm09', name: "M09 - What's On Sale?", area: '1B', actuator: 'Empurrar e Abaixar', missionPoints: 30, proximityBonus: 1, similarityBonus: 1, similarMission: 'Super Powered - M08', nearbyMissions: 'Missão 10' },
-    { id: 'm10', name: 'M10 - Tip The Scales', area: '1B', actuator: 'Empurrar e Pegar', missionPoints: 30, proximityBonus: 1, similarityBonus: 1, similarMission: 'Submerged - M14 (Plankton)', nearbyMissions: 'Missão 09' },
-    { id: 'm11', name: 'M11 - Angler Artifacts', area: '1B', actuator: 'Empurrar', missionPoints: 30, proximityBonus: 1, similarityBonus: 1, similarMission: 'Master Piece - M11', nearbyMissions: 'Missão 12' },
-    { id: 'm12', name: 'M12 - Salvage Operation', area: '1A', actuator: 'Empurrar e Puxar', missionPoints: 30, proximityBonus: 1, similarityBonus: 1, similarMission: 'Cargo Connect - M05', nearbyMissions: 'Missão 11' },
-    { id: 'm13', name: 'M13 - Statue Rebuild', area: '3', actuator: 'Abaixar', missionPoints: 30, proximityBonus: 1, similarityBonus: 1, similarMission: 'Master Piece - M12', nearbyMissions: 'Missão 14' },
-    { id: 'm14', name: 'M14 - Forum', area: '3', actuator: 'Entregar', missionPoints: 35, proximityBonus: 2, similarityBonus: 1, similarMission: 'Cargo Connect - M01', nearbyMissions: 'Missão 13' },
-    { id: 'm15', name: 'M15 - Site Marking', area: '4', actuator: 'Entregar e Abaixar', missionPoints: 30, proximityBonus: 1, similarityBonus: 3, similarMission: 'Submerged - M03', nearbyMissions: '-' },
-];
-
-const STORAGE_KEY = 'missionAnalysisData_v2';
+const STORAGE_KEY_ANALYSIS = 'missionAnalysisData_v2';
+const STORAGE_KEY_MISSIONS = 'missions';
 
 export default function AnalysisTable() {
-    const [missions, setMissions] = useState<MissionAnalysisData[]>(initialMissions);
+    const [analysisData, setAnalysisData] = useState<MissionAnalysisData[]>([]);
+    const [allMissions, setAllMissions] = useState<Mission[]>([]);
     const [isClient, setIsClient] = useState(false);
+    const { toast } = useToast();
 
     useEffect(() => {
         setIsClient(true);
         try {
-            const savedData = localStorage.getItem(STORAGE_KEY);
+            const savedData = localStorage.getItem(STORAGE_KEY_ANALYSIS);
             if (savedData) {
-                setMissions(JSON.parse(savedData));
+                setAnalysisData(JSON.parse(savedData));
+            } else {
+                 setAnalysisData([{ id: crypto.randomUUID(), saidaName: 'Saída 1', missionIds: [] }]);
             }
+
+            const savedMissions = localStorage.getItem(STORAGE_KEY_MISSIONS);
+            if(savedMissions) {
+                setAllMissions(JSON.parse(savedMissions));
+            }
+
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
         }
     }, []);
 
-    useEffect(() => {
-        if (isClient) {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(missions));
-            } catch (error) {
-                console.error("Failed to save data to localStorage", error);
-            }
+    const handleSave = () => {
+        try {
+            localStorage.setItem(STORAGE_KEY_ANALYSIS, JSON.stringify(analysisData));
+            toast({
+                title: "Configuração Salva!",
+                description: "A associação de missões por saída foi salva com sucesso.",
+            });
+        } catch (error) {
+            console.error("Failed to save data to localStorage", error);
+            toast({
+                variant: 'destructive',
+                title: "Erro ao Salvar",
+                description: "Não foi possível salvar a configuração.",
+            });
         }
-    }, [missions, isClient]);
+    };
+    
+    const handleAddSaida = () => {
+        const nextSaidaNumber = analysisData.length + 1;
+        const newSaida: MissionAnalysisData = {
+            id: crypto.randomUUID(),
+            saidaName: `Saída ${nextSaidaNumber}`,
+            missionIds: [],
+        };
+        setAnalysisData(prev => [...prev, newSaida]);
+    };
 
-    const handleFieldChange = (id: string, field: keyof MissionAnalysisData, value: string | number) => {
-        setMissions(prevMissions =>
-            prevMissions.map(mission =>
-                mission.id === id ? { ...mission, [field]: value } : mission
-            )
+    const handleDeleteSaida = (id: string) => {
+        setAnalysisData(prev => prev.filter(m => m.id !== id));
+    };
+
+    const handleMissionSelectionChange = (saidaId: string, missionId: string, checked: boolean) => {
+        setAnalysisData(prevData =>
+            prevData.map(saida => {
+                if (saida.id === saidaId) {
+                    const newMissionIds = checked
+                        ? [...saida.missionIds, missionId]
+                        : saida.missionIds.filter(id => id !== missionId);
+                    return { ...saida, missionIds: newMissionIds };
+                }
+                return saida;
+            })
         );
     };
 
-    const handleAddMission = () => {
-        const newMission: MissionAnalysisData = {
-            id: crypto.randomUUID(),
-            name: 'Nova Missão',
-            area: '',
-            actuator: '',
-            missionPoints: 0,
-            proximityBonus: 1,
-            similarityBonus: 1,
-            similarMission: '',
-            nearbyMissions: '',
-        };
-        setMissions(prev => [...prev, newMission]);
-    };
-
-    const handleDeleteMission = (id: string) => {
-        setMissions(prev => prev.filter(m => m.id !== id));
-    };
-
-    const calculateDriveTrainComplexity = useCallback((area: string): number => {
-        const normalizedArea = area.toUpperCase().trim();
-        if (normalizedArea.startsWith('1')) return 3;
-        if (normalizedArea.startsWith('2')) return 2;
-        if (normalizedArea.startsWith('3') || normalizedArea.startsWith('4')) return 1;
-        return 1; // Default
-    }, []);
-
-    const calculateActuatorComplexity = useCallback((actuator: string): number => {
-        const lowerActuator = actuator.toLowerCase();
-        if (lowerActuator.includes('e') || lowerActuator.includes('&') || lowerActuator.includes(',')) return 3;
-        if (['abaixar', 'puxar', 'entregar'].some(term => lowerActuator.includes(term))) return 2;
-        return 1;
-    }, []);
-    
-    const calculateImpact = useCallback((points: number): number => {
-        if (points >= 40) return 3;
-        if (points >= 35) return 2;
-        if (points >= 30) return 1;
-        return 1;
-    }, []);
-
-    const processedMissions = useMemo((): InteractiveMissionData[] => {
-        const calculatedMissions = missions.map(mission => {
-            const driveTrainComplexity = calculateDriveTrainComplexity(mission.area);
-            const actuatorComplexity = calculateActuatorComplexity(mission.actuator);
-            const effort = driveTrainComplexity * actuatorComplexity;
-            const impact = calculateImpact(mission.missionPoints);
-            const priority = (impact / effort) + mission.proximityBonus + mission.similarityBonus;
-            return { ...mission, driveTrainComplexity, actuatorComplexity, effort, impact, priority };
-        });
-
-        return calculatedMissions.map(mission => ({
-            ...mission,
-        }));
-    }, [missions, calculateDriveTrainComplexity, calculateActuatorComplexity, calculateImpact]);
-    
-    const priorityStats = useMemo(() => {
-        if (processedMissions.length === 0) return { mean: 0, stdDev: 0 };
-        const priorities = processedMissions.map(m => m.priority);
-        const mean = priorities.reduce((sum, p) => sum + p, 0) / priorities.length;
-        const stdDev = Math.sqrt(priorities.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / priorities.length);
-        return { mean, stdDev };
-    }, [processedMissions]);
-
-    const getRowClass = (priority: number) => {
-        const { mean, stdDev } = priorityStats;
-        const highThreshold = mean + stdDev * 0.5;
-        const lowThreshold = mean - stdDev * 0.5;
-
-        if (priority > highThreshold) return 'bg-green-100/50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30';
-        if (priority < lowThreshold) return 'bg-red-100/50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30';
-        return 'bg-yellow-100/50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30';
-    };
+    const getMissionNameById = (missionId: string) => {
+        return allMissions.find(m => m.id === missionId)?.name || 'Missão desconhecida';
+    }
 
 
-    const EditableCell = ({ id, field, value }: { id: string, field: keyof MissionAnalysisData, value: string | number }) => (
-        <Input
-            value={value}
-            onChange={(e) => handleFieldChange(id, field, (typeof value === 'number' && e.target.value !== '') ? parseFloat(e.target.value) : e.target.value)}
-            type={typeof value === 'number' ? 'number' : 'text'}
-            className="w-full text-center bg-transparent border-0 focus-visible:ring-1 p-1 h-auto"
-        />
-    );
-
-    const HeaderCell = ({ children, tooltip }: { children: React.ReactNode, tooltip: string }) => (
-        <TableHead className="text-center p-1 align-bottom">
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild><span className="cursor-help font-semibold">{children}</span></TooltipTrigger>
-                    <TooltipContent><p>{tooltip}</p></TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-        </TableHead>
-    );
+    if (!isClient) {
+        return <div>Carregando...</div>;
+    }
 
     return (
-        <div className="w-full rounded-lg border">
-            <div className="overflow-x-auto">
-                <Table className="bg-card table-fixed w-full">
-                    <TableHeader className="bg-muted/50">
-                        <TableRow>
-                            <TableHead className="p-1 w-[250px]">Missão</TableHead>
-                            <HeaderCell tooltip="Área do tapete onde a missão é realizada">Área</HeaderCell>
-                            <HeaderCell tooltip="Complexidade da locomoção do robô até a missão">Complexidade<br/>Locomoção</HeaderCell>
-                            <HeaderCell tooltip="Tipo de acionador mecânico necessário">Acionador</HeaderCell>
-                            <HeaderCell tooltip="Complexidade para construir o acionador">Complexidade<br/>Acionador</HeaderCell>
-                            <HeaderCell tooltip="Esforço total (Locomoção x Acionador)">Esforço</HeaderCell>
-                            <HeaderCell tooltip="Pontuação base da missão">Pontos</HeaderCell>
-                            <HeaderCell tooltip="Impacto da missão na pontuação geral">Impacto</HeaderCell>
-                            <HeaderCell tooltip="Bônus por proximidade com outras missões">Bônus<br/>Proximidade</HeaderCell>
-                            <HeaderCell tooltip="Quais missões estão próximas no tapete">Missões<br/>Próximas</HeaderCell>
-                            <HeaderCell tooltip="Bônus por similaridade com missões de anos anteriores">Bônus<br/>Similaridade</HeaderCell>
-                            <HeaderCell tooltip="Com qual missão de temporada passada se parece">Missão<br/>Parecida</HeaderCell>
-                            <TableHead className="text-center p-1 align-bottom font-semibold">Priorização</TableHead>
-                            <TableHead className="p-1"></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isClient && processedMissions.map(mission => (
-                            <TableRow key={mission.id} className={cn("transition-colors", getRowClass(mission.priority))}>
-                                <TableCell className="font-medium p-1">
-                                    <EditableCell id={mission.id} field="name" value={mission.name} />
-                                </TableCell>
-                                <TableCell className="p-1"><EditableCell id={mission.id} field="area" value={mission.area} /></TableCell>
-                                <TableCell className="font-bold text-center text-lg p-1">{mission.driveTrainComplexity}</TableCell>
-                                <TableCell className="p-1"><EditableCell id={mission.id} field="actuator" value={mission.actuator} /></TableCell>
-                                <TableCell className="font-bold text-center text-lg p-1">{mission.actuatorComplexity}</TableCell>
-                                <TableCell className="font-bold text-center text-lg p-1">{mission.effort}</TableCell>
-                                <TableCell className="p-1"><EditableCell id={mission.id} field="missionPoints" value={mission.missionPoints} /></TableCell>
-                                <TableCell className="font-bold text-center text-lg p-1">{mission.impact}</TableCell>
-                                <TableCell className="p-1"><EditableCell id={mission.id} field="proximityBonus" value={mission.proximityBonus} /></TableCell>
-                                <TableCell className="p-1"><EditableCell id={mission.id} field="nearbyMissions" value={mission.nearbyMissions} /></TableCell>
-                                <TableCell className="p-1"><EditableCell id={mission.id} field="similarityBonus" value={mission.similarityBonus} /></TableCell>
-                                <TableCell className="p-1"><EditableCell id={mission.id} field="similarMission" value={mission.similarMission} /></TableCell>
-                                <TableCell className="p-1">
-                                    <div className="flex flex-col items-center space-y-1">
-                                        <Badge className="text-md">{mission.priority.toFixed(2)}</Badge>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="p-1">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteMission(mission.id)}>
-                                        <Trash2 className="w-4 h-4 text-destructive" />
-                                    </Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </div>
-             <div className="p-4 bg-card border-t">
-                <Button onClick={handleAddMission}>
+        <div className="space-y-6">
+            <div className="flex justify-end gap-2">
+                 <Button onClick={handleAddSaida}>
                     <PlusCircle className="mr-2" />
-                    Adicionar Missão
+                    Adicionar Saída
                 </Button>
+                <Button onClick={handleSave}>
+                    <Save className="mr-2"/>
+                    Salvar Configuração
+                </Button>
+            </div>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {analysisData.map((saida, index) => (
+                    <Card key={saida.id}>
+                        <CardHeader className="flex-row items-center justify-between">
+                            <CardTitle>
+                                <Select
+                                    value={saida.saidaName}
+                                    onValueChange={(newName) => {
+                                        const newData = [...analysisData];
+                                        newData[index].saidaName = newName;
+                                        setAnalysisData(newData);
+                                    }}
+                                >
+                                    <SelectTrigger className="text-lg font-bold border-0 shadow-none -ml-3 w-[150px]">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from({ length: 10 }, (_, i) => `Saída ${i + 1}`).map(name => (
+                                            <SelectItem key={name} value={name}>{name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </CardTitle>
+                             <Button variant="ghost" size="icon" onClick={() => handleDeleteSaida(saida.id)}>
+                                <Trash2 className="w-5 h-5 text-destructive" />
+                            </Button>
+                        </CardHeader>
+                        <CardContent>
+                             <ScrollArea className="h-64">
+                                <div className="space-y-2 pr-4">
+                                {allMissions.length > 0 ? allMissions.map(mission => (
+                                    <div key={mission.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-muted/50">
+                                        <Checkbox
+                                            id={`${saida.id}-${mission.id}`}
+                                            checked={saida.missionIds.includes(mission.id)}
+                                            onCheckedChange={(checked) => handleMissionSelectionChange(saida.id, mission.id, !!checked)}
+                                        />
+                                        <label
+                                            htmlFor={`${saida.id}-${mission.id}`}
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            {mission.name}
+                                        </label>
+                                    </div>
+                                )) : (
+                                    <p className="text-sm text-muted-foreground text-center p-4">
+                                        Nenhuma missão cadastrada. Adicione missões na aba "Missões" para começar.
+                                    </p>
+                                )}
+                                </div>
+                             </ScrollArea>
+                        </CardContent>
+                    </Card>
+                ))}
             </div>
         </div>
     );
