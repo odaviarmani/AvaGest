@@ -9,11 +9,12 @@ import { type RoundData, MissionState, initialMissionState } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, BarChart, Clock, Target, ListTree, AlertCircle, TrendingUp, CheckCircle, XCircle, Settings2 } from "lucide-react";
+import { ArrowLeft, BarChart, Clock, Target, ListTree, AlertCircle, TrendingUp, CheckCircle, XCircle, Settings2, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
@@ -38,7 +39,7 @@ const missionLabels: { [key: string]: string } = {
     precision_tokens: "Fichas de Precisão"
 };
 
-const isMissionCompleted = (missionKey: keyof MissionState, missionState: MissionState) => {
+const isMissionCompleted = (missionKey: keyof MissionState, missionState?: MissionState) => {
     // Handle cases where older round data might not have the `missions` property.
     if (!missionState) {
         return false;
@@ -83,6 +84,55 @@ const isMissionCompleted = (missionKey: keyof MissionState, missionState: Missio
     }
     return false;
 };
+
+const SaidaAnalysisCard = ({ saidaNum, data }: { saidaNum: number, data: any }) => {
+    if (!data) return null;
+
+    const { missions, totalPrecision, averageTime, commonErrors } = data;
+
+    return (
+        <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle>Análise da Saída {saidaNum}</CardTitle>
+                <CardDescription>
+                    Métricas de desempenho para as missões planejadas nesta saída.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="space-y-2">
+                    <h4 className="font-semibold text-sm">Missões na Saída:</h4>
+                    <ul className="list-disc list-inside text-sm text-muted-foreground">
+                        {missions.map((m: any) => <li key={m.missionKey}>{m.name} <span className="font-mono text-xs">({m.consistency.toFixed(1)}%)</span></li>)}
+                    </ul>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <StatDisplay icon={<Clock className="text-blue-500" />} title="Tempo Médio" value={`${averageTime.toFixed(2)}s`} />
+                    <StatDisplay icon={<Target className="text-green-500" />} title="Precisão Total" value={`${totalPrecision.toFixed(1)}%`} />
+                </div>
+                <div>
+                     <h4 className="font-semibold text-sm">Erros Mais Comuns:</h4>
+                     {commonErrors.length > 0 ? (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {commonErrors.map((error: any) => <Badge key={error} variant="destructive">{error}</Badge>)}
+                        </div>
+                     ) : (
+                         <p className="text-sm text-muted-foreground mt-1">Nenhum erro comum identificado para as missões desta saída.</p>
+                     )}
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
+const StatDisplay = ({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) => (
+    <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+        <div className="text-2xl">{icon}</div>
+        <div>
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-lg font-bold">{value}</p>
+        </div>
+    </div>
+);
 
 export default function RoundsStatsPage() {
     const [history, setHistory] = useState<RoundData[]>([]);
@@ -189,6 +239,33 @@ export default function RoundsStatsPage() {
                 mostCommonError: mostCommonError ? mostCommonError[0] : 'N/A',
             };
         }).filter(item => item.name);
+        
+        const saidasAnalysis: Record<number, any> = {};
+        for (let i = 1; i <= numberOfSaidas; i++) {
+            const saidaMissions = missionPerformance.filter(m => missionExitConfig[m.missionKey]?.includes(i));
+            if (saidaMissions.length > 0) {
+
+                const totalPrecision = saidaMissions.reduce((acc, m) => acc + m.consistency, 0);
+                
+                const saidaTiming = averageTimingsData.find(t => t.name === `Saída ${i}`);
+                const averageTime = saidaTiming ? saidaTiming.averageTime : 0;
+
+                const errorsCount: Record<string, number> = {};
+                saidaMissions.forEach(m => {
+                    if (m.mostCommonError !== 'N/A') {
+                        errorsCount[m.mostCommonError] = (errorsCount[m.mostCommonError] || 0) + 1;
+                    }
+                });
+                const commonErrors = Object.entries(errorsCount).sort((a, b) => b[1] - a[1]).map(([error]) => error);
+
+                saidasAnalysis[i] = {
+                    missions: saidaMissions,
+                    totalPrecision,
+                    averageTime,
+                    commonErrors,
+                };
+            }
+        }
 
 
         return {
@@ -199,8 +276,9 @@ export default function RoundsStatsPage() {
             programmingTypesData,
             averageTimingsData,
             missionPerformance,
+            saidasAnalysis,
         };
-    }, [filteredHistory]);
+    }, [filteredHistory, numberOfSaidas, missionExitConfig]);
 
     const handleExitConfigChange = (missionKey: string, exit: number, checked: boolean) => {
         setMissionExitConfig(prev => {
@@ -382,7 +460,7 @@ export default function RoundsStatsPage() {
                                                             <DropdownMenuCheckboxItem
                                                                 key={saidaNum}
                                                                 checked={missionExitConfig[item.missionKey]?.includes(saidaNum)}
-                                                                onCheckedChange={(checked) => handleExitConfigChange(item.missionKey, saidaNum, checked)}
+                                                                onCheckedChange={(checked) => handleExitConfigChange(item.missionKey, saidaNum, !!checked)}
                                                             >
                                                                 Saída {saidaNum}
                                                             </DropdownMenuCheckboxItem>
@@ -396,6 +474,40 @@ export default function RoundsStatsPage() {
                             </Table>
                         </CardContent>
                     </Card>
+
+                    <div className="space-y-8">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Análise por Saída</CardTitle>
+                                <CardDescription>Desempenho agregado com base nas missões planejadas para cada saída.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                {Object.keys(stats.saidasAnalysis).length > 0 ? Array.from({ length: numberOfSaidas }, (_, i) => i + 1).map(saidaNum => {
+                                    const saidaData = stats.saidasAnalysis[saidaNum];
+                                    const trocaTiming = stats.averageTimingsData.find(t => t.name === `Troca de anexo ${saidaNum}-${saidaNum + 1}`);
+                                    
+                                    if (!saidaData) return null;
+
+                                    return (
+                                        <React.Fragment key={`saida-fragment-${saidaNum}`}>
+                                            <SaidaAnalysisCard saidaNum={saidaNum} data={saidaData} />
+                                            {trocaTiming && (
+                                                <div className="flex justify-center">
+                                                    <StatDisplay icon={<Clock />} title={`Tempo Médio - Troca ${saidaNum}-${saidaNum + 1}`} value={`${trocaTiming.averageTime.toFixed(2)}s`} />
+                                                </div>
+                                            )}
+                                        </React.Fragment>
+                                    );
+                                }) : (
+                                    <div className="text-center text-muted-foreground py-8">
+                                        <Info className="mx-auto w-8 h-8 mb-2" />
+                                        <p>Nenhuma missão foi atribuída a uma saída.</p>
+                                        <p className="text-sm">Vá para a tabela de "Análise de Desempenho por Missão" e configure as saídas.</p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
 
                     <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                         <Card>
@@ -468,3 +580,5 @@ export default function RoundsStatsPage() {
         </div>
     );
 }
+
+    
