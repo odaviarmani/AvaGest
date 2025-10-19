@@ -1,9 +1,9 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { PlusCircle } from 'lucide-react';
+import { PlusCircle, Trophy } from 'lucide-react';
 import { Attachment, EvolutionEntry } from '@/lib/types';
 import AttachmentCard from '@/components/attachments/AttachmentCard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -11,6 +11,77 @@ import AttachmentForm from '@/components/attachments/AttachmentForm';
 import EvolutionForm from '@/components/attachments/EvolutionForm';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+interface PerformanceData extends Attachment {
+    efficiencyScore: number;
+    totalTime: number;
+}
+
+const AttachmentPerformanceTable = ({ attachments }: { attachments: Attachment[] }) => {
+    const performanceData = useMemo<PerformanceData[]>(() => {
+        if (!attachments) return [];
+
+        return attachments.map(attachment => {
+            const totalTime = attachment.avgTime + attachment.swapTime;
+            const efficiencyScore = totalTime > 0
+                ? (attachment.points * (attachment.precision / 100)) / totalTime
+                : 0;
+            
+            return {
+                ...attachment,
+                efficiencyScore,
+                totalTime
+            };
+        })
+        .sort((a, b) => b.efficiencyScore - a.efficiencyScore);
+    }, [attachments]);
+
+    if (performanceData.length === 0) {
+        return null; // Don't render the table if there are no attachments
+    }
+
+    return (
+        <Card className="mb-12">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <Trophy className="w-6 h-6 text-yellow-500"/>
+                    Ranking de Eficiência dos Anexos
+                </CardTitle>
+                <CardDescription>
+                    Classificação dos anexos pela sua eficiência (pontos por segundo, ponderado pela precisão).
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[50px]">#</TableHead>
+                            <TableHead>Anexo</TableHead>
+                            <TableHead className="text-right">Eficiência (pts/s)</TableHead>
+                            <TableHead className="text-right">Pontos</TableHead>
+                            <TableHead className="text-right">Precisão</TableHead>
+                            <TableHead className="text-right">Tempo Total</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {performanceData.map((item, index) => (
+                            <TableRow key={item.id}>
+                                <TableCell className="font-bold text-lg">{index + 1}</TableCell>
+                                <TableCell className="font-medium">{item.name}</TableCell>
+                                <TableCell className="text-right font-mono text-primary font-bold">{item.efficiencyScore.toFixed(2)}</TableCell>
+                                <TableCell className="text-right font-mono">{item.points} pts</TableCell>
+                                <TableCell className="text-right font-mono">{item.precision}%</TableCell>
+                                <TableCell className="text-right font-mono">{item.totalTime.toFixed(1)}s</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+    );
+};
 
 
 export default function AttachmentsPage() {
@@ -184,6 +255,8 @@ export default function AttachmentsPage() {
                     </Button>
                 </div>
             </header>
+
+            {isClient && <AttachmentPerformanceTable attachments={attachments} />}
 
             <div className="space-y-12">
                 {isClient && attachments.length > 0 ? (
