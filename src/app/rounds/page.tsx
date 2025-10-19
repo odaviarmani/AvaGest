@@ -3,14 +3,14 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from "react";
 import RoundsTimer, { StageTime } from "@/components/rounds/RoundsTimer";
-import ScoreCalculator, { initialMissionState } from "@/components/rounds/ScoreCalculator";
+import ScoreCalculator from "@/components/rounds/ScoreCalculator";
 import RoundLog, { RoundData } from "@/components/rounds/RoundLog";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { BarChart } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { MissionState } from "@/lib/types";
+import { MissionState, initialMissionState } from "@/lib/types";
 
 const TOTAL_SECONDS = 150; // 2 minutes and 30 seconds
 
@@ -21,6 +21,23 @@ export default function RoundsPage() {
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [missions, setMissions] = useState<MissionState>(initialMissionState);
   const [numberOfSaidas, setNumberOfSaidas] = useState(6);
+  const [isClient, setIsClient] = useState(false);
+
+
+  useEffect(() => {
+    setIsClient(true);
+    const savedNumberOfSaidas = localStorage.getItem('numberOfSaidas');
+    if (savedNumberOfSaidas) {
+        setNumberOfSaidas(Number(savedNumberOfSaidas));
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isClient) {
+        localStorage.setItem('numberOfSaidas', String(numberOfSaidas));
+    }
+  }, [numberOfSaidas, isClient]);
+
 
   const stageNames = useMemo(() => {
     const names = [];
