@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, Trophy } from 'lucide-react';
 import { Attachment, EvolutionEntry } from '@/lib/types';
 import AttachmentCard from '@/components/attachments/AttachmentCard';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import AttachmentForm from '@/components/attachments/AttachmentForm';
-import EvolutionForm from '@/components/attachments/EvolutionForm';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -90,9 +89,6 @@ export default function AttachmentsPage() {
     
     const [isAttachmentFormOpen, setIsAttachmentFormOpen] = useState(false);
     const [editingAttachment, setEditingAttachment] = useState<Attachment | null>(null);
-    
-    const [isEvolutionFormOpen, setIsEvolutionFormOpen] = useState(false);
-    const [evolvingAttachment, setEvolvingAttachment] = useState<Attachment | null>(null);
 
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
     const [attachmentToDelete, setAttachmentToDelete] = useState<string | null>(null);
@@ -152,16 +148,9 @@ export default function AttachmentsPage() {
         setIsAttachmentFormOpen(true);
     };
 
-    const handleOpenEvolutionForm = (attachment: Attachment) => {
-        setEvolvingAttachment(attachment);
-        setIsEvolutionFormOpen(true);
-    };
-
     const handleCloseForms = () => {
         setEditingAttachment(null);
-        setEvolvingAttachment(null);
         setIsAttachmentFormOpen(false);
-        setIsEvolutionFormOpen(false);
     };
 
     const handleSaveAttachment = (data: Attachment) => {
@@ -174,40 +163,6 @@ export default function AttachmentsPage() {
         }
         handleCloseForms();
     };
-
-    const handleSaveEvolution = (attachmentToUpdate: Attachment, newEvolutionData: Omit<EvolutionEntry, 'id' | 'date'>) => {
-        const previousState: EvolutionEntry = {
-            id: crypto.randomUUID(),
-            date: new Date().toISOString(),
-            name: attachmentToUpdate.name,
-            missions: attachmentToUpdate.missions,
-            points: attachmentToUpdate.points,
-            avgTime: attachmentToUpdate.avgTime,
-            swapTime: attachmentToUpdate.swapTime,
-            precision: attachmentToUpdate.precision,
-            imageUrl: attachmentToUpdate.imageUrl,
-            notes: newEvolutionData.notes,
-        };
-
-        const updatedAttachment: Attachment = {
-            ...attachmentToUpdate,
-            name: newEvolutionData.name,
-            missions: newEvolutionData.missions,
-            points: newEvolutionData.points,
-            avgTime: newEvolutionData.avgTime,
-            swapTime: newEvolutionData.swapTime,
-            precision: newEvolutionData.precision,
-            imageUrl: newEvolutionData.imageUrl,
-            evolutionLog: [...(attachmentToUpdate.evolutionLog || []), previousState],
-        };
-        
-        const newAttachments = attachments.map(a => a.id === updatedAttachment.id ? updatedAttachment : a);
-        setAttachments(newAttachments);
-
-        toast({ title: "Evolução registrada!", description: `Nova evolução para "${updatedAttachment.name}" foi salva.` });
-        handleCloseForms();
-    };
-
 
     const handleDeleteRequest = (attachmentId: string) => {
         setAttachmentToDelete(attachmentId);
@@ -271,7 +226,6 @@ export default function AttachmentsPage() {
                                         onEdit={() => handleOpenAttachmentForm(attachment)}
                                         onDelete={() => handleDeleteRequest(attachment.id)}
                                         onDuplicate={() => handleDuplicate(attachment.id)}
-                                        onEvolve={() => handleOpenEvolutionForm(attachment)}
                                     />
                                 ))}
                             </div>
@@ -299,22 +253,6 @@ export default function AttachmentsPage() {
                          <AttachmentForm
                             attachment={editingAttachment}
                             onSave={handleSaveAttachment}
-                            onCancel={handleCloseForms}
-                        />
-                    )}
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={isEvolutionFormOpen} onOpenChange={setIsEvolutionFormOpen}>
-                <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Registrar Evolução</DialogTitle>
-                        <DialogDescription>Registre uma nova versão do anexo "{evolvingAttachment?.name}".</DialogDescription>
-                    </DialogHeader>
-                    {isEvolutionFormOpen && evolvingAttachment && (
-                         <EvolutionForm
-                            baseAttachment={evolvingAttachment}
-                            onSave={handleSaveEvolution}
                             onCancel={handleCloseForms}
                         />
                     )}

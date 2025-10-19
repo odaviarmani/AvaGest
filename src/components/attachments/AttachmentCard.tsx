@@ -7,10 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import Image from 'next/image';
 import { Button } from '../ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
-import { MoreVertical, Pencil, Trash2, Copy, Clock, Target, GitBranch, Puzzle, GitCommit, Eye } from 'lucide-react';
+import { MoreVertical, Pencil, Trash2, Copy, Clock, Target, GitBranch, Puzzle, Eye } from 'lucide-react';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
-import { Badge } from '../ui/badge';
 import EvolutionDetails from './EvolutionDetails';
 
 
@@ -19,11 +18,10 @@ interface AttachmentCardProps {
     onEdit: () => void;
     onDelete: () => void;
     onDuplicate: () => void;
-    onEvolve: () => void;
 }
 
 
-export default function AttachmentCard({ attachment, onEdit, onDelete, onDuplicate, onEvolve }: AttachmentCardProps) {
+export default function AttachmentCard({ attachment, onEdit, onDelete, onDuplicate }: AttachmentCardProps) {
     const { runExit, category, name, missions, points, imageUrl, avgTime, swapTime, precision, evolutionLog } = attachment;
     const [isEvolutionVisible, setIsEvolutionVisible] = useState(false);
 
@@ -74,10 +72,6 @@ export default function AttachmentCard({ attachment, onEdit, onDelete, onDuplica
                     <div className="flex items-center gap-1 text-muted-foreground"><GitBranch className="w-4 h-4"/> <span className="font-semibold">{swapTime}s</span> Troca</div>
                     
                     <div className="col-span-3 flex justify-center items-center gap-4 pt-2">
-                        <Button variant="secondary" onClick={onEvolve}>
-                            <GitCommit className="mr-2 h-4 w-4" />
-                            Registrar Evolução
-                        </Button>
                         <Button 
                             variant="outline"
                             onClick={() => setIsEvolutionVisible(!isEvolutionVisible)}
