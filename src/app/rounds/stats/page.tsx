@@ -55,7 +55,7 @@ const SaidaAnalysisCard = ({
                 const missionDetails = allMissions.find(m => m.id === missionConfig.missionId);
                 if (!missionDetails) return null;
 
-                const missionKey = missionDetails.name.split(' ')[0].toLowerCase() as keyof MissionState;
+                const missionKey = missionDetails.name.split(' ')[0].toLowerCase().replace('–', '') as keyof MissionState;
                 const stepDetail = missionStepDetails[missionKey as keyof typeof missionStepDetails];
                 
                 let details = '';
@@ -460,3 +460,4 @@ export default function RoundsStatsPage() {
     
 
     
+

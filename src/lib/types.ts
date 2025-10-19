@@ -159,6 +159,12 @@ export const inventoryItemSchema = z.object({
 
 export type InventoryItem = z.infer<typeof inventoryItemSchema>;
 
+export interface ChatMessage {
+  id: string;
+  username: string;
+  message: string;
+  timestamp: string;
+}
 export interface MissionState {
     m00_equipment_inspection: boolean;
     m01_surface_brushing: { soil_deposits_cleaned: number; brush_not_touching: boolean };
