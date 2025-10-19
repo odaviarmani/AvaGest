@@ -27,6 +27,7 @@ const SaidaAnalysisCard = ({
     roundsHistory: RoundData[],
     allMissions: Mission[],
 }) => {
+    const safeMissionIds = saidaConfig.missionIds || [];
 
     const saidaStats = useMemo(() => {
         let totalRunsForSaida = 0;
@@ -47,7 +48,7 @@ const SaidaAnalysisCard = ({
             const saidaData = round.missions.missionsPerSaida[saidaKey as keyof typeof round.missions.missionsPerSaida];
             if (!saidaData) return;
 
-            saidaConfig.missionIds.forEach(missionId => {
+            safeMissionIds.forEach(missionId => {
                 totalMissionsInSaidaRuns++;
                 const mission = allMissions.find(m => m.id === missionId);
                 if (!mission) return;
@@ -68,7 +69,7 @@ const SaidaAnalysisCard = ({
             });
         });
 
-        const missionConsistency = saidaConfig.missionIds.map(missionId => {
+        const missionConsistency = safeMissionIds.map(missionId => {
              const missionName = allMissions.find(m => m.id === missionId)?.name || "Desconhecida";
              const successCount = missionSuccessCount[missionId] || 0;
              const consistency = totalRunsForSaida > 0 ? (successCount / totalRunsForSaida) * 100 : 0;
@@ -80,7 +81,7 @@ const SaidaAnalysisCard = ({
 
         return { missionConsistency, overallConsistency, totalRunsForSaida };
 
-    }, [saidaConfig, roundsHistory, allMissions]);
+    }, [saidaConfig, roundsHistory, allMissions, safeMissionIds]);
     
     const timings = useMemo(() => {
         const saidaTimings: number[] = [];
