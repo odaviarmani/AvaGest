@@ -6,15 +6,77 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart as RechartsBarChart, LineChart, Pie, Sector, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Cell } from 'recharts';
-import { type RoundData } from '@/components/rounds/RoundLog';
+import { type RoundData, MissionState, initialMissionState } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, BarChart, Clock, Target, ListTree } from "lucide-react";
+import { ArrowLeft, BarChart, Clock, Target, ListTree, AlertCircle, TrendingUp, CheckCircle, XCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
+
+const missionLabels: { [key: string]: string } = {
+    m00_equipment_inspection: "M00 - Inspeção de Equipamentos",
+    m01_surface_brushing: "M01 - Escovação de Superfícies",
+    m02_map_reveal: "M02 - Revelação do Mapa",
+    m03_mine_shaft_explorer: "M03 - Explorador do Poço da Mina",
+    m04_careful_retrieval: "M04 - Recuperação Cuidadosa",
+    m05_who_lived_here: "M05 - Quem Morava Aqui?",
+    m06_forge: "M06 - Forja",
+    m07_heavy_lifting: "M07 - Levantamento de Peso",
+    m08_silo: "M08 - Silo",
+    m09_whats_on_sale: "M09 - O que Está à Venda",
+    m10_tip_the_scales: "M10 - Virar a Balança",
+    m11_fisher_artifacts: "M11 - Artefatos de Fisher",
+    m12_salvage_operation: "M12 - Operação de Resgate",
+    m13_statue_reconstruction: "M13 - Reconstrução da Estátua",
+    m14_forum: "M14 - Fórum",
+    m15_site_marking: "M15 - Marcação de Local",
+    precision_tokens: "Fichas de Precisão"
+};
+
+const isMissionCompleted = (missionKey: keyof MissionState, missionState: MissionState) => {
+    const value = missionState[missionKey];
+    if (typeof value === 'boolean') {
+        return value;
+    }
+    if (typeof value === 'object' && value !== null) {
+        if ('soil_deposits_cleaned' in value) { // M01
+            return value.soil_deposits_cleaned > 0 || value.brush_not_touching;
+        }
+        if ('part1' in value) { // M02, M06, M08
+            return value.part1 || value.part2 || value.part3;
+        }
+        if ('explored' in value) { // M03
+            return value.explored || value.gold_retrieved;
+        }
+        if ('retrieved' in value) { // M04, M11
+            return value.retrieved || ('not_broken' in value && value.not_broken) || ('on_pedestal' in value && value.on_pedestal);
+        }
+        if ('store_open' in value) { // M09
+            return value.store_open || value.item_on_pedestal;
+        }
+        if ('tipped' in value) { // M10
+            return value.tipped || value.both_sides_down;
+        }
+        if ('raised' in value) { // M12
+            return value.raised || value.animals_moved;
+        }
+         if ('artifacts' in value) { // M14
+            return value.artifacts > 0;
+        }
+        if ('locations' in value) { // M15
+            return value.locations > 0;
+        }
+    }
+    if(missionKey === 'precision_tokens' && typeof value === 'number') {
+        return value > 0;
+    }
+    return false;
+};
 
 export default function RoundsStatsPage() {
     const [history, setHistory] = useState<RoundData[]>([]);
@@ -80,6 +142,46 @@ export default function RoundsStatsPage() {
             name,
             averageTime: count > 0 ? parseFloat(((total / count) / 1000).toFixed(2)) : 0,
         }));
+        
+        const missionConsistency = (Object.keys(initialMissionState) as Array<keyof MissionState>).map(key => {
+            const completedCount = reversedHistory.filter(round => isMissionCompleted(key, round.missions)).length;
+            const percentage = reversedHistory.length > 0 ? (completedCount / reversedHistory.length) * 100 : 0;
+            return {
+                name: missionLabels[key] || key,
+                consistency: percentage,
+            };
+        }).filter(item => item.name); // Filter out any undefined names
+
+        const missionErrorCorrelation: Record<string, Record<string, number>> = {};
+        Object.keys(missionLabels).forEach(missionKey => {
+            missionErrorCorrelation[missionKey] = {};
+        });
+
+        reversedHistory.forEach(round => {
+            const failedMissions = (Object.keys(initialMissionState) as Array<keyof MissionState>)
+                .filter(key => !isMissionCompleted(key, round.missions));
+            
+            failedMissions.forEach(missionKey => {
+                round.errors.forEach(error => {
+                    if (error !== "Nenhuma") {
+                        if (!missionErrorCorrelation[missionKey][error]) {
+                            missionErrorCorrelation[missionKey][error] = 0;
+                        }
+                        missionErrorCorrelation[missionKey][error]++;
+                    }
+                });
+            });
+        });
+        
+        const errorCorrelationData = Object.entries(missionErrorCorrelation)
+            .map(([missionKey, errors]) => {
+                const mostCommonError = Object.entries(errors).sort((a, b) => b[1] - a[1])[0];
+                return {
+                    name: missionLabels[missionKey],
+                    mostCommonError: mostCommonError ? mostCommonError[0] : 'N/A',
+                    errorCount: mostCommonError ? mostCommonError[1] : 0,
+                }
+            }).filter(item => item.errorCount > 0);
 
 
         return {
@@ -88,17 +190,21 @@ export default function RoundsStatsPage() {
             scoreHistoryData,
             errorCausesData,
             programmingTypesData,
-            averageTimingsData
+            averageTimingsData,
+            missionConsistency,
+            errorCorrelationData,
         };
     }, [filteredHistory]);
 
     if (!isClient) {
         return (
-            <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
-                <Skeleton className="h-[300px] w-full" />
-                <Skeleton className="h-[300px] w-full" />
-                <Skeleton className="h-[300px] w-full" />
-                <Skeleton className="h-[300px] w-full" />
+            <div className="flex-1 p-4 md:p-8">
+                <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
+                    <Skeleton className="h-[300px] w-full" />
+                    <Skeleton className="h-[300px] w-full" />
+                    <Skeleton className="h-[300px] w-full" />
+                    <Skeleton className="h-[300px] w-full" />
+                </div>
             </div>
         )
     }
@@ -172,20 +278,24 @@ export default function RoundsStatsPage() {
             ) : (
                 <div className="space-y-8">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Total de Rounds</CardTitle>
+                         <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total de Rounds</CardTitle>
+                                <BarChart className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <p className="text-4xl font-bold">{stats.totalRounds}</p>
+                                <p className="text-2xl font-bold">{stats.totalRounds}</p>
+                                <p className="text-xs text-muted-foreground">Rounds analisados</p>
                             </CardContent>
                         </Card>
                         <Card>
-                            <CardHeader>
-                                <CardTitle>Média de Pontuação</CardTitle>
+                           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Média de Pontuação</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
-                                <p className="text-4xl font-bold">{stats.averageScore.toFixed(1)}</p>
+                                <p className="text-2xl font-bold">{stats.averageScore.toFixed(1)}</p>
+                                <p className="text-xs text-muted-foreground">Média de pontos por round</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -256,6 +366,65 @@ export default function RoundsStatsPage() {
                             </CardContent>
                         </Card>
                     </div>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Consistência por Missão</CardTitle>
+                            <CardDescription>Taxa de sucesso para cada missão individualmente em todos os rounds registrados.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-[60%]">Missão</TableHead>
+                                        <TableHead className="text-right">Consistência</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {stats.missionConsistency.map((item) => (
+                                        <TableRow key={item.name}>
+                                            <TableCell className="font-medium">{item.name}</TableCell>
+                                            <TableCell className="text-right font-mono">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <span>{item.consistency.toFixed(1)}%</span>
+                                                    <Progress value={item.consistency} className="w-24 h-2" />
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Causas de Falha por Missão</CardTitle>
+                            <CardDescription>Principal tipo de erro associado a falhas em cada missão.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Missão com Falha</TableHead>
+                                        <TableHead className="text-right">Causa Mais Comum</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {stats.errorCorrelationData.length > 0 ? stats.errorCorrelationData.map((item) => (
+                                        <TableRow key={item.name}>
+                                            <TableCell className="font-medium">{item.name}</TableCell>
+                                            <TableCell className="text-right">{item.mostCommonError}</TableCell>
+                                        </TableRow>
+                                    )) : (
+                                         <TableRow>
+                                            <TableCell colSpan={2} className="h-24 text-center">Nenhuma falha com erro associado registrada.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
 
                     <Card>
                         <CardHeader>
