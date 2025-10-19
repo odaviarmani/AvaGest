@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth, ADMIN_USERS } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -25,10 +25,12 @@ const userThemes: Record<string, { primary: string, primaryForeground: string, r
     'Avalon':    { primary: '0 0% 0%',  primaryForeground: '0 0% 98%',  ring: '0 0% 0%' }, // Black
 };
 
-export default function AppContent({ children }: { children: React.ReactNode }) {
+const AppContent = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const { isAuthenticated, username, logout } = useAuth();
   const [isClient, setIsClient] = useState(false);
+  const spotifyPlayerRef = useRef<HTMLIFrameElement>(null);
+
 
   useEffect(() => {
     setIsClient(true);
@@ -117,11 +119,20 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
                     <ThemeToggle />
                   </div>
               </header>
-              <main className="flex-1 flex flex-col">{children}</main>
+              <main className="flex-1 flex flex-col">
+                 {React.Children.map(children, child => {
+                    if (React.isValidElement(child)) {
+                        // @ts-ignore
+                        return React.cloneElement(child, { spotifyPlayerRef });
+                    }
+                    return child;
+                })}
+              </main>
               <footer className="p-4 border-t shrink-0 flex items-center justify-center">
               <iframe
+                  ref={spotifyPlayerRef}
                   style={{ borderRadius: '12px' }}
-                  src="https://open.spotify.com/embed/station/playlist/37i9dQZF1DXcBWXoPEoRv3?utm_source=generator&theme=0"
+                  src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWXoPEoRv3?utm_source=generator&theme=0"
                   width="80%"
                   height="80"
                   allowFullScreen={false}
@@ -135,4 +146,8 @@ export default function AppContent({ children }: { children: React.ReactNode }) 
         </div>
     </ThemeProvider>
   );
-}
+};
+
+AppContent.displayName = 'AppContent';
+
+export default AppContent;

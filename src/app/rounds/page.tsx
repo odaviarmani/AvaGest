@@ -7,14 +7,19 @@ import ScoreCalculator from "@/components/rounds/ScoreCalculator";
 import RoundLog, { RoundData } from "@/components/rounds/RoundLog";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { BarChart } from "lucide-react";
+import { BarChart, Music } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { MissionState, initialMissionState } from "@/lib/types";
+import { Switch } from "@/components/ui/switch";
 
 const TOTAL_SECONDS = 150; // 2 minutes and 30 seconds
 
-export default function RoundsPage() {
+interface RoundsPageProps {
+    spotifyPlayerRef?: React.RefObject<HTMLIFrameElement>;
+}
+
+export default function RoundsPage({ spotifyPlayerRef }: RoundsPageProps) {
   const [timerSeconds, setTimerSeconds] = useState(TOTAL_SECONDS);
   const [isActive, setIsActive] = useState(false);
   const [stageTimings, setStageTimings] = useState<StageTime[]>([]);
@@ -22,6 +27,7 @@ export default function RoundsPage() {
   const [missions, setMissions] = useState<MissionState>(initialMissionState);
   const [numberOfSaidas, setNumberOfSaidas] = useState(6);
   const [isClient, setIsClient] = useState(false);
+  const [autoPlayMusic, setAutoPlayMusic] = useState(false);
 
 
   useEffect(() => {
@@ -30,13 +36,18 @@ export default function RoundsPage() {
     if (savedNumberOfSaidas) {
         setNumberOfSaidas(Number(savedNumberOfSaidas));
     }
+    const savedAutoPlay = localStorage.getItem('roundsAutoPlayMusic');
+    if (savedAutoPlay) {
+        setAutoPlayMusic(JSON.parse(savedAutoPlay));
+    }
   }, []);
 
   useEffect(() => {
     if (isClient) {
         localStorage.setItem('numberOfSaidas', String(numberOfSaidas));
+        localStorage.setItem('roundsAutoPlayMusic', JSON.stringify(autoPlayMusic));
     }
-  }, [numberOfSaidas, isClient]);
+  }, [numberOfSaidas, autoPlayMusic, isClient]);
 
 
   const stageNames = useMemo(() => {
@@ -137,6 +148,15 @@ export default function RoundsPage() {
 
   const isRoundFinished = currentStageIndex === stageNames.length - 1 && stageTimings[stageNames.length - 1]?.duration !== null && !isActive;
 
+   const handleAnimationFinish = useCallback(() => {
+    if (autoPlayMusic) {
+      spotifyPlayerRef?.current?.contentWindow?.postMessage({ command: 'play' }, '*');
+      const playButton = (spotifyPlayerRef?.current?.contentDocument || spotifyPlayerRef?.current?.contentWindow?.document)?.querySelector('[data-testid="play-button"]');
+      (playButton as HTMLElement)?.click();
+    }
+  }, [autoPlayMusic, spotifyPlayerRef]);
+
+
   return (
     <div className="flex-1 p-4 md:p-8">
       <header className="mb-4 flex justify-between items-center">
@@ -177,6 +197,16 @@ export default function RoundsPage() {
                         </SelectContent>
                     </Select>
                 </div>
+                 <div className="flex items-center space-x-2 rounded-lg border p-3 shadow-sm">
+                    <Music className="w-5 h-5"/>
+                    <Label htmlFor="autoplay-music">Música Automática</Label>
+                    <Switch
+                        id="autoplay-music"
+                        checked={autoPlayMusic}
+                        onCheckedChange={setAutoPlayMusic}
+                        disabled={isActive}
+                    />
+                </div>
                 <RoundsTimer 
                     seconds={timerSeconds}
                     setSeconds={setTimerSeconds}
@@ -188,6 +218,7 @@ export default function RoundsPage() {
                     setCurrentStageIndex={setCurrentStageIndex}
                     totalSeconds={TOTAL_SECONDS}
                     stageNames={stageNames}
+                    onAnimationFinish={handleAnimationFinish}
                 />
             </div>
             <div className="md:col-span-1">

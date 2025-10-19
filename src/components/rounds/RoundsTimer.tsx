@@ -73,11 +73,12 @@ interface RoundsTimerProps {
     setCurrentStageIndex: React.Dispatch<React.SetStateAction<number>>;
     totalSeconds: number;
     stageNames: string[];
+    onAnimationFinish: () => void;
 }
 
 export default function RoundsTimer({
     seconds, setSeconds, isActive, setIsActive, stageTimings, setStageTimings,
-    currentStageIndex, setCurrentStageIndex, totalSeconds, stageNames
+    currentStageIndex, setCurrentStageIndex, totalSeconds, stageNames, onAnimationFinish
 }: RoundsTimerProps) {
   const [showAnimation, setShowAnimation] = useState(false);
   
@@ -158,10 +159,11 @@ export default function RoundsTimer({
     }
   };
 
-  const handleAnimationFinish = useCallback(() => {
+  const handleAnimationFinishInternal = useCallback(() => {
     setShowAnimation(false);
     startTimers();
-  },[startTimers]);
+    onAnimationFinish();
+  },[startTimers, onAnimationFinish]);
 
   const handleResetTimer = () => {
     handlePause();
@@ -217,7 +219,7 @@ export default function RoundsTimer({
 
   return (
     <>
-    {showAnimation && <CountdownAnimation onFinish={handleAnimationFinish} />}
+    {showAnimation && <CountdownAnimation onFinish={handleAnimationFinishInternal} />}
     <Card className="w-full">
       <CardHeader>
         <CardTitle>Cronômetro do Round</CardTitle>
