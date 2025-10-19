@@ -39,6 +39,10 @@ const missionLabels: { [key: string]: string } = {
 };
 
 const isMissionCompleted = (missionKey: keyof MissionState, missionState: MissionState) => {
+    // Handle cases where older round data might not have the `missions` property.
+    if (!missionState) {
+        return false;
+    }
     const value = missionState[missionKey];
     if (typeof value === 'boolean') {
         return value;
@@ -93,7 +97,7 @@ export default function RoundsStatsPage() {
 
     const filteredHistory = useMemo(() => {
         if (roundCount === 'all') return history;
-        return history.slice(0, roundCount);
+        return history.slice(-roundCount);
     }, [history, roundCount]);
 
     const stats = useMemo(() => {
@@ -159,7 +163,7 @@ export default function RoundsStatsPage() {
 
         reversedHistory.forEach(round => {
             const failedMissions = (Object.keys(initialMissionState) as Array<keyof MissionState>)
-                .filter(key => !isMissionCompleted(key, round.missions));
+                .filter(key => round.missions && !isMissionCompleted(key, round.missions));
             
             failedMissions.forEach(missionKey => {
                 round.errors.forEach(error => {
