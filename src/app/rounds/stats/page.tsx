@@ -193,8 +193,10 @@ export default function RoundsStatsPage() {
                     return acc;
                 }, {} as Record<string, number>);
 
+                const totalErrors = errorsInFailedRounds.length;
+
                 Object.entries(errorCounts).forEach(([error, count]) => {
-                    errorDistribution[error] = (count / errorsInFailedRounds.length) * 100;
+                    errorDistribution[error] = (count / totalErrors) * 100;
                 });
             }
 
@@ -551,5 +553,7 @@ export default function RoundsStatsPage() {
         </div>
     );
 }
+
+    
 
     
