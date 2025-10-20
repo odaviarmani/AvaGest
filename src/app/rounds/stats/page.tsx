@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BarChart as RechartsBarChart, LineChart, Pie, Sector, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Cell } from 'recharts';
-import { type RoundData, MissionState, initialMissionState } from '@/lib/types';
+import { type RoundData, MissionState, initialMissionState, errorCauses } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -20,6 +20,7 @@ import SaidaAnalysisCard from '@/components/rounds/SaidaAnalysisCard';
 
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
+const ERROR_CHART_COLORS = { 'Humana': '#ffc658', 'Código': '#8884d8', 'Mecânica': '#ff8042' };
 
 const missionLabels: { [key: string]: string } = {
     m00_equipment_inspection: "M00 - Inspeção de Equipamentos",
@@ -182,24 +183,26 @@ export default function RoundsStatsPage() {
             const completedCount = reversedHistory.filter(round => isMissionCompleted(key, round.missions)).length;
             const consistency = reversedHistory.length > 0 ? (completedCount / reversedHistory.length) * 100 : 0;
             
-            const errorsInFailedRounds: Record<string, number> = {};
-            reversedHistory
-                .filter(round => round.missions && !isMissionCompleted(key, round.missions))
-                .forEach(round => {
-                    round.errors.forEach(error => {
-                         if (error !== "Nenhuma") {
-                            errorsInFailedRounds[error] = (errorsInFailedRounds[error] || 0) + 1;
-                        }
-                    })
-                });
+            const failedRounds = reversedHistory.filter(round => round.missions && !isMissionCompleted(key, round.missions));
+            const errorsInFailedRounds = failedRounds.flatMap(round => round.errors.filter(e => e !== 'Nenhuma'));
+            
+            const errorDistribution: Record<string, number> = {};
+            if (errorsInFailedRounds.length > 0) {
+                const errorCounts = errorsInFailedRounds.reduce((acc, error) => {
+                    acc[error] = (acc[error] || 0) + 1;
+                    return acc;
+                }, {} as Record<string, number>);
 
-            const mostCommonError = Object.entries(errorsInFailedRounds).sort((a,b) => b[1] - a[1])[0];
+                Object.entries(errorCounts).forEach(([error, count]) => {
+                    errorDistribution[error] = (count / errorsInFailedRounds.length) * 100;
+                });
+            }
 
             return {
                 name: missionLabels[key] || key,
                 missionKey: key,
                 consistency,
-                mostCommonError: mostCommonError ? mostCommonError[0] : 'N/A',
+                errorDistribution,
             };
         }).filter(item => item.name);
         
@@ -213,19 +216,26 @@ export default function RoundsStatsPage() {
             const saidaTiming = averageTimingsData.find(t => t.name === `Saída ${i}`);
             const averageTime = saidaTiming ? saidaTiming.averageTime : 0;
 
-            const errorsCount: Record<string, number> = {};
-            saidaMissions.forEach(m => {
-                if (m.mostCommonError !== 'N/A') {
-                    errorsCount[m.mostCommonError] = (errorsCount[m.mostCommonError] || 0) + 1;
-                }
+            const totalErrorDistribution: Record<string, number[]> = {};
+            saidaMissions.forEach(mission => {
+                Object.entries(mission.errorDistribution).forEach(([error, percentage]) => {
+                    if (!totalErrorDistribution[error]) {
+                        totalErrorDistribution[error] = [];
+                    }
+                    totalErrorDistribution[error].push(percentage);
+                });
             });
-            const commonErrors = Object.entries(errorsCount).sort((a, b) => b[1] - a[1]).map(([error]) => error);
+
+            const aggregatedErrorDistribution = Object.entries(totalErrorDistribution).map(([error, percentages]) => {
+                const averagePercentage = percentages.reduce((sum, p) => sum + p, 0) / percentages.length;
+                return { name: error, value: averagePercentage };
+            });
 
             saidasAnalysis[i] = {
                 missions: saidaMissions,
                 averagePrecision,
                 averageTime,
-                commonErrors,
+                errorDistribution: aggregatedErrorDistribution,
             };
         }
 
@@ -390,9 +400,9 @@ export default function RoundsStatsPage() {
                              <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-[40%]">Missão</TableHead>
+                                        <TableHead className="w-[30%]">Missão</TableHead>
                                         <TableHead>Consistência</TableHead>
-                                        <TableHead>Principal Causa de Falha</TableHead>
+                                        <TableHead>Distribuição de Erros (em falhas)</TableHead>
                                         <TableHead className="text-right">Saídas Planejadas</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -406,7 +416,26 @@ export default function RoundsStatsPage() {
                                                     <Progress value={item.consistency} className="w-24 h-2" />
                                                 </div>
                                             </TableCell>
-                                            <TableCell>{item.mostCommonError}</TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap gap-2">
+                                                     {Object.keys(item.errorDistribution).length > 0 ? (
+                                                        Object.entries(item.errorDistribution)
+                                                            .sort(([, a], [, b]) => b - a)
+                                                            .map(([error, percentage]) => (
+                                                                <Badge
+                                                                    key={error}
+                                                                    variant="secondary"
+                                                                    style={{ backgroundColor: `${ERROR_CHART_COLORS[error as keyof typeof ERROR_CHART_COLORS]}33` }}
+                                                                    className="border"
+                                                                    >
+                                                                    {error}: {percentage.toFixed(0)}%
+                                                                </Badge>
+                                                            ))
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">N/A</span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
                                             <TableCell className="text-right">
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
@@ -522,3 +551,5 @@ export default function RoundsStatsPage() {
         </div>
     );
 }
+
+    
