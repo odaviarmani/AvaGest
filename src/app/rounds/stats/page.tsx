@@ -16,6 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import SaidaAnalysisCard from '@/components/rounds/SaidaAnalysisCard';
 
 
 const CHART_COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#0088FE', '#00C49F'];
@@ -84,45 +85,6 @@ const isMissionCompleted = (missionKey: keyof MissionState, missionState?: Missi
         return value > 0;
     }
     return false;
-};
-
-const SaidaAnalysisCard = ({ saidaNum, data }: { saidaNum: number, data: any }) => {
-    if (!data) return null;
-
-    const { missions, averagePrecision, averageTime, commonErrors } = data;
-
-    return (
-        <Card className="shadow-lg">
-            <CardHeader>
-                <CardTitle>Análise da Saída {saidaNum}</CardTitle>
-                <CardDescription>
-                    Métricas de desempenho para as missões planejadas nesta saída.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="space-y-2">
-                    <h4 className="font-semibold text-sm">Missões na Saída:</h4>
-                    <ul className="list-disc list-inside text-sm text-muted-foreground">
-                        {missions.map((m: any) => <li key={m.missionKey}>{m.name} <span className="font-mono text-xs">({m.consistency.toFixed(1)}%)</span></li>)}
-                    </ul>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <StatDisplay icon={<Clock className="text-blue-500" />} title="Tempo Médio" value={`${averageTime.toFixed(2)}s`} />
-                    <StatDisplay icon={<Target className="text-green-500" />} title="Precisão Média" value={`${averagePrecision.toFixed(1)}%`} />
-                </div>
-                <div>
-                     <h4 className="font-semibold text-sm">Erros Mais Comuns:</h4>
-                     {commonErrors.length > 0 ? (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {commonErrors.map((error: any) => <Badge key={error} variant="destructive">{error}</Badge>)}
-                        </div>
-                     ) : (
-                         <p className="text-sm text-muted-foreground mt-1">Nenhum erro comum identificado para as missões desta saída.</p>
-                     )}
-                </div>
-            </CardContent>
-        </Card>
-    );
 };
 
 const StatDisplay = ({ icon, title, value }: { icon: React.ReactNode; title: string; value: string }) => (
@@ -244,29 +206,27 @@ export default function RoundsStatsPage() {
         const saidasAnalysis: Record<number, any> = {};
         for (let i = 1; i <= numberOfSaidas; i++) {
             const saidaMissions = missionPerformance.filter(m => missionExitConfig[m.missionKey]?.includes(i));
-            if (saidaMissions.length > 0) {
+            
+            const totalPrecision = saidaMissions.reduce((acc, m) => acc + m.consistency, 0);
+            const averagePrecision = saidaMissions.length > 0 ? totalPrecision / saidaMissions.length : 0;
+            
+            const saidaTiming = averageTimingsData.find(t => t.name === `Saída ${i}`);
+            const averageTime = saidaTiming ? saidaTiming.averageTime : 0;
 
-                const totalPrecision = saidaMissions.reduce((acc, m) => acc + m.consistency, 0);
-                const averagePrecision = totalPrecision / saidaMissions.length;
-                
-                const saidaTiming = averageTimingsData.find(t => t.name === `Saída ${i}`);
-                const averageTime = saidaTiming ? saidaTiming.averageTime : 0;
+            const errorsCount: Record<string, number> = {};
+            saidaMissions.forEach(m => {
+                if (m.mostCommonError !== 'N/A') {
+                    errorsCount[m.mostCommonError] = (errorsCount[m.mostCommonError] || 0) + 1;
+                }
+            });
+            const commonErrors = Object.entries(errorsCount).sort((a, b) => b[1] - a[1]).map(([error]) => error);
 
-                const errorsCount: Record<string, number> = {};
-                saidaMissions.forEach(m => {
-                    if (m.mostCommonError !== 'N/A') {
-                        errorsCount[m.mostCommonError] = (errorsCount[m.mostCommonError] || 0) + 1;
-                    }
-                });
-                const commonErrors = Object.entries(errorsCount).sort((a, b) => b[1] - a[1]).map(([error]) => error);
-
-                saidasAnalysis[i] = {
-                    missions: saidaMissions,
-                    averagePrecision,
-                    averageTime,
-                    commonErrors,
-                };
-            }
+            saidasAnalysis[i] = {
+                missions: saidaMissions,
+                averagePrecision,
+                averageTime,
+                commonErrors,
+            };
         }
 
 
@@ -484,23 +444,28 @@ export default function RoundsStatsPage() {
                                 <CardDescription>Desempenho agregado com base nas missões planejadas para cada saída.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
-                                {Object.keys(stats.saidasAnalysis).length > 0 ? Array.from({ length: numberOfSaidas }, (_, i) => i + 1).map(saidaNum => {
-                                    const saidaData = stats.saidasAnalysis[saidaNum];
-                                    const trocaTiming = stats.averageTimingsData.find(t => t.name === `Troca de anexo ${saidaNum}-${saidaNum + 1}`);
-                                    
-                                    if (!saidaData) return null;
+                                {Object.keys(stats.saidasAnalysis).length > 0 ? (
+                                    Array.from({ length: numberOfSaidas }, (_, i) => i + 1).map(saidaNum => {
+                                        const saidaData = stats.saidasAnalysis[saidaNum];
+                                        const trocaTiming = stats.averageTimingsData.find(t => t.name === `Troca de anexo ${saidaNum}-${saidaNum + 1}`);
 
-                                    return (
-                                        <React.Fragment key={`saida-fragment-${saidaNum}`}>
-                                            <SaidaAnalysisCard saidaNum={saidaNum} data={saidaData} />
-                                            {trocaTiming && (
-                                                <div className="flex justify-center">
-                                                    <StatDisplay icon={<Clock />} title={`Tempo Médio - Troca ${saidaNum}-${saidaNum + 1}`} value={`${trocaTiming.averageTime.toFixed(2)}s`} />
-                                                </div>
-                                            )}
-                                        </React.Fragment>
-                                    );
-                                }) : (
+                                        if (!saidaData || saidaData.missions.length === 0) return null;
+
+                                        return (
+                                            <React.Fragment key={`saida-fragment-${saidaNum}`}>
+                                                <SaidaAnalysisCard 
+                                                    saidaNum={saidaNum} 
+                                                    data={saidaData} 
+                                                />
+                                                {trocaTiming && trocaTiming.averageTime > 0 && (
+                                                    <div className="flex justify-center -my-2">
+                                                        <StatDisplay icon={<Clock />} title={`Tempo Médio - Troca ${saidaNum}-${saidaNum + 1}`} value={`${trocaTiming.averageTime.toFixed(2)}s`} />
+                                                    </div>
+                                                )}
+                                            </React.Fragment>
+                                        );
+                                    })
+                                ) : (
                                     <div className="text-center text-muted-foreground py-8">
                                         <Info className="mx-auto w-8 h-8 mb-2" />
                                         <p>Nenhuma missão foi atribuída a uma saída.</p>
@@ -557,5 +522,3 @@ export default function RoundsStatsPage() {
         </div>
     );
 }
-
-    
