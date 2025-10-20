@@ -29,8 +29,6 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const { isAuthenticated, username, logout } = useAuth();
   const [isClient, setIsClient] = useState(false);
-  const spotifyPlayerRef = useRef<HTMLIFrameElement>(null);
-
 
   useEffect(() => {
     setIsClient(true);
@@ -120,17 +118,10 @@ const AppContent = ({ children }: { children: React.ReactNode }) => {
                   </div>
               </header>
               <main className="flex-1 flex flex-col">
-                 {React.Children.map(children, child => {
-                    if (React.isValidElement(child)) {
-                        // @ts-ignore
-                        return React.cloneElement(child, { spotifyPlayerRef });
-                    }
-                    return child;
-                })}
+                 {children}
               </main>
               <footer className="p-4 border-t shrink-0 flex items-center justify-center">
               <iframe
-                  ref={spotifyPlayerRef}
                   style={{ borderRadius: '12px' }}
                   src="https://open.spotify.com/embed/playlist/4mSIYnwHQKR9uzPNE4TPJ4?utm_source=generator&theme=0"
                   width="80%"

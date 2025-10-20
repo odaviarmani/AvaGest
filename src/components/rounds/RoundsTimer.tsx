@@ -73,12 +73,11 @@ interface RoundsTimerProps {
     setCurrentStageIndex: React.Dispatch<React.SetStateAction<number>>;
     totalSeconds: number;
     stageNames: string[];
-    onAnimationFinish: () => void;
 }
 
 export default function RoundsTimer({
     seconds, setSeconds, isActive, setIsActive, stageTimings, setStageTimings,
-    currentStageIndex, setCurrentStageIndex, totalSeconds, stageNames, onAnimationFinish
+    currentStageIndex, setCurrentStageIndex, totalSeconds, stageNames
 }: RoundsTimerProps) {
   const [showAnimation, setShowAnimation] = useState(false);
   
@@ -162,8 +161,7 @@ export default function RoundsTimer({
   const handleAnimationFinishInternal = useCallback(() => {
     setShowAnimation(false);
     startTimers();
-    onAnimationFinish();
-  },[startTimers, onAnimationFinish]);
+  },[startTimers]);
 
   const handleResetTimer = () => {
     handlePause();
