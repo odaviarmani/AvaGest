@@ -52,7 +52,7 @@ export default function SaidaAnalysisCard({ saidaNum, data }: { saidaNum: number
                         <div className="h-48 w-full">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
-                                    <Pie data={errorDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label={(props) => `${props.name}: ${props.percent.toFixed(0)}%`}>
+                                    <Pie data={errorDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} fill="#8884d8">
                                         {errorDistribution.map((entry: any, index: number) => (
                                             <Cell key={`cell-${index}`} fill={ERROR_CHART_COLORS[entry.name as keyof typeof ERROR_CHART_COLORS]} />
                                         ))}
@@ -61,6 +61,7 @@ export default function SaidaAnalysisCard({ saidaNum, data }: { saidaNum: number
                                         contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
                                         formatter={(value: number) => `${value.toFixed(1)}%`}
                                     />
+                                    <Legend />
                                 </PieChart>
                             </ResponsiveContainer>
                         </div>
@@ -75,5 +76,3 @@ export default function SaidaAnalysisCard({ saidaNum, data }: { saidaNum: number
         </Card>
     );
 };
-
-    
