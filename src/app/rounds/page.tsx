@@ -134,7 +134,7 @@ export default function RoundsPage() {
     setMissions(initialMissionState);
   }, []);
 
-  const isRoundFinished = currentStageIndex === stageNames.length - 1 && stageTimings[stageNames.length - 1]?.duration !== null && !isActive;
+  const canRegisterRound = !isActive && stageTimings.length > 0 && timerSeconds < TOTAL_SECONDS;
 
   return (
     <div className="flex-1 p-4 md:p-8">
@@ -200,7 +200,7 @@ export default function RoundsPage() {
             <RoundLog 
                 score={totalScore}
                 timings={stageTimings}
-                isRoundFinished={isRoundFinished}
+                canRegisterRound={canRegisterRound}
                 onRegisterNewRound={handleResetAll}
                 missionsState={missions}
             />

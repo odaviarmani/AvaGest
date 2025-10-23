@@ -23,7 +23,7 @@ type ErrorCause = typeof errorCauses[number];
 interface RoundLogProps {
     score: number;
     timings: StageTime[];
-    isRoundFinished: boolean;
+    canRegisterRound: boolean;
     onRegisterNewRound: () => void;
     missionsState: MissionState;
 }
@@ -34,7 +34,7 @@ const formatSubTime = (ms: number | null) => {
     return `${totalSeconds.toFixed(3)}s`;
 };
 
-export default function RoundLog({ score, timings, isRoundFinished, onRegisterNewRound, missionsState }: RoundLogProps) {
+export default function RoundLog({ score, timings, canRegisterRound, onRegisterNewRound, missionsState }: RoundLogProps) {
     const [selectedProgramming, setSelectedProgramming] = useState<ProgrammingType[]>([]);
     const [selectedErrors, setSelectedErrors] = useState<ErrorCause[]>([]);
     const [history, setHistory] = useState<RoundData[]>([]);
@@ -152,7 +152,7 @@ export default function RoundLog({ score, timings, isRoundFinished, onRegisterNe
                     <Button 
                         className="w-full" 
                         onClick={handleRegister} 
-                        disabled={!isRoundFinished || selectedProgramming.length === 0 || selectedErrors.length === 0}
+                        disabled={!canRegisterRound || selectedProgramming.length === 0 || selectedErrors.length === 0}
                     >
                         <Save className="mr-2 h-4 w-4" />
                         Registrar Round
@@ -197,5 +197,3 @@ export default function RoundLog({ score, timings, isRoundFinished, onRegisterNe
         </div>
     );
 }
-
-    
