@@ -5,6 +5,7 @@ import React from 'react';
 import TaskCalendar from "@/components/calendar/TaskCalendar";
 import ProjectGanttChart from '@/components/calendar/ProjectGanttChart';
 import { Separator } from '@/components/ui/separator';
+import WeeklyTaskView from '@/components/calendar/WeeklyTaskView';
 
 export default function CalendarPage() {
   return (
@@ -19,6 +20,20 @@ export default function CalendarPage() {
       </header>
       <div>
         <TaskCalendar />
+      </div>
+
+      <Separator />
+
+       <div>
+        <header className="mb-8">
+            <div>
+                <h1 className="text-3xl font-bold">Visão Semanal</h1>
+                <p className="text-muted-foreground">
+                Veja as tarefas que começam ou terminam nesta semana.
+                </p>
+            </div>
+        </header>
+        <WeeklyTaskView />
       </div>
 
       <Separator />
